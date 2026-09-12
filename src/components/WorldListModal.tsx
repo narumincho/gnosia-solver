@@ -1,15 +1,10 @@
 import { Globe, X } from "lucide-preact";
-import {
-  GameSettings,
-  Role,
-  ROLE_DEFINITIONS,
-  RoleAssignment,
-} from "../types.ts";
+import { GameSettings, ROLE_DEFINITIONS, RoleAssignment } from "../types.ts";
 
 interface WorldListModalProps {
   isOpen: boolean;
   onClose: () => void;
-  sampleWorlds: Array<RoleAssignment>;
+  sampleWorlds: ReadonlyArray<RoleAssignment>;
   totalWorlds: number;
   settings: GameSettings;
 }
@@ -37,7 +32,7 @@ export function WorldListModal({
               成立し得る世界一覧 ({totalWorlds} 通り)
             </h3>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>
+          <button type="button" className="modal-close-btn" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
@@ -102,7 +97,7 @@ export function WorldListModal({
                         W{idx + 1}
                       </td>
                       {settings.players.map((p) => {
-                        const role: Role = world[p.id];
+                        const role = world[p.id];
                         const def = role ? ROLE_DEFINITIONS[role] : null;
                         if (!def) return <td key={p.id}>-</td>;
 
@@ -150,7 +145,7 @@ export function WorldListModal({
             marginTop: "1.2rem",
           }}
         >
-          <button className="btn" onClick={onClose}>
+          <button type="button" className="btn" onClick={onClose}>
             閉じる
           </button>
         </div>

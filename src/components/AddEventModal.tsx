@@ -1,14 +1,5 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
-import {
-  Activity,
-  AlertTriangle,
-  Search,
-  ShieldCheck,
-  Skull,
-  Target,
-  UserCheck,
-  X,
-} from "lucide-preact";
+import { AlertTriangle, Target, X } from "lucide-preact";
 import {
   EventType,
   GameEvent,
@@ -23,15 +14,15 @@ interface AddEventModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddEvent: (ev: NewGameEvent) => void;
-  onUpdateEvent?: (ev: GameEvent) => void;
-  editingEvent?: GameEvent;
+  onUpdateEvent?: ((ev: GameEvent) => void) | undefined;
+  editingEvent?: GameEvent | undefined;
   settings: GameSettings;
-  currentDay?: number;
-  initialType?: EventType;
-  initialPlayerId?: string;
+  currentDay?: number | undefined;
+  initialType?: EventType | undefined;
+  initialPlayerId?: string | undefined;
   playerStatuses: Record<string, PlayerStatus>;
-  claimedRoles: Record<string, Array<Role>>;
-  myRole?: Role;
+  claimedRoles: Record<string, ReadonlyArray<Role>>;
+  myRole?: Role | undefined;
 }
 
 export function AddEventModal({
@@ -41,7 +32,7 @@ export function AddEventModal({
   onUpdateEvent,
   editingEvent,
   settings,
-  currentDay = 1,
+  currentDay: _currentDay = 1,
   initialType = "DEFINITE_LIE",
   initialPlayerId,
   playerStatuses,
@@ -126,11 +117,10 @@ export function AddEventModal({
   );
   const [reportResult, setReportResult] = useState<ReportJudgement>("HUMAN");
   const [witnessPlayer, setWitnessPlayer] = useState<string>("player");
-  const [disappearedPlayerIds, setDisappearedPlayerIds] = useState<Array<string>>(
+  const [disappearedPlayerIds, setDisappearedPlayerIds] = useState<
+    ReadonlyArray<string>
+  >(
     [],
-  );
-  const [noAttackNote, setNoAttackNote] = useState<string>(
-    "夜間の犠牲者なし (天使護衛成功 または バグ襲撃)",
   );
 
   // 初期値の自動調整
@@ -180,79 +170,36 @@ export function AddEventModal({
         case "NO_ATTACK":
           setDisappearedPlayerIds([]);
           break;
+        default:
+          break;
       }
-      return;
-    }
-
-    // 新規登録時の初期化
-    if (initialType) setEventType(initialType);
-
-    if (initialType === "DISAPPEARANCE") {
-      setDisappearedPlayerIds(initialPlayerId ? [initialPlayerId] : []);
-    } else if (initialType === "GNOSIA_ATTACK") {
-      const defaultTarget = initialPlayerId && initialPlayerId !== "player"
-        ? initialPlayerId
-        : alivePlayers.find((p) => p.id !== "player")?.id ||
-          settings.players[0]?.id || "";
-      setSelectedPlayer(defaultTarget);
-    } else if (initialType === "DEFINITE_LIE") {
-      setWitnessPlayer("player");
-      const defaultLiar = initialPlayerId && initialPlayerId !== "player"
-        ? initialPlayerId
-        : settings.players.find((p) => p.id !== "player")?.id ||
-          settings.players[0]?.id || "";
-      setSelectedPlayer(defaultLiar);
-    } else if (initialType === "CO") {
-      const defaultCandidate = initialPlayerId && coCandidates.some((p) =>
-          p.id === initialPlayerId
-        )
-        ? initialPlayerId
-        : coCandidates[0]?.id || "";
-      setSelectedPlayer(defaultCandidate);
-      setSelectedGuardDuty(initialPlayerId ? [initialPlayerId] : []);
-    } else if (initialType === "INVESTIGATION") {
-      const defaultInv = (initialPlayerId && engineerCandidates.some((p) =>
-          p.id === initialPlayerId
-        ))
-        ? initialPlayerId
-        : engineerCandidates[0]?.id || alivePlayers[0]?.id || "";
-      setSelectedPlayer(defaultInv);
-
-      // 対象は調査者以外の生存者
-      const defaultTarget = alivePlayers.find((p) => p.id !== defaultInv)?.id ||
-        settings.players[0]?.id || "";
-      setTargetPlayer(defaultTarget);
-    } else if (initialType === "DOCTOR_REPORT") {
-      const defaultDoc = (initialPlayerId && doctorCandidates.some((p) =>
-          p.id === initialPlayerId
-        ))
-        ? initialPlayerId
-        : doctorCandidates[0]?.id || alivePlayers[0]?.id || "";
-      setSelectedPlayer(defaultDoc);
-      setTargetPlayer(frozenPlayers[0]?.id || settings.players[0]?.id || "");
-    } else if (initialType === "VOTE") {
-      setSelectedPlayer(
-        initialPlayerId || alivePlayers[0]?.id || settings.players[0]?.id || "",
-      );
     } else {
-      setSelectedPlayer(
-        initialPlayerId || alivePlayers[0]?.id || settings.players[0]?.id || "",
-      );
+      setEventType(initialType);
+      if (initialPlayerId) {
+        setSelectedPlayer(initialPlayerId);
+      }
+      setSelectedGuardDuty([]);
+      setTargetPlayer("");
+      setReportResult("HUMAN");
+      setWitnessPlayer("player");
+      setDisappearedPlayerIds([]);
     }
   }, [editingEvent, initialType, initialPlayerId]);
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
 
-    let eventData: Omit<GameEvent, "id" | "day">;
+    let eventData: NewGameEvent | null = null;
     switch (eventType) {
       case "CO":
         if (claimedRole === "GUARD_DUTY") {
-          if (selectedGuardDuty.length !== 2) return;
+          const p1 = selectedGuardDuty[0];
+          const p2 = selectedGuardDuty[1];
+          if (!p1 || !p2) return;
           eventData = {
             type: "CO",
-            playerId: selectedGuardDuty[0],
-            partnerPlayerId: selectedGuardDuty[1],
+            playerId: p1,
+            partnerPlayerId: p2,
             claimedRole: "GUARD_DUTY",
           };
         } else {
@@ -308,6 +255,8 @@ export function AddEventModal({
         return;
     }
 
+    if (!eventData) return;
+
     if (editingEvent && onUpdateEvent) {
       onUpdateEvent({
         ...eventData,
@@ -328,7 +277,7 @@ export function AddEventModal({
           <h3 className="modal-title">
             {editingEvent ? "イベントの編集" : "イベントの記録"}
           </h3>
-          <button className="modal-close-btn" onClick={onClose}>
+          <button type="button" className="modal-close-btn" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
@@ -496,7 +445,10 @@ export function AddEventModal({
                   value={claimedRole}
                   onChange={(e) =>
                     setClaimedRole(
-                      (e.target as HTMLSelectElement).value as any,
+                      (e.target as HTMLSelectElement).value as
+                        | "ENGINEER"
+                        | "DOCTOR"
+                        | "GUARD_DUTY",
                     )}
                 >
                   {settings.roles.hasEngineer && (

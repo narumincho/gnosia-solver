@@ -1,4 +1,4 @@
-import { Eye, Shield, UserCheck } from "lucide-preact";
+import { Eye, Shield } from "lucide-preact";
 import {
   GameSettings,
   PerspectiveOption,
@@ -9,10 +9,10 @@ import {
 interface PerspectiveBarProps {
   settings: GameSettings;
   perspective: PerspectiveOption;
-  myRole?: Role;
+  myRole?: Role | undefined;
   onSelectPerspective: (id: string, name: string) => void;
-  onSelectRole: (role?: Role) => void;
-  onSetMyRole: (role?: Role) => void;
+  onSelectRole: (role?: Role | undefined) => void;
+  onSetMyRole: (role?: Role | undefined) => void;
 }
 
 export function PerspectiveBar({
@@ -25,7 +25,7 @@ export function PerspectiveBar({
 }: PerspectiveBarProps) {
   const isObjective = perspective.id === "objective";
 
-  const availableRoles: Array<Role> = [
+  const availableRoles: ReadonlyArray<Role> = [
     "CREW",
     ...(settings.roles.gnosiaCount > 0 ? ["GNOSIA" as Role] : []),
     ...(settings.roles.hasEngineer ? ["ENGINEER" as Role] : []),
@@ -123,6 +123,7 @@ export function PerspectiveBar({
 
       <div className="perspective-selector-row">
         <button
+          type="button"
           className={`perspective-btn ${isObjective ? "active" : ""}`}
           onClick={() => onSelectPerspective("objective", "全体 (客観神視点)")}
         >
@@ -134,6 +135,7 @@ export function PerspectiveBar({
           return (
             <button
               key={p.id}
+              type="button"
               className={`perspective-btn ${
                 perspective.id === p.id ? "active" : ""
               }`}

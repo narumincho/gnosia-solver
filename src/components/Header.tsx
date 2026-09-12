@@ -21,6 +21,7 @@ export function Header({
 
       <div className="header-actions">
         <button
+          type="button"
           className="btn"
           onClick={onOpenWorlds}
           title="成立する配役パターン一覧を表示"
@@ -32,6 +33,7 @@ export function Header({
         </button>
 
         <button
+          type="button"
           className="btn"
           onClick={onOpenExportImport}
           title="現在の入力状況をファイルやテキストで保存・復元"
@@ -41,6 +43,7 @@ export function Header({
         </button>
 
         <button
+          type="button"
           className="btn"
           onClick={onOpenSettings}
           title="参加者や役職設定を変更"
@@ -50,6 +53,7 @@ export function Header({
         </button>
 
         <button
+          type="button"
           className="btn btn-danger btn-sm"
           onClick={onReset}
           title="現在のゲーム履歴をリセット"

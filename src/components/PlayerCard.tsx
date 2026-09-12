@@ -1,11 +1,4 @@
-import {
-  AlertTriangle,
-  ShieldAlert,
-  Skull,
-  Snowflake,
-  Target,
-  User,
-} from "lucide-preact";
+import { AlertTriangle, Skull, Snowflake, Target, User } from "lucide-preact";
 import {
   PlayerStatus,
   Role,
@@ -16,17 +9,17 @@ import {
 interface PlayerCardProps {
   player: { id: string; name: string };
   status: PlayerStatus;
-  claimedRoles: Array<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">;
-  definiteLieReasons?: Array<string>;
+  claimedRoles: ReadonlyArray<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">;
+  definiteLieReasons?: ReadonlyArray<string> | undefined;
   isCurrentPerspective: boolean;
   solverResult: SolverResult;
-  myRole?: Role;
+  myRole?: Role | undefined;
   onQuickLie: (playerId: string) => void;
   onQuickFreeze: (playerId: string) => void;
   onQuickAttack: (playerId: string) => void;
-  onQuickGnosiaAttack?: (playerId: string) => void;
+  onQuickGnosiaAttack?: ((playerId: string) => void) | undefined;
   onQuickInvestigate: (playerId: string) => void;
-  onQuickDoctorReport?: (playerId: string) => void;
+  onQuickDoctorReport?: ((playerId: string) => void) | undefined;
 }
 
 export function PlayerCard({
@@ -160,11 +153,11 @@ export function PlayerCard({
         </div>
 
         <div className="role-stacked-bar">
-          {Object.entries(roleProbs)
+          {(Object.entries(roleProbs) as ReadonlyArray<[Role, number]>)
             .filter(([_, prob]) => prob > 0.005)
             .sort((a, b) => b[1] - a[1])
             .map(([role, prob]) => {
-              const r = role as Role;
+              const r = role;
               const def = ROLE_DEFINITIONS[r];
               const pct = Math.round(prob * 100);
 
@@ -194,6 +187,7 @@ export function PlayerCard({
         <div className="player-quick-actions">
           {claimedRoles.includes("ENGINEER") && (
             <button
+              type="button"
               className="quick-btn"
               onClick={() => onQuickInvestigate(player.id)}
               style={{
@@ -207,6 +201,7 @@ export function PlayerCard({
           )}
           {claimedRoles.includes("DOCTOR") && (
             <button
+              type="button"
               className="quick-btn"
               onClick={() => onQuickDoctorReport?.(player.id)}
               style={{
@@ -219,6 +214,7 @@ export function PlayerCard({
             </button>
           )}
           <button
+            type="button"
             className="quick-btn"
             onClick={() => onQuickFreeze(player.id)}
             title="投票でコールドスリープ"
@@ -226,6 +222,7 @@ export function PlayerCard({
             <Snowflake size={11} /> 冷凍
           </button>
           <button
+            type="button"
             className="quick-btn"
             onClick={() => onQuickAttack(player.id)}
             title="夜間に消滅"
@@ -235,6 +232,7 @@ export function PlayerCard({
           {myRole === "GNOSIA" && player.id !== "player" &&
             onQuickGnosiaAttack && (
             <button
+              type="button"
               className="quick-btn"
               onClick={() => onQuickGnosiaAttack(player.id)}
               style={{
@@ -247,6 +245,7 @@ export function PlayerCard({
             </button>
           )}
           <button
+            type="button"
             className="quick-btn quick-btn-lie"
             onClick={() => onQuickLie(player.id)}
             title="嘘看破"

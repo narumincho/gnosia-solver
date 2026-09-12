@@ -21,13 +21,19 @@ import {
 } from "../types.ts";
 
 interface EventTimelineProps {
-  events: Array<GameEvent>;
+  events: ReadonlyArray<GameEvent>;
   settings: GameSettings;
   currentDay: number;
   playerStatuses: Record<string, PlayerStatus>;
-  claimedRoles: Record<string, Array<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">>;
-  myRole?: Role;
-  onOpenAddEvent: (initialType?: EventType, initialPlayerId?: string) => void;
+  claimedRoles: Record<
+    string,
+    ReadonlyArray<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">
+  >;
+  myRole?: Role | undefined;
+  onOpenAddEvent: (
+    initialType?: EventType | undefined,
+    initialPlayerId?: string | undefined,
+  ) => void;
   onQuickDoctorReport: (
     reporterId: string,
     targetId: string,
@@ -37,7 +43,7 @@ interface EventTimelineProps {
   onRemoveEvent: (id: string) => void;
   onMoveEvent: (fromIndex: number, toIndex: number) => void;
   hasContradiction: boolean;
-  contradictionReason?: string;
+  contradictionReason?: string | undefined;
 }
 
 export function EventTimeline({
@@ -184,9 +190,9 @@ export function EventTimeline({
           return (
             <span>
               夜間に{" "}
-              <strong>{getPlayerName(ev.disappearedPlayerIds[0])}</strong> が
+              <strong>{getPlayerName(ev.disappearedPlayerIds[0] ?? "")}</strong>
               {" "}
-              <span style={{ color: "var(--color-gnosia)" }}>消滅</span>{" "}
+              が <span style={{ color: "var(--color-gnosia)" }}>消滅</span>{" "}
               (非グノーシア確定)
             </span>
           );
@@ -194,11 +200,12 @@ export function EventTimeline({
           return (
             <span>
               夜間に{" "}
-              <strong>{getPlayerName(ev.disappearedPlayerIds[0])}</strong> と
+              <strong>{getPlayerName(ev.disappearedPlayerIds[0] ?? "")}</strong>
               {" "}
-              <strong>{getPlayerName(ev.disappearedPlayerIds[1])}</strong> が
+              と{" "}
+              <strong>{getPlayerName(ev.disappearedPlayerIds[1] ?? "")}</strong>
               {" "}
-              <span style={{ color: "var(--color-gnosia)" }}>消滅</span>{" "}
+              が <span style={{ color: "var(--color-gnosia)" }}>消滅</span>{" "}
               <span
                 className="badge"
                 style={{
@@ -372,8 +379,9 @@ export function EventTimeline({
   // 直近で投票により冷凍された乗員（ドクターの報告対象）
   const lastFrozenPlayer = useMemo(() => {
     for (let i = events.length - 1; i >= 0; i--) {
-      if (events[i].type === "VOTE") {
-        const frozenId = (events[i] as any).frozenPlayerId;
+      const ev = events[i];
+      if (ev && ev.type === "VOTE") {
+        const frozenId = ev.frozenPlayerId;
         const player = settings.players.find((p) => p.id === frozenId);
         if (player) return player;
       }
@@ -436,6 +444,7 @@ export function EventTimeline({
           {recordedDays.map((d) => (
             <button
               key={d}
+              type="button"
               className={`btn btn-sm ${currentDay === d ? "btn-primary" : ""}`}
               onClick={() => {
                 const el = document.getElementById(`timeline-day-${d}`);
@@ -477,8 +486,9 @@ export function EventTimeline({
           )
           : (
             events.map((ev, index) => {
+              const prevEv = events[index - 1];
               const isFirstOfDay = index === 0 ||
-                events[index - 1].day !== ev.day;
+                (prevEv ? prevEv.day !== ev.day : true);
               return (
                 <Fragment key={ev.id}>
                   {isFirstOfDay && (
@@ -534,6 +544,7 @@ export function EventTimeline({
                         }}
                       >
                         <button
+                          type="button"
                           className="event-action-btn"
                           disabled={index === 0}
                           onClick={() => onMoveEvent(index, index - 1)}
@@ -542,6 +553,7 @@ export function EventTimeline({
                           <ArrowUp size={13} />
                         </button>
                         <button
+                          type="button"
                           className="event-action-btn"
                           disabled={index === events.length - 1}
                           onClick={() => onMoveEvent(index, index + 1)}
@@ -551,6 +563,7 @@ export function EventTimeline({
                         </button>
                         {ev.type !== "DAY_CHANGE" && (
                           <button
+                            type="button"
                             className="event-edit-btn"
                             onClick={() => onEditEvent(ev)}
                             title="イベントを編集"
@@ -559,6 +572,7 @@ export function EventTimeline({
                           </button>
                         )}
                         <button
+                          type="button"
                           className="event-delete-btn"
                           onClick={() => onRemoveEvent(ev.id)}
                           title="イベントを削除"

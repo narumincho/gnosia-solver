@@ -27,7 +27,9 @@ export const DEFAULT_SETTINGS: GameSettings = {
 };
 
 // イベントの並び順から各イベントの発生日 (day) を自動計算する
-export function recalculateDays(events: Array<GameEvent>): Array<GameEvent> {
+export function recalculateDays(
+  events: ReadonlyArray<GameEvent>,
+): ReadonlyArray<GameEvent> {
   let day = 1;
   let hasVote = false;
 
@@ -57,7 +59,7 @@ export function recalculateDays(events: Array<GameEvent>): Array<GameEvent> {
 
 export function useGameStore() {
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
-  const [events, setEvents] = useState<Array<GameEvent>>([]);
+  const [events, setEvents] = useState<ReadonlyArray<GameEvent>>([]);
   const [perspectiveRoles, setPerspectiveRoles] = useState<
     Record<string, Role>
   >({});
@@ -74,6 +76,7 @@ export function useGameStore() {
   const currentDay = useMemo(() => {
     if (events.length === 0) return 1;
     const last = events[events.length - 1];
+    if (!last) return 1;
     if (
       last.type === "DISAPPEARANCE" ||
       last.type === "ATTACK" ||
@@ -163,14 +166,22 @@ export function useGameStore() {
     const map: Record<string, Array<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">> = {};
     for (const ev of events) {
       if (ev.type === "CO") {
-        if (!map[ev.playerId]) map[ev.playerId] = [];
-        if (!map[ev.playerId].includes(ev.claimedRole)) {
-          map[ev.playerId].push(ev.claimedRole);
+        let pRoles = map[ev.playerId];
+        if (!pRoles) {
+          pRoles = [];
+          map[ev.playerId] = pRoles;
+        }
+        if (!pRoles.includes(ev.claimedRole)) {
+          pRoles.push(ev.claimedRole);
         }
         if (ev.partnerPlayerId) {
-          if (!map[ev.partnerPlayerId]) map[ev.partnerPlayerId] = [];
-          if (!map[ev.partnerPlayerId].includes(ev.claimedRole)) {
-            map[ev.partnerPlayerId].push(ev.claimedRole);
+          let partnerRoles = map[ev.partnerPlayerId];
+          if (!partnerRoles) {
+            partnerRoles = [];
+            map[ev.partnerPlayerId] = partnerRoles;
+          }
+          if (!partnerRoles.includes(ev.claimedRole)) {
+            partnerRoles.push(ev.claimedRole);
           }
         }
       }
@@ -183,14 +194,18 @@ export function useGameStore() {
     const map: Record<string, Array<string>> = {};
     for (const ev of events) {
       if (ev.type === "DEFINITE_LIE") {
-        if (!map[ev.targetId]) map[ev.targetId] = [];
+        let list = map[ev.targetId];
+        if (!list) {
+          list = [];
+          map[ev.targetId] = list;
+        }
         const isSelf = ev.witnessId === "player" || !ev.witnessId;
         const witnessName = isSelf
           ? "自分"
           : settings.players.find((p) => p.id === ev.witnessId)?.name ||
             ev.witnessId;
         const label = isSelf ? "嘘看破 (自分)" : `密告 (${witnessName})`;
-        map[ev.targetId].push(label);
+        list.push(label);
       }
     }
     return map;
@@ -234,7 +249,9 @@ export function useGameStore() {
       }
       const next = [...prev];
       const [item] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, item);
+      if (item !== undefined) {
+        next.splice(toIndex, 0, item);
+      }
       return recalculateDays(next);
     });
   };
@@ -274,15 +291,19 @@ export function useGameStore() {
   };
 
   // インポート実行
-  const importSession = (data: any): { success: boolean; error?: string } => {
+  const importSession = (
+    data: unknown,
+  ): { success: boolean; error?: string | undefined } => {
     try {
       if (!data || typeof data !== "object") {
         return { success: false, error: "無効なデータ形式です。" };
       }
 
+      const session = data as Partial<SessionData>;
+
       if (
-        !data.settings || !Array.isArray(data.settings.players) ||
-        !data.settings.roles
+        !session.settings || !Array.isArray(session.settings.players) ||
+        !session.settings.roles
       ) {
         return {
           success: false,
@@ -290,33 +311,40 @@ export function useGameStore() {
         };
       }
 
-      if (!Array.isArray(data.events)) {
+      if (!Array.isArray(session.events)) {
         return {
           success: false,
           error: "イベント一覧 (events) が正しく含まれていません。",
         };
       }
 
-      setSettings(data.settings);
-      setEvents(recalculateDays(data.events));
-      if (data.perspective && typeof data.perspective.id === "string") {
-        setPerspective(data.perspective);
+      setSettings(session.settings);
+      setEvents(recalculateDays(session.events));
+      if (session.perspective && typeof session.perspective.id === "string") {
+        setPerspective(session.perspective);
       }
-      if (data.myRole) {
-        setMyRoleState(data.myRole);
+      if (session.myRole) {
+        setMyRoleState(session.myRole);
       }
-      if (data.perspectiveRoles && typeof data.perspectiveRoles === "object") {
-        setPerspectiveRoles(data.perspectiveRoles);
+      if (
+        session.perspectiveRoles &&
+        typeof session.perspectiveRoles === "object"
+      ) {
+        setPerspectiveRoles(session.perspectiveRoles);
       }
-      if (data.playerStatuses && typeof data.playerStatuses === "object") {
-        setPlayerStatuses(data.playerStatuses);
+      if (
+        session.playerStatuses && typeof session.playerStatuses === "object"
+      ) {
+        setPlayerStatuses(session.playerStatuses);
       }
 
       return { success: true };
-    } catch (e: any) {
+    } catch (e: unknown) {
       return {
         success: false,
-        error: e.message || "インポート中にエラーが発生しました。",
+        error: e instanceof Error
+          ? e.message
+          : "インポート中にエラーが発生しました。",
       };
     }
   };

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "preact/hooks";
-import { Check, Sliders, Users, X } from "lucide-preact";
+import { Sliders, X } from "lucide-preact";
 import {
   DEFAULT_CHARACTERS,
   GameSettings,
@@ -143,7 +143,7 @@ export function GameSetupModal({
             <Sliders size={20} color="var(--text-accent)" />
             <h3 className="modal-title">ゲーム設定 (配役 & 参加者)</h3>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>
+          <button type="button" className="modal-close-btn" onClick={onClose}>
             <X size={20} />
           </button>
         </div>

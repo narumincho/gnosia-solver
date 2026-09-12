@@ -33,7 +33,7 @@ Deno.test("再現テスト - エンジニアが調査して生存している対
     allowHiddenRoles: false,
   };
 
-  const events: Array<GameEvent> = [
+  const events: ReadonlyArray<GameEvent> = [
     {
       day: 1,
       type: "CO",

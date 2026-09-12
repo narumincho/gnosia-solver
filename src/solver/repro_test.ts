@@ -1,10 +1,9 @@
-import { assertEquals } from "@std/assert";
 import { GnosiaSolver } from "./solver.ts";
 import { DEFAULT_SETTINGS } from "../state/store.ts";
 import { GameEvent } from "../types.ts";
 
 Deno.test("再現テスト - 自分と沙明がエンジニアCOしたとき、しげみちがグノーシア100%になるか", () => {
-  const events: Array<GameEvent> = [
+  const events: ReadonlyArray<GameEvent> = [
     {
       id: "1",
       day: 1,

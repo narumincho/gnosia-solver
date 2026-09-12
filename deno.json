@@ -3,7 +3,9 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
-    "lib": ["deno.ns", "dom", "dom.iterable", "dom.asynciterable"]
+    "lib": ["deno.ns", "dom", "dom.iterable", "dom.asynciterable"],
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
   },
   "tasks": {
     "dev": "deno run -A vite",

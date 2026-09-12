@@ -101,7 +101,7 @@ export interface CharacterPreset {
   defaultIncluded: boolean;
 }
 
-export const DEFAULT_CHARACTERS: Array<CharacterPreset> = [
+export const DEFAULT_CHARACTERS: ReadonlyArray<CharacterPreset> = [
   { id: "player", name: "自分 (Player)", defaultIncluded: true },
   { id: "setsu", name: "セツ", defaultIncluded: true },
   { id: "gina", name: "ジナ", defaultIncluded: true },
@@ -121,7 +121,7 @@ export const DEFAULT_CHARACTERS: Array<CharacterPreset> = [
 
 // ゲーム設定
 export interface GameSettings {
-  players: Array<{ id: string; name: string }>;
+  players: ReadonlyArray<{ id: string; name: string }>;
   roles: {
     gnosiaCount: number;
     hasEngineer: boolean;
@@ -163,7 +163,7 @@ export interface BaseGameEvent {
 export interface COEvent extends BaseGameEvent {
   type: "CO";
   playerId: string;
-  partnerPlayerId?: string; // 留守番CO時の2人目 (留守番COは2人ペア)
+  partnerPlayerId?: string | undefined; // 留守番CO時の2人目 (留守番COは2人ペア)
   claimedRole: "ENGINEER" | "DOCTOR" | "GUARD_DUTY";
 }
 
@@ -185,19 +185,19 @@ export interface DefiniteLieEvent extends BaseGameEvent {
   type: "DEFINITE_LIE";
   targetId: string; // 嘘をついた（とされる）人
   witnessId: string; // 嘘に気づいた人 (自分 = "player", または夜の密告者)
-  reason?: string; // 理由メモ (後方互換用)
+  reason?: string | undefined; // 理由メモ (後方互換用)
 }
 
 export interface VoteEvent extends BaseGameEvent {
   type: "VOTE";
   frozenPlayerId: string;
-  votes?: Record<string, string>; // voterId -> targetId
+  votes?: Record<string, string> | undefined; // voterId -> targetId
 }
 
 // 消滅もしくは平和 (夜の出来事: 0〜2人消滅)
 export interface DisappearanceEvent extends BaseGameEvent {
   type: "DISAPPEARANCE";
-  disappearedPlayerIds: Array<string>; // 0人(平和/犠牲者なし), 1人消滅, 2人消滅
+  disappearedPlayerIds: ReadonlyArray<string>; // 0人(平和/犠牲者なし), 1人消滅, 2人消滅
 }
 
 // グノーシア夜間襲撃対象指定 (自分がグノーシアの場合の視点入力)
@@ -213,13 +213,13 @@ export interface AttackEvent extends BaseGameEvent {
 
 export interface NoAttackEvent extends BaseGameEvent {
   type: "NO_ATTACK";
-  guardedPlayerId?: string; // 守護天使が護衛した対象（任意） (後方互換用)
-  note?: string; // メモ (後方互換用)
+  guardedPlayerId?: string | undefined; // 守護天使が護衛した対象（任意） (後方互換用)
+  note?: string | undefined; // メモ (後方互換用)
 }
 
 export interface DayChangeEvent extends BaseGameEvent {
   type: "DAY_CHANGE";
-  note?: string; // メモ（「翌日へ」「夜の経過」など）
+  note?: string | undefined; // メモ（「翌日へ」「夜の経過」など）
 }
 
 export type GameEvent =
@@ -235,16 +235,16 @@ export type GameEvent =
   | DayChangeEvent;
 
 export type NewGameEvent =
-  | (Omit<COEvent, "id" | "day"> & { day?: number })
-  | (Omit<InvestigationEvent, "id" | "day"> & { day?: number })
-  | (Omit<DoctorReportEvent, "id" | "day"> & { day?: number })
-  | (Omit<DefiniteLieEvent, "id" | "day"> & { day?: number })
-  | (Omit<VoteEvent, "id" | "day"> & { day?: number })
-  | (Omit<DisappearanceEvent, "id" | "day"> & { day?: number })
-  | (Omit<GnosiaAttackEvent, "id" | "day"> & { day?: number })
-  | (Omit<AttackEvent, "id" | "day"> & { day?: number })
-  | (Omit<NoAttackEvent, "id" | "day"> & { day?: number })
-  | (Omit<DayChangeEvent, "id" | "day"> & { day?: number });
+  | (Omit<COEvent, "id" | "day"> & { day?: number | undefined })
+  | (Omit<InvestigationEvent, "id" | "day"> & { day?: number | undefined })
+  | (Omit<DoctorReportEvent, "id" | "day"> & { day?: number | undefined })
+  | (Omit<DefiniteLieEvent, "id" | "day"> & { day?: number | undefined })
+  | (Omit<VoteEvent, "id" | "day"> & { day?: number | undefined })
+  | (Omit<DisappearanceEvent, "id" | "day"> & { day?: number | undefined })
+  | (Omit<GnosiaAttackEvent, "id" | "day"> & { day?: number | undefined })
+  | (Omit<AttackEvent, "id" | "day"> & { day?: number | undefined })
+  | (Omit<NoAttackEvent, "id" | "day"> & { day?: number | undefined })
+  | (Omit<DayChangeEvent, "id" | "day"> & { day?: number | undefined });
 
 // 1つの配役パターン (World)
 export type RoleAssignment = Record<string, Role>;
@@ -261,16 +261,16 @@ export interface SolverResult {
   definiteRoles: Record<string, Role>;
   // 矛盾・破綻しているか
   hasContradiction: boolean;
-  contradictionReason?: string;
+  contradictionReason?: string | undefined;
   // 有効な配役一覧（上位100件など）
-  sampleWorlds: Array<RoleAssignment>;
+  sampleWorlds: ReadonlyArray<RoleAssignment>;
 }
 
 // プレイヤー視点
 export interface PerspectiveOption {
   id: string; // "objective" (全体) または playerId
   name: string;
-  role?: Role; // その視点での自身の役職（指定時）
+  role?: Role | undefined; // その視点での自身の役職（指定時）
 }
 
 // エクスポート / インポート用セッションデータ
@@ -278,10 +278,10 @@ export interface SessionData {
   version: number;
   exportedAt: string;
   settings: GameSettings;
-  events: Array<GameEvent>;
+  events: ReadonlyArray<GameEvent>;
   currentDay: number;
   perspective: PerspectiveOption;
-  myRole?: Role;
-  perspectiveRoles?: Record<string, Role>;
-  playerStatuses?: Record<string, PlayerStatus>;
+  myRole?: Role | undefined;
+  perspectiveRoles?: Record<string, Role> | undefined;
+  playerStatuses?: Record<string, PlayerStatus> | undefined;
 }

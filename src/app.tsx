@@ -8,7 +8,7 @@ import { AddEventModal } from "./components/AddEventModal.tsx";
 import { GameSetupModal } from "./components/GameSetupModal.tsx";
 import { WorldListModal } from "./components/WorldListModal.tsx";
 import { ExportImportModal } from "./components/ExportImportModal.tsx";
-import { EventType, GameEvent, Role } from "./types.ts";
+import { EventType, GameEvent } from "./types.ts";
 
 export function App() {
   const {
@@ -16,7 +16,6 @@ export function App() {
     setSettings,
     events,
     currentDay,
-    setCurrentDay,
     perspective,
     selectPerspective,
     updatePerspectiveRole,
@@ -30,7 +29,6 @@ export function App() {
     updateEvent,
     removeEvent,
     moveEvent,
-    advanceDay,
     resetGame,
     exportSession,
     importSession,

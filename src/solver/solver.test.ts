@@ -23,7 +23,7 @@ Deno.test("GnosiaSolver - 基本的な探索と確率計算", () => {
     allowHiddenRoles: false,
   };
 
-  const events: Array<GameEvent> = [];
+  const events: ReadonlyArray<GameEvent> = [];
   const solver = new GnosiaSolver(settings, events);
   const result = solver.solve();
 
@@ -55,7 +55,7 @@ Deno.test("GnosiaSolver - エンジニアCOと調査結果、襲撃による確�
     allowHiddenRoles: false,
   };
 
-  const events: Array<GameEvent> = [
+  const events: ReadonlyArray<GameEvent> = [
     // p2 (セツ) と p4 (SQ) がエンジニアCO
     { id: "1", day: 1, type: "CO", playerId: "p2", claimedRole: "ENGINEER" },
     { id: "2", day: 1, type: "CO", playerId: "p4", claimedRole: "ENGINEER" },
@@ -115,7 +115,7 @@ Deno.test("GnosiaSolver - 嘘看破イベントによる人間陣営除外", () 
   };
 
   // SQ (p3) が嘘をついたことが確定した（自分が直感で看破、敵対役職＝グノーシアのみの設定）
-  const events: Array<GameEvent> = [
+  const events: ReadonlyArray<GameEvent> = [
     {
       id: "1",
       day: 1,
@@ -159,7 +159,7 @@ Deno.test("GnosiaSolver - ドクター判定とバグ・AC主義者を含む15�
     allowHiddenRoles: false,
   };
 
-  const events: Array<GameEvent> = [
+  const events: ReadonlyArray<GameEvent> = [
     // ラキオがエンジニアCO、セツがドクターCO
     { id: "1", day: 1, type: "CO", playerId: "raqio", claimedRole: "ENGINEER" },
     { id: "2", day: 1, type: "CO", playerId: "setsu", claimedRole: "DOCTOR" },
@@ -206,7 +206,7 @@ Deno.test("GnosiaSolver - 他者による密告 (密告者が人間なら対象�
   };
 
   // セツ (p2) が「SQ (p3) が嘘をついている」と夜に密告
-  const events: Array<GameEvent> = [
+  const events: ReadonlyArray<GameEvent> = [
     { id: "1", day: 1, type: "DEFINITE_LIE", witnessId: "p2", targetId: "p3" },
   ];
 
@@ -229,7 +229,7 @@ Deno.test("GnosiaSolver - 他者による密告 (密告者が人間なら対象�
   assertEquals(result.gnosiaProbabilities["p3"], 0.5);
 
   // もし p2 が人間確定（襲撃されて消滅）したら、p3 はグノーシア確定になるはず
-  const eventsWithAttack: Array<GameEvent> = [
+  const eventsWithAttack: ReadonlyArray<GameEvent> = [
     ...events,
     { id: "2", day: 1, type: "ATTACK", attackedPlayerId: "p2" },
   ];
@@ -261,7 +261,7 @@ Deno.test("GnosiaSolver - 消滅もしくは平和 (0人消滅/平和 と 2人�
   };
 
   // 1) 0人消滅（平和）: 破綻せず計算できる
-  const peaceEvents: Array<GameEvent> = [
+  const peaceEvents: ReadonlyArray<GameEvent> = [
     { id: "1", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: [] },
   ];
   const solverPeace = new GnosiaSolver(settings, peaceEvents);
@@ -269,7 +269,7 @@ Deno.test("GnosiaSolver - 消滅もしくは平和 (0人消滅/平和 と 2人�
   assertEquals(resultPeace.hasContradiction, false);
 
   // 2) 2人消滅: エンジニアがp3を調査し、朝にp2とp3が消滅 -> p3がバグ確定
-  const twoDisappearedEvents: Array<GameEvent> = [
+  const twoDisappearedEvents: ReadonlyArray<GameEvent> = [
     {
       id: "1",
       day: 1,
@@ -325,7 +325,7 @@ Deno.test("GnosiaSolver - グノーシア視点で襲撃対象と違う人物が
   // ラキオがエンジニアCOし、SQを調査
   // 夜、グノーシアとしてセツを襲撃対象に指定
   // 朝、消滅したのはSQ（襲撃対象のセツではない！）
-  const events: Array<GameEvent> = [
+  const events: ReadonlyArray<GameEvent> = [
     { id: "1", day: 1, type: "CO", playerId: "raqio", claimedRole: "ENGINEER" },
     {
       id: "2",
@@ -349,11 +349,11 @@ Deno.test("GnosiaSolver - グノーシア視点で襲撃対象と違う人物が
 
   // SQ は確実にバグ！
   assertEquals(result.definiteRoles["sq"], "BUG");
-  assertEquals(result.roleProbabilities["sq"]["BUG"], 1.0);
+  assertEquals(result.roleProbabilities["sq"]?.["BUG"], 1.0);
 
   // セツは襲撃されたが守護天使に守られたため非グノーシアかつ非バグ
   assertEquals(result.gnosiaProbabilities["setsu"], 0.0);
-  assertEquals(result.roleProbabilities["setsu"]["BUG"], 0.0);
+  assertEquals(result.roleProbabilities["setsu"]?.["BUG"], 0.0);
 
   // ラキオはSQ（バグ）を調査して消滅させたため真エンジニア確定
   assertEquals(result.definiteRoles["raqio"], "ENGINEER");
@@ -390,7 +390,7 @@ Deno.test("GnosiaSolver - 留守番CO（2人同時ペアCO）による確定留�
   };
 
   // セツとしげみちがペアで留守番CO
-  const events: Array<GameEvent> = [
+  const events: ReadonlyArray<GameEvent> = [
     {
       id: "1",
       day: 1,
@@ -407,15 +407,15 @@ Deno.test("GnosiaSolver - 留守番CO（2人同時ペアCO）による確定留�
   assertEquals(result.hasContradiction, false);
   assertEquals(result.definiteRoles["setsu"], "GUARD_DUTY");
   assertEquals(result.definiteRoles["shigemichi"], "GUARD_DUTY");
-  assertEquals(result.roleProbabilities["setsu"]["GUARD_DUTY"], 1.0);
-  assertEquals(result.roleProbabilities["shigemichi"]["GUARD_DUTY"], 1.0);
+  assertEquals(result.roleProbabilities["setsu"]?.["GUARD_DUTY"], 1.0);
+  assertEquals(result.roleProbabilities["shigemichi"]?.["GUARD_DUTY"], 1.0);
   assertEquals(result.gnosiaProbabilities["setsu"], 0.0);
   assertEquals(result.gnosiaProbabilities["shigemichi"], 0.0);
 
   // 他の人物は留守番確率 0%
-  assertEquals(result.roleProbabilities["player"]["GUARD_DUTY"], 0.0);
-  assertEquals(result.roleProbabilities["raqio"]["GUARD_DUTY"], 0.0);
-  assertEquals(result.roleProbabilities["gina"]["GUARD_DUTY"], 0.0);
+  assertEquals(result.roleProbabilities["player"]?.["GUARD_DUTY"], 0.0);
+  assertEquals(result.roleProbabilities["raqio"]?.["GUARD_DUTY"], 0.0);
+  assertEquals(result.roleProbabilities["gina"]?.["GUARD_DUTY"], 0.0);
 });
 
 Deno.test("GnosiaSolver - 実戦フルプレイ検証（15人・4グノーシア・Day 1〜Day 6 完走データ）", () => {
@@ -449,7 +449,7 @@ Deno.test("GnosiaSolver - 実戦フルプレイ検証（15人・4グノーシア
     allowHiddenRoles: false,
   };
 
-  const events: Array<GameEvent> = [
+  const events: ReadonlyArray<GameEvent> = [
     {
       day: 1,
       type: "CO",
@@ -772,7 +772,7 @@ Deno.test("GnosiaSolver - note例題: エンジニアとドクターの対応（
     allowHiddenRoles: false,
   };
 
-  const events: Array<GameEvent> = [
+  const events: ReadonlyArray<GameEvent> = [
     // 1日目: ククルシカ・レムナンがエンジニアCO、ジョナス・夕里子がドクターCO。セツが冷凍。
     {
       id: "1",
@@ -952,11 +952,11 @@ Deno.test("GnosiaSolver - note例題: エンジニアとドクターの対応（
 
   // AC主義者: ジョナス
   assertEquals(result.definiteRoles["jonas"], "AC_FOLLOWER");
-  assertEquals(result.roleProbabilities["jonas"]["AC_FOLLOWER"], 1.0);
+  assertEquals(result.roleProbabilities["jonas"]?.["AC_FOLLOWER"], 1.0);
 
   // バグ: ステラ
   assertEquals(result.definiteRoles["stella"], "BUG");
-  assertEquals(result.roleProbabilities["stella"]["BUG"], 1.0);
+  assertEquals(result.roleProbabilities["stella"]?.["BUG"], 1.0);
 
   // 真役職: ククルシカ（エンジニア）、夕里子（ドクター）
   assertEquals(result.definiteRoles["kukrushka"], "ENGINEER");

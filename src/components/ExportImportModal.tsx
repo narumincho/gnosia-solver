@@ -14,7 +14,7 @@ interface ExportImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onExport: () => SessionData;
-  onImport: (data: any) => { success: boolean; error?: string };
+  onImport: (data: unknown) => { success: boolean; error?: string | undefined };
 }
 
 export function ExportImportModal({
@@ -67,11 +67,12 @@ export function ExportImportModal({
     if (!input.files || input.files.length === 0) return;
 
     const file = input.files[0];
+    if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         const text = event.target?.result as string;
-        const parsed = JSON.parse(text);
+        const parsed: unknown = JSON.parse(text);
         const res = onImport(parsed);
         if (res.success) {
           setSuccessMessage("インポートが完了しました！");
@@ -83,8 +84,11 @@ export function ExportImportModal({
           setErrorMessage(res.error || "データの形式が不正です。");
           setSuccessMessage(null);
         }
-      } catch (err: any) {
-        setErrorMessage("JSONの解析に失敗しました: " + err.message);
+      } catch (err: unknown) {
+        setErrorMessage(
+          "JSONの解析に失敗しました: " +
+            (err instanceof Error ? err.message : String(err)),
+        );
         setSuccessMessage(null);
       }
     };
@@ -99,7 +103,7 @@ export function ExportImportModal({
     }
 
     try {
-      const parsed = JSON.parse(importText);
+      const parsed: unknown = JSON.parse(importText);
       const res = onImport(parsed);
       if (res.success) {
         setSuccessMessage("インポートが完了しました！");
@@ -111,8 +115,11 @@ export function ExportImportModal({
         setErrorMessage(res.error || "データの形式が不正です。");
         setSuccessMessage(null);
       }
-    } catch (err: any) {
-      setErrorMessage("無効なJSON形式です: " + err.message);
+    } catch (err: unknown) {
+      setErrorMessage(
+        "無効なJSON形式です: " +
+          (err instanceof Error ? err.message : String(err)),
+      );
       setSuccessMessage(null);
     }
   };
@@ -131,7 +138,7 @@ export function ExportImportModal({
               セッションのエキスポート / インポート
             </h3>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>
+          <button type="button" className="modal-close-btn" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
@@ -147,6 +154,7 @@ export function ExportImportModal({
           }}
         >
           <button
+            type="button"
             className={`btn btn-sm ${
               activeTab === "export" ? "btn-primary" : ""
             }`}
@@ -160,6 +168,7 @@ export function ExportImportModal({
             <span>エクスポート (保存)</span>
           </button>
           <button
+            type="button"
             className={`btn btn-sm ${
               activeTab === "import" ? "btn-primary" : ""
             }`}
@@ -218,11 +227,15 @@ export function ExportImportModal({
             <div
               style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem" }}
             >
-              <button className="btn btn-primary" onClick={handleDownload}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleDownload}
+              >
                 <Download size={16} />
                 <span>JSONファイルをダウンロード</span>
               </button>
-              <button className="btn" onClick={handleCopy}>
+              <button type="button" className="btn" onClick={handleCopy}>
                 {copied
                   ? <Check size={16} color="#34d399" />
                   : <Copy size={16} />}
@@ -308,7 +321,11 @@ export function ExportImportModal({
                 gap: "0.75rem",
               }}
             >
-              <button className="btn btn-primary" onClick={handleTextImport}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleTextImport}
+              >
                 <Upload size={16} />
                 <span>テキストからインポート実行</span>
               </button>
@@ -325,7 +342,7 @@ export function ExportImportModal({
             paddingTop: "0.75rem",
           }}
         >
-          <button className="btn" onClick={onClose}>
+          <button type="button" className="btn" onClick={onClose}>
             閉じる
           </button>
         </div>

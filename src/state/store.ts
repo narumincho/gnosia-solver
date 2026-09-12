@@ -71,6 +71,7 @@ export function useGameStore() {
     if (events.length === 0) return 1;
     const last = events[events.length - 1];
     if (
+      last.type === "DISAPPEARANCE" ||
       last.type === "ATTACK" ||
       last.type === "NO_ATTACK" ||
       last.type === "DAY_CHANGE"

@@ -99,13 +99,30 @@ export function AddEventModal({
     });
   }, [settings.players, claimedRoles, myRole]);
 
+  // 設定上登場するCO役職の一覧
+  const availableCORoles = useMemo(() => {
+    const list: ("ENGINEER" | "DOCTOR" | "GUARD_DUTY")[] = [];
+    if (settings.roles.hasEngineer) list.push("ENGINEER");
+    if (settings.roles.hasDoctor) list.push("DOCTOR");
+    if (settings.roles.hasGuardDuty) list.push("GUARD_DUTY");
+    return list;
+  }, [settings.roles]);
+
   // フォーム用入力ステート
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
   const [selectedGuardDuty, setSelectedGuardDuty] = useState<string[]>([]);
   const [targetPlayer, setTargetPlayer] = useState<string>("");
   const [claimedRole, setClaimedRole] = useState<
     "ENGINEER" | "DOCTOR" | "GUARD_DUTY"
-  >("ENGINEER");
+  >(
+    settings.roles.hasEngineer
+      ? "ENGINEER"
+      : settings.roles.hasDoctor
+      ? "DOCTOR"
+      : settings.roles.hasGuardDuty
+      ? "GUARD_DUTY"
+      : "ENGINEER",
+  );
   const [reportResult, setReportResult] = useState<ReportJudgement>("HUMAN");
   const [witnessPlayer, setWitnessPlayer] = useState<string>("player");
   const [disappearedPlayerIds, setDisappearedPlayerIds] = useState<string[]>([]);
@@ -355,11 +372,19 @@ export function AddEventModal({
               }}
             >
               <option value="DISAPPEARANCE">消滅もしくは平和 (夜の出来事: 0〜2人)</option>
-              <option value="GNOSIA_ATTACK">【グノーシア視点】夜の襲撃対象指定</option>
+              {myRole === "GNOSIA" && (
+                <option value="GNOSIA_ATTACK">【グノーシア視点】夜の襲撃対象指定</option>
+              )}
               <option value="DEFINITE_LIE">嘘に気づいた</option>
-              <option value="CO">役職名乗り出 (CO)</option>
-              <option value="INVESTIGATION">エンジニア調査報告</option>
-              <option value="DOCTOR_REPORT">ドクター医療報告</option>
+              {availableCORoles.length > 0 && (
+                <option value="CO">役職名乗り出 (CO)</option>
+              )}
+              {settings.roles.hasEngineer && (
+                <option value="INVESTIGATION">エンジニア調査報告</option>
+              )}
+              {settings.roles.hasDoctor && (
+                <option value="DOCTOR_REPORT">ドクター医療報告</option>
+              )}
               <option value="VOTE">コールドスリープ (投票)</option>
             </select>
           </div>
@@ -458,9 +483,15 @@ export function AddEventModal({
                       (e.target as HTMLSelectElement).value as any,
                     )}
                 >
-                  <option value="ENGINEER">エンジニア</option>
-                  <option value="DOCTOR">ドクター</option>
-                  <option value="GUARD_DUTY">留守番 (2人組・白確定)</option>
+                  {settings.roles.hasEngineer && (
+                    <option value="ENGINEER">エンジニア</option>
+                  )}
+                  {settings.roles.hasDoctor && (
+                    <option value="DOCTOR">ドクター</option>
+                  )}
+                  {settings.roles.hasGuardDuty && (
+                    <option value="GUARD_DUTY">留守番 (2人組・白確定)</option>
+                  )}
                 </select>
               </div>
 

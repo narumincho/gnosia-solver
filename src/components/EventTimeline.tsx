@@ -343,6 +343,32 @@ export function EventTimeline({
     });
   }, [settings.players, playerStatuses, claimedRoles, myRole]);
 
+  // 本日（currentDay）まだ調査報告していない生存エンジニア (Day 2以降)
+  const pendingEngineers = useMemo(() => {
+    if (currentDay < 2) return [];
+    return aliveEngineers.filter((p) => {
+      return !events.some(
+        (e) =>
+          e.day === currentDay &&
+          e.type === "INVESTIGATION" &&
+          e.investigatorId === p.id,
+      );
+    });
+  }, [currentDay, aliveEngineers, events]);
+
+  // 本日（currentDay）まだ医療報告していない生存ドクター (Day 2以降)
+  const pendingDoctors = useMemo(() => {
+    if (currentDay < 2) return [];
+    return aliveDoctors.filter((p) => {
+      return !events.some(
+        (e) =>
+          e.day === currentDay &&
+          e.type === "DOCTOR_REPORT" &&
+          e.reporterId === p.id,
+      );
+    });
+  }, [currentDay, aliveDoctors, events]);
+
   // 直近で投票により冷凍された乗員（ドクターの報告対象）
   const lastFrozenPlayer = useMemo(() => {
     for (let i = events.length - 1; i >= 0; i--) {
@@ -354,11 +380,12 @@ export function EventTimeline({
     }
     return undefined;
   }, [events, settings.players]);
-
   // タイムラインに存在する日の一覧
-  const recordedDays = Array.from(
-    new Set(events.map((e) => e.day).concat([currentDay])),
-  ).sort((a, b) => a - b);
+  const recordedDays = useMemo(() => {
+    return Array.from(
+      new Set(events.map((e) => e.day).concat([currentDay])),
+    ).sort((a, b) => a - b);
+  }, [events, currentDay]);
 
   return (
     <div className="sidebar-panel">
@@ -370,108 +397,18 @@ export function EventTimeline({
           </h2>
         </div>
 
-        <div style={{ display: "flex", gap: "0.4rem" }}>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={() => onOpenAddEvent()}
-            title="任意のイベントを追加"
-          >
-            <Plus size={14} />
-            <span>イベント追加</span>
-          </button>
-        </div>
+        <span
+          className="badge"
+          style={{
+            fontSize: "0.75rem",
+            background: "rgba(56, 189, 248, 0.1)",
+            color: "var(--accent-primary, #38bdf8)",
+            border: "1px solid rgba(56, 189, 248, 0.3)",
+          }}
+        >
+          全 {events.length} イベント
+        </span>
       </div>
-
-      {/* 生存エンジニア・ドクターのクイック報告パネル */}
-      {(aliveEngineers.length > 0 || aliveDoctors.length > 0) && (
-        <div className="quick-report-panel">
-          <div className="quick-report-header">
-            <span>⚡ 朝の報告クイック作成</span>
-          </div>
-
-          {aliveEngineers.length > 0 && (
-            <div
-              className="quick-report-section"
-              style={{ marginTop: 0, paddingTop: 0, borderTop: "none" }}
-            >
-              <span className="quick-report-label">🔍 エンジニア調査報告:</span>
-              <div className="quick-report-buttons">
-                {aliveEngineers.map((p) => (
-                  <button
-                    key={p.id}
-                    className="quick-report-btn-engineer"
-                    onClick={() => onOpenAddEvent("INVESTIGATION", p.id)}
-                    title={`${p.name} の調査結果を記録（調査者が自動選択されます）`}
-                  >
-                    {p.name}の調査
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {aliveDoctors.length > 0 && (
-            <div className="quick-report-section">
-              <span className="quick-report-label">
-                🩺 ドクター医療報告{" "}
-                {lastFrozenPlayer ? `(対象: ${lastFrozenPlayer.name})` : ""}:
-              </span>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.35rem",
-                }}
-              >
-                {aliveDoctors.map((p) => (
-                  <div key={p.id} className="quick-doc-row">
-                    <span className="quick-doc-name">{p.name}:</span>
-                    {lastFrozenPlayer
-                      ? (
-                        <div style={{ display: "flex", gap: "0.25rem" }}>
-                          <button
-                            className="btn-doc-human"
-                            onClick={() =>
-                              onQuickDoctorReport(
-                                p.id,
-                                lastFrozenPlayer.id,
-                                "HUMAN",
-                              )}
-                            title={`${p.name} の医療報告: ${lastFrozenPlayer.name} は【人間】`}
-                          >
-                            人間
-                          </button>
-                          <button
-                            className="btn-doc-gnosia"
-                            onClick={() =>
-                              onQuickDoctorReport(
-                                p.id,
-                                lastFrozenPlayer.id,
-                                "GNOSIA",
-                              )}
-                            title={`${p.name} の医療報告: ${lastFrozenPlayer.name} は【グノーシア】`}
-                          >
-                            グノーシア
-                          </button>
-                        </div>
-                      )
-                      : (
-                        <button
-                          className="btn btn-xs btn-secondary"
-                          onClick={() => onOpenAddEvent("DOCTOR_REPORT", p.id)}
-                          title="ドクター報告モーダルを開く"
-                        >
-                          報告を入力
-                        </button>
-                      )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {hasContradiction && (
         <div className="alert-box">
@@ -638,6 +575,142 @@ export function EventTimeline({
               );
             })
           )}
+
+        {/* 翌日に進行していてその日のイベントがまだない場合、進行中Dayのセパレータを表示 */}
+        {events.length > 0 && currentDay > (events[events.length - 1]?.day || 0) && (
+          <div
+            id={`timeline-day-${currentDay}`}
+            className="timeline-day-separator"
+          >
+            <span className="timeline-day-badge">Day {currentDay}</span>
+            <div className="timeline-day-line" />
+          </div>
+        )}
+
+        {/* Day X 朝の未入力報告スロット (イベント一覧の枠内に直接配置) */}
+        {currentDay >= 2 && (pendingEngineers.length > 0 || pendingDoctors.length > 0) && (
+          <div className="pending-reports-box">
+            <div className="pending-reports-header">
+              <span className="pending-reports-title">
+                🌅 Day {currentDay} 朝の報告 (未入力: 残り {pendingEngineers.length + pendingDoctors.length} 件)
+              </span>
+            </div>
+
+            {/* エンジニア調査報告スロット */}
+            {pendingEngineers.map((p) => (
+              <div key={`pending-eng-${p.id}`} className="pending-report-row">
+                <div className="pending-report-info">
+                  <span
+                    className="badge badge-engineer"
+                    style={{ fontSize: "0.7rem", padding: "1px 6px" }}
+                  >
+                    調査
+                  </span>
+                  <strong className="pending-report-name">{p.name}</strong> の調査報告:
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-engineer-report"
+                  onClick={() => onOpenAddEvent("INVESTIGATION", p.id)}
+                  title={`${p.name} の調査結果を記録`}
+                >
+                  🔍 調査結果を入力
+                </button>
+              </div>
+            ))}
+
+            {/* ドクター医療報告スロット */}
+            {pendingDoctors.map((p) => (
+              <div key={`pending-doc-${p.id}`} className="pending-report-row">
+                <div className="pending-report-info">
+                  <span
+                    className="badge badge-doctor"
+                    style={{ fontSize: "0.7rem", padding: "1px 6px" }}
+                  >
+                    医療
+                  </span>
+                  <strong className="pending-report-name">{p.name}</strong> の医療報告
+                  {lastFrozenPlayer ? ` (${lastFrozenPlayer.name}):` : ":"}
+                </div>
+                {lastFrozenPlayer ? (
+                  <div style={{ display: "flex", gap: "0.3rem" }}>
+                    <button
+                      type="button"
+                      className="btn-doc-human"
+                      onClick={() =>
+                        onQuickDoctorReport(
+                          p.id,
+                          lastFrozenPlayer.id,
+                          "HUMAN",
+                        )}
+                      title={`${p.name} の医療報告: ${lastFrozenPlayer.name} は【人間】`}
+                    >
+                      人間
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-doc-gnosia"
+                      onClick={() =>
+                        onQuickDoctorReport(
+                          p.id,
+                          lastFrozenPlayer.id,
+                          "GNOSIA",
+                        )}
+                      title={`${p.name} の医療報告: ${lastFrozenPlayer.name} は【グノーシア】`}
+                    >
+                      グノーシア
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-doctor-report"
+                    onClick={() => onOpenAddEvent("DOCTOR_REPORT", p.id)}
+                    title={`${p.name} の医療報告を入力`}
+                  >
+                    🩺 報告を入力
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* タイムライン最下部のイベント追加アクションバー */}
+        <div className="timeline-bottom-bar">
+          <button
+            type="button"
+            className="btn btn-primary btn-add-event-bottom"
+            onClick={() => onOpenAddEvent()}
+            title="任意のイベント（投票、消滅、CO、看破など）を追加"
+          >
+            <Plus size={16} />
+            <span>＋ イベントを追加</span>
+          </button>
+
+          <div style={{ display: "flex", gap: "0.4rem", width: "100%" }}>
+            <button
+              type="button"
+              className="btn btn-sm btn-night-action"
+              style={{ flex: 1 }}
+              onClick={() => onOpenAddEvent("DISAPPEARANCE")}
+              title="夜の出来事 (消滅または平和) を記録"
+            >
+              <span>🌙 消滅 / 平和</span>
+            </button>
+            {myRole === "GNOSIA" && (
+              <button
+                type="button"
+                className="btn btn-sm btn-gnosia-action"
+                style={{ flex: 1 }}
+                onClick={() => onOpenAddEvent("GNOSIA_ATTACK")}
+                title="自分がグノーシアの際の襲撃対象を記録"
+              >
+                <span>🎯 襲撃先</span>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

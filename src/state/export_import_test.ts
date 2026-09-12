@@ -118,6 +118,17 @@ Deno.test("Event Order & recalculateDays - 並び順からのDay自動計算と�
   // ATTACK も Day 1
   assertEquals(reCalculated[3].id, "3");
   assertEquals(reCalculated[3].day, 1);
+
+  // DISAPPEARANCE（消滅もしくは平和）でも翌日に進むこと
+  const disEvents: GameEvent[] = [
+    { id: "1", day: 0, type: "CO", playerId: "player", claimedRole: "ENGINEER" },
+    { id: "2", day: 0, type: "VOTE", frozenPlayerId: "stella" },
+    { id: "3", day: 0, type: "DISAPPEARANCE", disappearedPlayerIds: ["remnan"] },
+    { id: "4", day: 0, type: "INVESTIGATION", investigatorId: "player", targetId: "setsu", result: "HUMAN" },
+  ];
+  const disCalculated = recalculateDays(disEvents);
+  assertEquals(disCalculated[2].day, 1);
+  assertEquals(disCalculated[3].day, 2);
 });
 
 

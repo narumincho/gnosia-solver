@@ -71,7 +71,7 @@ export function AddEventModal({
       const alreadyClaimed = (claimedRoles[p.id]?.length ?? 0) > 0;
       if (
         editingEvent && editingEvent.type === "CO" &&
-        editingEvent.playerId === p.id
+        (editingEvent.playerId === p.id || editingEvent.partnerPlayerId === p.id)
       ) {
         return true;
       }
@@ -101,6 +101,7 @@ export function AddEventModal({
 
   // フォーム用入力ステート
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
+  const [selectedGuardDuty, setSelectedGuardDuty] = useState<string[]>([]);
   const [targetPlayer, setTargetPlayer] = useState<string>("");
   const [claimedRole, setClaimedRole] = useState<
     "ENGINEER" | "DOCTOR" | "GUARD_DUTY"
@@ -120,6 +121,13 @@ export function AddEventModal({
         case "CO":
           setSelectedPlayer(editingEvent.playerId);
           setClaimedRole(editingEvent.claimedRole);
+          if (editingEvent.claimedRole === "GUARD_DUTY") {
+            const list = [editingEvent.playerId];
+            if (editingEvent.partnerPlayerId) list.push(editingEvent.partnerPlayerId);
+            setSelectedGuardDuty(list);
+          } else {
+            setSelectedGuardDuty([]);
+          }
           break;
         case "INVESTIGATION":
           setSelectedPlayer(editingEvent.investigatorId);
@@ -178,6 +186,7 @@ export function AddEventModal({
         ? initialPlayerId
         : coCandidates[0]?.id || "";
       setSelectedPlayer(defaultCandidate);
+      setSelectedGuardDuty(initialPlayerId ? [initialPlayerId] : []);
     } else if (initialType === "INVESTIGATION") {
       const defaultInv = (initialPlayerId && engineerCandidates.some((p) =>
           p.id === initialPlayerId
@@ -215,11 +224,21 @@ export function AddEventModal({
     let eventData: Omit<GameEvent, "id" | "day">;
     switch (eventType) {
       case "CO":
-        eventData = {
-          type: "CO",
-          playerId: selectedPlayer,
-          claimedRole,
-        };
+        if (claimedRole === "GUARD_DUTY") {
+          if (selectedGuardDuty.length !== 2) return;
+          eventData = {
+            type: "CO",
+            playerId: selectedGuardDuty[0],
+            partnerPlayerId: selectedGuardDuty[1],
+            claimedRole: "GUARD_DUTY",
+          };
+        } else {
+          eventData = {
+            type: "CO",
+            playerId: selectedPlayer,
+            claimedRole,
+          };
+        }
         break;
       case "INVESTIGATION":
         eventData = {
@@ -428,42 +447,8 @@ export function AddEventModal({
 
           {/* 役職名乗り出 (CO) */}
           {eventType === "CO" && (
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">
-                  名乗り出た人物 (未CO者のみ)
-                </label>
-                <select
-                  className="form-select"
-                  value={selectedPlayer}
-                  onChange={(e) =>
-                    setSelectedPlayer((e.target as HTMLSelectElement).value)}
-                  disabled={coCandidates.length === 0}
-                >
-                  {coCandidates.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                  {coCandidates.length === 0 && (
-                    <option value="">(全員すでにCO済みです)</option>
-                  )}
-                </select>
-                {coCandidates.length === 0 && (
-                  <span
-                    style={{
-                      color: "var(--text-muted)",
-                      fontSize: "0.75rem",
-                      marginTop: "0.25rem",
-                      display: "block",
-                    }}
-                  >
-                    ※ 生存している全員がすでに役職CO済みです
-                  </span>
-                )}
-              </div>
-
-              <div className="form-group">
+            <div>
+              <div className="form-group" style={{ marginBottom: "1rem" }}>
                 <label className="form-label">宣言役職</label>
                 <select
                   className="form-select"
@@ -475,9 +460,159 @@ export function AddEventModal({
                 >
                   <option value="ENGINEER">エンジニア</option>
                   <option value="DOCTOR">ドクター</option>
-                  <option value="GUARD_DUTY">留守番 (2人)</option>
+                  <option value="GUARD_DUTY">留守番 (2人組・白確定)</option>
                 </select>
               </div>
+
+              {claimedRole === "GUARD_DUTY" ? (
+                <div className="form-group">
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "0.4rem",
+                    }}
+                  >
+                    <label className="form-label" style={{ marginBottom: 0 }}>
+                      名乗り出た留守番 (2人をチェック)
+                    </label>
+                    <span
+                      className={`badge ${
+                        selectedGuardDuty.length === 2
+                          ? "badge-human"
+                          : "badge-enemy"
+                      }`}
+                      style={{ fontSize: "0.75rem" }}
+                    >
+                      {selectedGuardDuty.length} / 2人 選択中
+                    </span>
+                  </div>
+                  <p
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "var(--text-muted)",
+                      marginBottom: "0.6rem",
+                    }}
+                  >
+                    ※ 留守番COは必ず2人同時に行われます。名乗り出た2人にチェックを入れてください。
+                  </p>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(130px, 1fr))",
+                      gap: "0.5rem",
+                      background: "var(--bg-secondary)",
+                      padding: "0.75rem",
+                      borderRadius: "8px",
+                      border: "1px solid var(--border-color)",
+                      maxHeight: "220px",
+                      overflowY: "auto",
+                    }}
+                  >
+                    {(coCandidates.length >= 2 ? coCandidates : alivePlayers).map((p) => {
+                      const isChecked = selectedGuardDuty.includes(p.id);
+                      const isDisabled = !isChecked && selectedGuardDuty.length >= 2;
+                      return (
+                        <label
+                          key={p.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                            padding: "0.45rem 0.65rem",
+                            borderRadius: "6px",
+                            background: isChecked
+                              ? "rgba(56, 189, 248, 0.15)"
+                              : "var(--bg-tertiary)",
+                            border: isChecked
+                              ? "1px solid var(--accent-primary, #38bdf8)"
+                              : "1px solid transparent",
+                            cursor: isDisabled ? "not-allowed" : "pointer",
+                            opacity: isDisabled ? 0.5 : 1,
+                            fontSize: "0.85rem",
+                            userSelect: "none",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={isDisabled}
+                            onChange={() => {
+                              if (isChecked) {
+                                setSelectedGuardDuty(
+                                  selectedGuardDuty.filter((id) => id !== p.id),
+                                );
+                              } else if (selectedGuardDuty.length < 2) {
+                                setSelectedGuardDuty([...selectedGuardDuty, p.id]);
+                              }
+                            }}
+                            style={{ cursor: isDisabled ? "not-allowed" : "pointer" }}
+                          />
+                          <span
+                            style={{
+                              fontWeight: isChecked ? 600 : "normal",
+                              color: isChecked
+                                ? "var(--accent-primary, #38bdf8)"
+                                : "inherit",
+                            }}
+                          >
+                            {p.name}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {selectedGuardDuty.length !== 2 && (
+                    <span
+                      style={{
+                        color: "var(--color-gnosia)",
+                        fontSize: "0.75rem",
+                        marginTop: "0.35rem",
+                        display: "block",
+                      }}
+                    >
+                      ※ 留守番は必ず2人選択してください
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="form-group">
+                  <label className="form-label">
+                    名乗り出た人物 (未CO者のみ)
+                  </label>
+                  <select
+                    className="form-select"
+                    value={selectedPlayer}
+                    onChange={(e) =>
+                      setSelectedPlayer((e.target as HTMLSelectElement).value)}
+                    disabled={coCandidates.length === 0}
+                  >
+                    {coCandidates.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                    {coCandidates.length === 0 && (
+                      <option value="">(全員すでにCO済みです)</option>
+                    )}
+                  </select>
+                  {coCandidates.length === 0 && (
+                    <span
+                      style={{
+                        color: "var(--text-muted)",
+                        fontSize: "0.75rem",
+                        marginTop: "0.25rem",
+                        display: "block",
+                      }}
+                    >
+                      ※ 生存している全員がすでに役職CO済みです
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -867,7 +1002,10 @@ export function AddEventModal({
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={(eventType === "CO" && coCandidates.length === 0) ||
+              disabled={(eventType === "CO" &&
+                (claimedRole === "GUARD_DUTY"
+                  ? selectedGuardDuty.length !== 2
+                  : (!selectedPlayer || coCandidates.length === 0))) ||
                 (eventType === "DOCTOR_REPORT" && frozenPlayers.length === 0) ||
                 (eventType === "INVESTIGATION" && alivePlayers.length === 0) ||
                 (eventType === "VOTE" && alivePlayers.length === 0) ||

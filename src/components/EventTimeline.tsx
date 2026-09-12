@@ -42,6 +42,18 @@ export function EventTimeline({
     switch (ev.type) {
       case "CO": {
         const roleDef = ROLE_DEFINITIONS[ev.claimedRole];
+        if (ev.claimedRole === "GUARD_DUTY" && ev.partnerPlayerId) {
+          return (
+            <span>
+              <strong>{getPlayerName(ev.playerId)}</strong> と{" "}
+              <strong>{getPlayerName(ev.partnerPlayerId)}</strong> が{" "}
+              <span style={{ color: roleDef.color, fontWeight: "bold" }}>
+                {roleDef.name}
+              </span>{" "}
+              と名乗り出た (CO)
+            </span>
+          );
+        }
         return (
           <span>
             <strong>{getPlayerName(ev.playerId)}</strong> が{" "}

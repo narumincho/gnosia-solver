@@ -161,6 +161,12 @@ export function useGameStore() {
         if (!map[ev.playerId].includes(ev.claimedRole)) {
           map[ev.playerId].push(ev.claimedRole);
         }
+        if (ev.partnerPlayerId) {
+          if (!map[ev.partnerPlayerId]) map[ev.partnerPlayerId] = [];
+          if (!map[ev.partnerPlayerId].includes(ev.claimedRole)) {
+            map[ev.partnerPlayerId].push(ev.claimedRole);
+          }
+        }
       }
     }
     return map;

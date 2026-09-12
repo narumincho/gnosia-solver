@@ -164,6 +164,7 @@ export interface BaseGameEvent {
 export interface COEvent extends BaseGameEvent {
   type: "CO";
   playerId: string;
+  partnerPlayerId?: string; // 留守番CO時の2人目 (留守番COは2人ペア)
   claimedRole: "ENGINEER" | "DOCTOR" | "GUARD_DUTY";
 }
 

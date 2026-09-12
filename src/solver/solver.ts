@@ -281,7 +281,10 @@ export class GnosiaSolver {
 
     for (const ev of this.events) {
       if (ev.type === "CO") {
-        if (ev.claimedRole === "GUARD_DUTY") guardDutyCOs.add(ev.playerId);
+        if (ev.claimedRole === "GUARD_DUTY") {
+          guardDutyCOs.add(ev.playerId);
+          if (ev.partnerPlayerId) guardDutyCOs.add(ev.partnerPlayerId);
+        }
         if (ev.claimedRole === "ENGINEER") engineerCOs.add(ev.playerId);
         if (ev.claimedRole === "DOCTOR") doctorCOs.add(ev.playerId);
       } else if (ev.type === "DISAPPEARANCE") {
@@ -572,8 +575,10 @@ export class GnosiaSolver {
       involvedPlayerIds.add(options.perspectivePlayerId);
     }
     for (const ev of this.events) {
-      if (ev.type === "CO") involvedPlayerIds.add(ev.playerId);
-      else if (ev.type === "INVESTIGATION") {
+      if (ev.type === "CO") {
+        involvedPlayerIds.add(ev.playerId);
+        if (ev.partnerPlayerId) involvedPlayerIds.add(ev.partnerPlayerId);
+      } else if (ev.type === "INVESTIGATION") {
         involvedPlayerIds.add(ev.investigatorId);
         involvedPlayerIds.add(ev.targetId);
       } else if (ev.type === "DOCTOR_REPORT") {

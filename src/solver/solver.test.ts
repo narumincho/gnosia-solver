@@ -338,3 +338,53 @@ Deno.test("GnosiaSolver - グノーシア視点で襲撃対象と違う人物が
   assertEquals(resultContradiction.hasContradiction, true);
 });
 
+Deno.test("GnosiaSolver - 留守番CO（2人同時ペアCO）による確定留守番（白確定）の検証", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "自分" },
+      { id: "setsu", name: "セツ" },
+      { id: "shigemichi", name: "しげみち" },
+      { id: "raqio", name: "ラキオ" },
+      { id: "gina", name: "ジナ" },
+    ],
+    roles: {
+      gnosiaCount: 1,
+      hasEngineer: true,
+      hasDoctor: false,
+      hasGuardianAngel: false,
+      hasGuardDuty: true,
+      hasACFollower: false,
+      hasBug: false,
+    },
+    allowHiddenRoles: false,
+  };
+
+  // セツとしげみちがペアで留守番CO
+  const events: GameEvent[] = [
+    {
+      id: "1",
+      day: 1,
+      type: "CO",
+      playerId: "setsu",
+      partnerPlayerId: "shigemichi",
+      claimedRole: "GUARD_DUTY",
+    },
+  ];
+
+  const solver = new GnosiaSolver(settings, events);
+  const result = solver.solve();
+
+  assertEquals(result.hasContradiction, false);
+  assertEquals(result.definiteRoles["setsu"], "GUARD_DUTY");
+  assertEquals(result.definiteRoles["shigemichi"], "GUARD_DUTY");
+  assertEquals(result.roleProbabilities["setsu"]["GUARD_DUTY"], 1.0);
+  assertEquals(result.roleProbabilities["shigemichi"]["GUARD_DUTY"], 1.0);
+  assertEquals(result.gnosiaProbabilities["setsu"], 0.0);
+  assertEquals(result.gnosiaProbabilities["shigemichi"], 0.0);
+
+  // 他の人物は留守番確率 0%
+  assertEquals(result.roleProbabilities["player"]["GUARD_DUTY"], 0.0);
+  assertEquals(result.roleProbabilities["raqio"]["GUARD_DUTY"], 0.0);
+  assertEquals(result.roleProbabilities["gina"]["GUARD_DUTY"], 0.0);
+});
+

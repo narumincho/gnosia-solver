@@ -9,7 +9,9 @@
     "dev": "deno run -A --node-modules-dir=auto npm:vite",
     "build": "deno run -A --node-modules-dir=auto npm:vite build",
     "preview": "deno run -A --node-modules-dir=auto npm:vite preview",
-    "test": "deno test -A src/"
+    "test": "deno test -A src/",
+    "lint:css": "deno run -A --node-modules-dir=auto npm:stylelint \"src/**/*.css\"",
+    "lint:css:fix": "deno run -A --node-modules-dir=auto npm:stylelint \"src/**/*.css\" --fix"
   },
   "imports": {
     "@preact/preset-vite": "npm:@preact/preset-vite@^2.10.6",
@@ -17,6 +19,8 @@
     "lucide-preact": "npm:lucide-preact@^0.475.0",
     "preact": "npm:preact@^10.26.4",
     "preact/hooks": "npm:preact@^10.26.4/hooks",
+    "stylelint": "npm:stylelint@^16.15.0",
+    "stylelint-config-standard": "npm:stylelint-config-standard@^37.0.0",
     "vite": "npm:vite@^6.2.0"
   }
 }

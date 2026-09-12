@@ -163,7 +163,11 @@ export function App() {
         currentDay={currentDay}
         initialType={addEventInitialType}
         initialPlayerId={addEventInitialPlayerId}
+        playerStatuses={playerStatuses}
+        claimedRoles={claimedRoles}
+        myRole={myRole}
       />
+
 
       <WorldListModal
         isOpen={isWorldsOpen}

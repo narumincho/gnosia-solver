@@ -100,25 +100,44 @@ export function PlayerCard({
         )}
       </div>
 
-      {/* グノーシア確率メーター */}
-      <div className="meter-container">
+      {/* 役職の帯グラフ (Stacked Role Bar) */}
+      <div className="role-stacked-bar-container">
         <div className="meter-labels">
+          <span className="meter-val-enemy">
+            敵対: <strong style={{ color: enemyPct > 50 ? "var(--color-gnosia)" : "var(--text-main)" }}>{enemyPct}%</strong>
+          </span>
           <span className="meter-val-gnosia">
             G確率: {gnosiaPct}%
           </span>
-          <span className="meter-val-enemy">
-            敵対確率: {enemyPct}%
-          </span>
         </div>
-        <div className="meter-track">
-          <div
-            className="meter-fill-gnosia"
-            style={{ width: `${gnosiaPct}%` }}
-          />
+
+        <div className="role-stacked-bar">
+          {Object.entries(roleProbs)
+            .filter(([_, prob]) => prob > 0.005)
+            .sort((a, b) => b[1] - a[1])
+            .map(([role, prob]) => {
+              const r = role as Role;
+              const def = ROLE_DEFINITIONS[r];
+              const pct = Math.round(prob * 100);
+
+              return (
+                <div
+                  key={role}
+                  className="role-bar-segment"
+                  style={{
+                    width: `${prob * 100}%`,
+                    backgroundColor: def.color,
+                  }}
+                  title={`${def.name}: ${pct}%`}
+                >
+                  {pct >= 14 ? `${def.shortName} ${pct}%` : pct >= 7 ? def.shortName : ""}
+                </div>
+              );
+            })}
         </div>
       </div>
 
-      {/* 役職内訳確率 */}
+      {/* 役職内訳確率ピル */}
       <div className="role-distribution">
         {Object.entries(roleProbs)
           .filter(([_, prob]) => prob > 0)
@@ -140,6 +159,7 @@ export function PlayerCard({
             );
           })}
       </div>
+
 
       {/* クイックアクション */}
       <div className="player-quick-actions">

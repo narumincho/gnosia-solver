@@ -1,6 +1,6 @@
-import { useState, useEffect } from "preact/hooks";
+import { useState, useEffect, useMemo } from "preact/hooks";
 import { X, AlertTriangle, ShieldCheck, UserCheck, Search, Activity, Skull } from "lucide-preact";
-import { EventType, GameEvent, GameSettings, ReportJudgement, Role } from "../types.ts";
+import { EventType, GameEvent, GameSettings, PlayerStatus, ReportJudgement, Role } from "../types.ts";
 
 interface AddEventModalProps {
   isOpen: boolean;
@@ -10,6 +10,9 @@ interface AddEventModalProps {
   currentDay: number;
   initialType?: EventType;
   initialPlayerId?: string;
+  playerStatuses: Record<string, PlayerStatus>;
+  claimedRoles: Record<string, ("ENGINEER" | "DOCTOR" | "GUARD_DUTY")[]>;
+  myRole?: Role;
 }
 
 export function AddEventModal({
@@ -20,26 +23,81 @@ export function AddEventModal({
   currentDay,
   initialType = "DEFINITE_LIE",
   initialPlayerId,
+  playerStatuses,
+  claimedRoles,
+  myRole,
 }: AddEventModalProps) {
   if (!isOpen) return null;
 
   const [eventType, setEventType] = useState<EventType>(initialType);
   const [day, setDay] = useState<number>(currentDay);
 
+  // プレイヤー群のフィルタリング
+  const alivePlayers = useMemo(() => {
+    return settings.players.filter((p) => (playerStatuses[p.id] || "ALIVE") === "ALIVE");
+  }, [settings.players, playerStatuses]);
+
+  const frozenPlayers = useMemo(() => {
+    return settings.players.filter((p) => playerStatuses[p.id] === "FROZEN");
+  }, [settings.players, playerStatuses]);
+
+  // エンジニアCOしたプレイヤー（または自分=真エンジニアの場合の自分）
+  const engineerCandidates = useMemo(() => {
+    return settings.players.filter((p) => {
+      const cos = claimedRoles[p.id] || [];
+      if (cos.includes("ENGINEER")) return true;
+      if (p.id === "player" && myRole === "ENGINEER") return true;
+      return false;
+    });
+  }, [settings.players, claimedRoles, myRole]);
+
+  // ドクターCOしたプレイヤー（または自分=真ドクターの場合の自分）
+  const doctorCandidates = useMemo(() => {
+    return settings.players.filter((p) => {
+      const cos = claimedRoles[p.id] || [];
+      if (cos.includes("DOCTOR")) return true;
+      if (p.id === "player" && myRole === "DOCTOR") return true;
+      return false;
+    });
+  }, [settings.players, claimedRoles, myRole]);
+
   // フォーム用入力ステート
-  const [selectedPlayer, setSelectedPlayer] = useState<string>(
-    initialPlayerId || settings.players[0]?.id || ""
-  );
-  const [targetPlayer, setTargetPlayer] = useState<string>(
-    settings.players[1]?.id || ""
-  );
+  const [selectedPlayer, setSelectedPlayer] = useState<string>("");
+  const [targetPlayer, setTargetPlayer] = useState<string>("");
   const [claimedRole, setClaimedRole] = useState<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">("ENGINEER");
   const [reportResult, setReportResult] = useState<ReportJudgement>("HUMAN");
   const [lieReason, setLieReason] = useState<string>("直感スキル発動 / 人間だと言え");
 
+  // 初期値の自動調整
   useEffect(() => {
     if (initialType) setEventType(initialType);
-    if (initialPlayerId) setSelectedPlayer(initialPlayerId);
+
+    if (initialType === "INVESTIGATION") {
+      const defaultInv =
+        (initialPlayerId && engineerCandidates.some((p) => p.id === initialPlayerId))
+          ? initialPlayerId
+          : engineerCandidates[0]?.id || alivePlayers[0]?.id || "";
+      setSelectedPlayer(defaultInv);
+
+      // 対象は調査者以外の生存者
+      const defaultTarget =
+        alivePlayers.find((p) => p.id !== defaultInv)?.id || settings.players[0]?.id || "";
+      setTargetPlayer(defaultTarget);
+    } else if (initialType === "DOCTOR_REPORT") {
+      const defaultDoc =
+        (initialPlayerId && doctorCandidates.some((p) => p.id === initialPlayerId))
+          ? initialPlayerId
+          : doctorCandidates[0]?.id || alivePlayers[0]?.id || "";
+      setSelectedPlayer(defaultDoc);
+      setTargetPlayer(frozenPlayers[0]?.id || settings.players[0]?.id || "");
+    } else if (initialType === "VOTE" || initialType === "ATTACK") {
+      setSelectedPlayer(initialPlayerId || alivePlayers[0]?.id || settings.players[0]?.id || "");
+    } else if (initialType === "NO_ATTACK") {
+      setSelectedPlayer("");
+      setLieReason("夜間の犠牲者なし (天使護衛成功 または バグ襲撃)");
+    } else {
+      setSelectedPlayer(initialPlayerId || alivePlayers[0]?.id || settings.players[0]?.id || "");
+    }
   }, [initialType, initialPlayerId]);
 
   const handleSubmit = (e: Event) => {
@@ -142,9 +200,18 @@ export function AddEventModal({
                 onChange={(e) => {
                   const val = (e.target as HTMLSelectElement).value as EventType;
                   setEventType(val);
-                  if (val === "NO_ATTACK") {
+                  if (val === "INVESTIGATION") {
+                    const inv = engineerCandidates[0]?.id || alivePlayers[0]?.id || "";
+                    setSelectedPlayer(inv);
+                    setTargetPlayer(alivePlayers.find((p) => p.id !== inv)?.id || "");
+                  } else if (val === "DOCTOR_REPORT") {
+                    setSelectedPlayer(doctorCandidates[0]?.id || alivePlayers[0]?.id || "");
+                    setTargetPlayer(frozenPlayers[0]?.id || "");
+                  } else if (val === "NO_ATTACK") {
                     setSelectedPlayer("");
                     setLieReason("夜間の犠牲者なし (天使護衛成功 または バグ襲撃)");
+                  } else if (val === "VOTE" || val === "ATTACK") {
+                    setSelectedPlayer(alivePlayers[0]?.id || "");
                   }
                 }}
               >
@@ -158,7 +225,6 @@ export function AddEventModal({
               </select>
             </div>
           </div>
-
 
           {/* 嘘をついていることが確定 */}
           {eventType === "DEFINITE_LIE" && (
@@ -176,12 +242,12 @@ export function AddEventModal({
                 >
                   {settings.players.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name}
+                      {p.name} {playerStatuses[p.id] === "FROZEN" ? "(冷凍済)" : playerStatuses[p.id] === "ATTACKED" ? "(消滅済)" : ""}
                     </option>
                   ))}
                 </select>
               </div>
-              <div className="form-group">
+              <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">看破の理由・メモ</label>
                 <input
                   type="text"
@@ -204,7 +270,7 @@ export function AddEventModal({
                   value={selectedPlayer}
                   onChange={(e) => setSelectedPlayer((e.target as HTMLSelectElement).value)}
                 >
-                  {settings.players.map((p) => (
+                  {alivePlayers.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
                     </option>
@@ -232,32 +298,49 @@ export function AddEventModal({
             <div>
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">調査したエンジニア</label>
+                  <label className="form-label">調査したエンジニア (CO者のみ)</label>
                   <select
                     className="form-select"
                     value={selectedPlayer}
-                    onChange={(e) => setSelectedPlayer((e.target as HTMLSelectElement).value)}
+                    onChange={(e) => {
+                      const newInv = (e.target as HTMLSelectElement).value;
+                      setSelectedPlayer(newInv);
+                      if (targetPlayer === newInv) {
+                        setTargetPlayer(alivePlayers.find((p) => p.id !== newInv)?.id || "");
+                      }
+                    }}
                   >
-                    {settings.players.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
+                    {engineerCandidates.length > 0 ? (
+                      engineerCandidates.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} {p.id === "player" && myRole === "ENGINEER" ? "(真エンジニア)" : "(CO者)"}
+                        </option>
+                      ))
+                    ) : (
+                      // フォールバック
+                      alivePlayers.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} (※未CO)
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">調査対象</label>
+                  <label className="form-label">調査対象 (生存者)</label>
                   <select
                     className="form-select"
                     value={targetPlayer}
                     onChange={(e) => setTargetPlayer((e.target as HTMLSelectElement).value)}
                   >
-                    {settings.players.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
+                    {alivePlayers
+                      .filter((p) => p.id !== selectedPlayer)
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
               </div>
@@ -281,33 +364,47 @@ export function AddEventModal({
             <div>
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">報告したドクター</label>
+                  <label className="form-label">報告したドクター (CO者のみ)</label>
                   <select
                     className="form-select"
                     value={selectedPlayer}
                     onChange={(e) => setSelectedPlayer((e.target as HTMLSelectElement).value)}
                   >
-                    {settings.players.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
+                    {doctorCandidates.length > 0 ? (
+                      doctorCandidates.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} {p.id === "player" && myRole === "DOCTOR" ? "(真ドクター)" : "(CO者)"}
+                        </option>
+                      ))
+                    ) : (
+                      alivePlayers.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} (※未CO)
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">冷凍された対象</label>
-                  <select
-                    className="form-select"
-                    value={targetPlayer}
-                    onChange={(e) => setTargetPlayer((e.target as HTMLSelectElement).value)}
-                  >
-                    {settings.players.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="form-label">診察した冷凍対象 (冷凍された乗員のみ)</label>
+                  {frozenPlayers.length > 0 ? (
+                    <select
+                      className="form-select"
+                      value={targetPlayer}
+                      onChange={(e) => setTargetPlayer((e.target as HTMLSelectElement).value)}
+                    >
+                      {frozenPlayers.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} (コールドスリープ済)
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <select className="form-select" disabled>
+                      <option value="">(コールドスリープされた乗員がいません)</option>
+                    </select>
+                  )}
                 </div>
               </div>
 
@@ -328,13 +425,13 @@ export function AddEventModal({
           {/* コールドスリープ (VOTE) */}
           {eventType === "VOTE" && (
             <div className="form-group">
-              <label className="form-label">コールドスリープされた人物</label>
+              <label className="form-label">コールドスリープされた人物 (生存者のみ)</label>
               <select
                 className="form-select"
                 value={selectedPlayer}
                 onChange={(e) => setSelectedPlayer((e.target as HTMLSelectElement).value)}
               >
-                {settings.players.map((p) => (
+                {alivePlayers.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>
@@ -346,13 +443,13 @@ export function AddEventModal({
           {/* 消滅 (ATTACK) */}
           {eventType === "ATTACK" && (
             <div className="form-group">
-              <label className="form-label">夜間に消滅した人物 (グノーシアではないことが確定)</label>
+              <label className="form-label">夜間に消滅した人物 (生存者のみ / 非グノーシア確定)</label>
               <select
                 className="form-select"
                 value={selectedPlayer}
                 onChange={(e) => setSelectedPlayer((e.target as HTMLSelectElement).value)}
               >
-                {settings.players.map((p) => (
+                {alivePlayers.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>
@@ -379,7 +476,7 @@ export function AddEventModal({
                   onChange={(e) => setSelectedPlayer((e.target as HTMLSelectElement).value)}
                 >
                   <option value="">(不明・指定なし: 単に犠牲者なし)</option>
-                  {settings.players.map((p) => (
+                  {alivePlayers.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name} (護衛されたため非グノーシア確定)
                     </option>
@@ -400,12 +497,19 @@ export function AddEventModal({
             </div>
           )}
 
-
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem" }}>
             <button type="button" className="btn" onClick={onClose}>
               キャンセル
             </button>
-            <button type="submit" className="btn btn-primary">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={
+                (eventType === "DOCTOR_REPORT" && frozenPlayers.length === 0) ||
+                (eventType === "INVESTIGATION" && alivePlayers.length === 0) ||
+                ((eventType === "VOTE" || eventType === "ATTACK") && alivePlayers.length === 0)
+              }
+            >
               イベントを記録する
             </button>
           </div>

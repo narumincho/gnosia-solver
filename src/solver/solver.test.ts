@@ -709,4 +709,105 @@ Deno.test("GnosiaSolver - 実戦フルプレイ検証（15人・4グノーシア
   assertEquals(result.gnosiaProbabilities["yuriko"], 0.0);
 });
 
+Deno.test("GnosiaSolver - note例題: エンジニアとドクターの対応（嘘つき5人の配役特定）", () => {
+  // https://note.com/hnghyk110164/n/n81bc7270a35c
+  // 「オーソドックスルール」で主人公は一般乗員
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "主人公" },
+      { id: "setsu", name: "セツ" },
+      { id: "gina", name: "ジナ" },
+      { id: "sq", name: "SQ" },
+      { id: "raqio", name: "ラキオ" },
+      { id: "stella", name: "ステラ" },
+      { id: "shigemichi", name: "しげみち" },
+      { id: "chipie", name: "シピ" },
+      { id: "comet", name: "コメット" },
+      { id: "jonas", name: "ジョナス" },
+      { id: "kukrushka", name: "ククルシカ" },
+      { id: "otome", name: "オトメ" },
+      { id: "remnan", name: "レムナン" },
+      { id: "sha_ming", name: "沙明" },
+      { id: "yuriko", name: "夕里子" },
+    ],
+    roles: {
+      gnosiaCount: 3,
+      hasEngineer: true,
+      hasDoctor: true,
+      hasGuardianAngel: true,
+      hasGuardDuty: true,
+      hasACFollower: true,
+      hasBug: true,
+    },
+    allowHiddenRoles: false,
+  };
+
+  const events: GameEvent[] = [
+    // 1日目: ククルシカ・レムナンがエンジニアCO、ジョナス・夕里子がドクターCO。セツが冷凍。
+    { id: "1", day: 1, type: "CO", playerId: "kukrushka", claimedRole: "ENGINEER" },
+    { id: "2", day: 1, type: "CO", playerId: "remnan", claimedRole: "ENGINEER" },
+    { id: "3", day: 1, type: "CO", playerId: "jonas", claimedRole: "DOCTOR" },
+    { id: "4", day: 1, type: "CO", playerId: "yuriko", claimedRole: "DOCTOR" },
+    { id: "5", day: 1, type: "VOTE", frozenPlayerId: "setsu" },
+
+    // 2日目: 消失無し。ククルシカ「沙明は人間」、レムナン「ジナは人間」。ジョナス「セツはグノーシア」、夕里子「セツは人間」。ジナが冷凍。
+    { id: "6", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: [] },
+    { id: "7", day: 2, type: "INVESTIGATION", investigatorId: "kukrushka", targetId: "sha_ming", result: "HUMAN" },
+    { id: "8", day: 2, type: "INVESTIGATION", investigatorId: "remnan", targetId: "gina", result: "HUMAN" },
+    { id: "9", day: 2, type: "DOCTOR_REPORT", reporterId: "jonas", targetId: "setsu", result: "GNOSIA" },
+    { id: "10", day: 2, type: "DOCTOR_REPORT", reporterId: "yuriko", targetId: "setsu", result: "HUMAN" },
+    { id: "11", day: 2, type: "VOTE", frozenPlayerId: "gina" },
+
+    // 3日目: 沙明が消失。ククルシカ「レムナンはグノーシア」、レムナン「沙明は人間」。ジョナス「ジナは人間」、夕里子「ジナはグノーシア」。主人公がステラの嘘看破。ステラが冷凍。夜SQがジョナス密告。
+    { id: "12", day: 2, type: "DISAPPEARANCE", disappearedPlayerIds: ["sha_ming"] },
+    { id: "13", day: 3, type: "INVESTIGATION", investigatorId: "kukrushka", targetId: "remnan", result: "GNOSIA" },
+    { id: "14", day: 3, type: "INVESTIGATION", investigatorId: "remnan", targetId: "sha_ming", result: "HUMAN" },
+    { id: "15", day: 3, type: "DOCTOR_REPORT", reporterId: "jonas", targetId: "gina", result: "HUMAN" },
+    { id: "16", day: 3, type: "DOCTOR_REPORT", reporterId: "yuriko", targetId: "gina", result: "GNOSIA" },
+    { id: "17", day: 3, type: "DEFINITE_LIE", targetId: "stella", witnessId: "player" },
+    { id: "18", day: 3, type: "VOTE", frozenPlayerId: "stella" },
+    { id: "19", day: 3, type: "DEFINITE_LIE", targetId: "jonas", witnessId: "sq" },
+
+    // 4日目: ラキオが消失。ククルシカ「ジョナスは人間」、レムナン「オトメはグノーシア」。ジョナス「ステラはグノーシア」、夕里子「ステラは人間」。夜シピがククルシカ密告。
+    { id: "20", day: 3, type: "DISAPPEARANCE", disappearedPlayerIds: ["raqio"] },
+    { id: "21", day: 4, type: "INVESTIGATION", investigatorId: "kukrushka", targetId: "jonas", result: "HUMAN" },
+    { id: "22", day: 4, type: "INVESTIGATION", investigatorId: "remnan", targetId: "otome", result: "GNOSIA" },
+    { id: "23", day: 4, type: "DOCTOR_REPORT", reporterId: "jonas", targetId: "stella", result: "GNOSIA" },
+    { id: "24", day: 4, type: "DOCTOR_REPORT", reporterId: "yuriko", targetId: "stella", result: "HUMAN" },
+    { id: "25", day: 4, type: "DEFINITE_LIE", targetId: "kukrushka", witnessId: "chipie" },
+  ];
+
+  const solver = new GnosiaSolver(settings, events);
+  const result = solver.solve({
+    perspectivePlayerId: "player",
+    perspectiveRole: "CREW",
+  });
+
+  // 1. 破綻しないこと
+  assertEquals(result.hasContradiction, false);
+  assertEquals(result.totalPossibleWorlds > 0, true);
+
+  // 2. 記事の解答と完全一致すること:
+  // グノーシア: ジナ・シピ・レムナン
+  assertEquals(result.definiteRoles["gina"], "GNOSIA");
+  assertEquals(result.definiteRoles["chipie"], "GNOSIA");
+  assertEquals(result.definiteRoles["remnan"], "GNOSIA");
+  assertEquals(result.gnosiaProbabilities["gina"], 1.0);
+  assertEquals(result.gnosiaProbabilities["chipie"], 1.0);
+  assertEquals(result.gnosiaProbabilities["remnan"], 1.0);
+
+  // AC主義者: ジョナス
+  assertEquals(result.definiteRoles["jonas"], "AC_FOLLOWER");
+  assertEquals(result.roleProbabilities["jonas"]["AC_FOLLOWER"], 1.0);
+
+  // バグ: ステラ
+  assertEquals(result.definiteRoles["stella"], "BUG");
+  assertEquals(result.roleProbabilities["stella"]["BUG"], 1.0);
+
+  // 真役職: ククルシカ（エンジニア）、夕里子（ドクター）
+  assertEquals(result.definiteRoles["kukrushka"], "ENGINEER");
+  assertEquals(result.definiteRoles["yuriko"], "DOCTOR");
+});
+
+
 

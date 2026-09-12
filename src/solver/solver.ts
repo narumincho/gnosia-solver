@@ -7,7 +7,7 @@ import {
   SolverResult,
 } from "../types.ts";
 
-export const ALL_ROLES: Role[] = [
+export const ALL_ROLES: Array<Role> = [
   "CREW",
   "GNOSIA",
   "ENGINEER",
@@ -45,9 +45,9 @@ export function isGnosiaSide(role: Role): boolean {
  */
 export class GnosiaSolver {
   private settings: GameSettings;
-  private events: GameEvent[];
+  private events: Array<GameEvent>;
 
-  constructor(settings: GameSettings, events: GameEvent[]) {
+  constructor(settings: GameSettings, events: Array<GameEvent>) {
     this.settings = settings;
     this.events = events;
   }
@@ -135,7 +135,7 @@ export class GnosiaSolver {
 
     // イベントが0件の場合の高速パス (計算量 O(N) で即座に正確な確率を算出)
     if (this.events.length === 0) {
-      const allRoles: Role[] = [
+      const allRoles: Array<Role> = [
         "CREW",
         "GNOSIA",
         "ENGINEER",
@@ -211,7 +211,7 @@ export class GnosiaSolver {
 
       // サンプル世界を1つ生成
       const sampleWorld: RoleAssignment = {};
-      const rolePool: Role[] = [];
+      const rolePool: Array<Role> = [];
       for (const [r, count] of Object.entries(targetRoleCounts)) {
         for (let i = 0; i < (count || 0); i++) {
           rolePool.push(r as Role);
@@ -631,8 +631,8 @@ export class GnosiaSolver {
       }
     }
 
-    const constrainedPlayerIds: string[] = [];
-    const unconstrainedPlayerIds: string[] = [];
+    const constrainedPlayerIds: Array<string> = [];
+    const unconstrainedPlayerIds: Array<string> = [];
 
     for (const pid of playerIds) {
       if (
@@ -652,7 +652,7 @@ export class GnosiaSolver {
       return res;
     };
 
-    const allRoles: Role[] = [
+    const allRoles: Array<Role> = [
       "CREW",
       "GNOSIA",
       "ENGINEER",
@@ -664,7 +664,7 @@ export class GnosiaSolver {
     ];
 
     let totalWorldsCount = 0;
-    const sampleWorlds: RoleAssignment[] = [];
+    const sampleWorlds: Array<RoleAssignment> = [];
 
     // 重み付きカウント集計（厳密解）
     const roleWeightedCounts: Record<string, Record<Role, number>> = {};
@@ -975,7 +975,7 @@ export class GnosiaSolver {
         if (sampleWorlds.length < 50) {
           const fullSample = { ...currentAssignment };
           if (unconstrainedCount > 0) {
-            const pool: Role[] = [];
+            const pool: Array<Role> = [];
             for (const [r, cnt] of Object.entries(remainingRoleCounts)) {
               for (let i = 0; i < (cnt || 0); i++) {
                 pool.push(r as Role);

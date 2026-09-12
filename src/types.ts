@@ -101,7 +101,7 @@ export interface CharacterPreset {
   defaultIncluded: boolean;
 }
 
-export const DEFAULT_CHARACTERS: CharacterPreset[] = [
+export const DEFAULT_CHARACTERS: Array<CharacterPreset> = [
   { id: "player", name: "自分 (Player)", defaultIncluded: true },
   { id: "setsu", name: "セツ", defaultIncluded: true },
   { id: "gina", name: "ジナ", defaultIncluded: true },
@@ -121,7 +121,7 @@ export const DEFAULT_CHARACTERS: CharacterPreset[] = [
 
 // ゲーム設定
 export interface GameSettings {
-  players: { id: string; name: string }[];
+  players: Array<{ id: string; name: string }>;
   roles: {
     gnosiaCount: number;
     hasEngineer: boolean;
@@ -197,7 +197,7 @@ export interface VoteEvent extends BaseGameEvent {
 // 消滅もしくは平和 (夜の出来事: 0〜2人消滅)
 export interface DisappearanceEvent extends BaseGameEvent {
   type: "DISAPPEARANCE";
-  disappearedPlayerIds: string[]; // 0人(平和/犠牲者なし), 1人消滅, 2人消滅
+  disappearedPlayerIds: Array<string>; // 0人(平和/犠牲者なし), 1人消滅, 2人消滅
 }
 
 // グノーシア夜間襲撃対象指定 (自分がグノーシアの場合の視点入力)
@@ -263,7 +263,7 @@ export interface SolverResult {
   hasContradiction: boolean;
   contradictionReason?: string;
   // 有効な配役一覧（上位100件など）
-  sampleWorlds: RoleAssignment[];
+  sampleWorlds: Array<RoleAssignment>;
 }
 
 // プレイヤー視点
@@ -278,7 +278,7 @@ export interface SessionData {
   version: number;
   exportedAt: string;
   settings: GameSettings;
-  events: GameEvent[];
+  events: Array<GameEvent>;
   currentDay: number;
   perspective: PerspectiveOption;
   myRole?: Role;

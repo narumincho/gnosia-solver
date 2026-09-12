@@ -9,7 +9,7 @@ import {
 interface WorldListModalProps {
   isOpen: boolean;
   onClose: () => void;
-  sampleWorlds: RoleAssignment[];
+  sampleWorlds: Array<RoleAssignment>;
   totalWorlds: number;
   settings: GameSettings;
 }

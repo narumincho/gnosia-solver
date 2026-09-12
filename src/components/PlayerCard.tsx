@@ -16,8 +16,8 @@ import {
 interface PlayerCardProps {
   player: { id: string; name: string };
   status: PlayerStatus;
-  claimedRoles: ("ENGINEER" | "DOCTOR" | "GUARD_DUTY")[];
-  definiteLieReasons?: string[];
+  claimedRoles: Array<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">;
+  definiteLieReasons?: Array<string>;
   isCurrentPerspective: boolean;
   solverResult: SolverResult;
   myRole?: Role;

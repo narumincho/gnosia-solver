@@ -27,7 +27,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
 };
 
 // イベントの並び順から各イベントの発生日 (day) を自動計算する
-export function recalculateDays(events: GameEvent[]): GameEvent[] {
+export function recalculateDays(events: Array<GameEvent>): Array<GameEvent> {
   let day = 1;
   let hasVote = false;
 
@@ -57,7 +57,7 @@ export function recalculateDays(events: GameEvent[]): GameEvent[] {
 
 export function useGameStore() {
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
-  const [events, setEvents] = useState<GameEvent[]>([]);
+  const [events, setEvents] = useState<Array<GameEvent>>([]);
   const [perspectiveRoles, setPerspectiveRoles] = useState<
     Record<string, Role>
   >({});
@@ -160,7 +160,7 @@ export function useGameStore() {
 
   // COしている役職のマップ (playerId -> Role[])
   const claimedRoles = useMemo(() => {
-    const map: Record<string, ("ENGINEER" | "DOCTOR" | "GUARD_DUTY")[]> = {};
+    const map: Record<string, Array<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">> = {};
     for (const ev of events) {
       if (ev.type === "CO") {
         if (!map[ev.playerId]) map[ev.playerId] = [];
@@ -180,7 +180,7 @@ export function useGameStore() {
 
   // 各プレイヤーが嘘をついたと確定または密告されているか (targetId -> labels[])
   const definiteLies = useMemo(() => {
-    const map: Record<string, string[]> = {};
+    const map: Record<string, Array<string>> = {};
     for (const ev of events) {
       if (ev.type === "DEFINITE_LIE") {
         if (!map[ev.targetId]) map[ev.targetId] = [];

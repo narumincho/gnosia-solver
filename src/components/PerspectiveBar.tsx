@@ -25,7 +25,7 @@ export function PerspectiveBar({
 }: PerspectiveBarProps) {
   const isObjective = perspective.id === "objective";
 
-  const availableRoles: Role[] = [
+  const availableRoles: Array<Role> = [
     "CREW",
     ...(settings.roles.gnosiaCount > 0 ? ["GNOSIA" as Role] : []),
     ...(settings.roles.hasEngineer ? ["ENGINEER" as Role] : []),

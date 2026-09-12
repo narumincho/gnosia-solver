@@ -24,7 +24,7 @@ Deno.test("NO_ATTACK - 守護天使の護衛成功による非グノーシア確
   };
 
   // 夜間に襲撃なしが発生し、ジナが護衛されていた
-  const events: GameEvent[] = [
+  const events: Array<GameEvent> = [
     {
       id: "1",
       day: 1,

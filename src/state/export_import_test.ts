@@ -4,7 +4,7 @@ import { GameEvent, SessionData } from "../types.ts";
 import { GnosiaSolver } from "../solver/solver.ts";
 
 Deno.test("SessionData - エクスポート＆インポートによる整合性の保持", () => {
-  const events: GameEvent[] = [
+  const events: Array<GameEvent> = [
     {
       id: "ev-1",
       day: 1,
@@ -51,7 +51,7 @@ Deno.test("SessionData - エクスポート＆インポートによる整合性�
 });
 
 Deno.test("Event Update - イベントの編集とソルバー再計算", () => {
-  const events: GameEvent[] = [
+  const events: Array<GameEvent> = [
     {
       id: "ev-1",
       day: 1,
@@ -90,7 +90,7 @@ Deno.test("Event Update - イベントの編集とソルバー再計算", () => 
 });
 
 Deno.test("Event Order & recalculateDays - 並び順からのDay自動計算と並び替え", () => {
-  const initialEvents: GameEvent[] = [
+  const initialEvents: Array<GameEvent> = [
     {
       id: "1",
       day: 0,
@@ -136,7 +136,7 @@ Deno.test("Event Order & recalculateDays - 並び順からのDay自動計算と�
   assertEquals(reCalculated[3].day, 1);
 
   // DISAPPEARANCE（消滅もしくは平和）でも翌日に進むこと
-  const disEvents: GameEvent[] = [
+  const disEvents: Array<GameEvent> = [
     {
       id: "1",
       day: 0,

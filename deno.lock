@@ -1,6 +1,7 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@narumincho/type-lint@1": "1.0.0",
     "jsr:@std/assert@^1.0.19": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.14",
     "npm:@preact/preset-vite@^2.10.6": "2.10.6_vite@6.4.3_preact@10.29.8",
@@ -12,6 +13,9 @@
     "npm:wrangler@^4.131.1": "4.131.1"
   },
   "jsr": {
+    "@narumincho/type-lint@1.0.0": {
+      "integrity": "6550ca44b49c2453c1142ec194219be5cb045de8b76519370f8bc195ecaac26a"
+    },
     "@std/assert@1.0.19": {
       "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e",
       "dependencies": [

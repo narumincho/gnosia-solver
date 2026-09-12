@@ -21,11 +21,11 @@ import {
 } from "../types.ts";
 
 interface EventTimelineProps {
-  events: GameEvent[];
+  events: Array<GameEvent>;
   settings: GameSettings;
   currentDay: number;
   playerStatuses: Record<string, PlayerStatus>;
-  claimedRoles: Record<string, ("ENGINEER" | "DOCTOR" | "GUARD_DUTY")[]>;
+  claimedRoles: Record<string, Array<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">>;
   myRole?: Role;
   onOpenAddEvent: (initialType?: EventType, initialPlayerId?: string) => void;
   onQuickDoctorReport: (
@@ -492,7 +492,7 @@ export function EventTimeline({
                   )}
                   <div
                     className={`event-card ${getEventClass(ev.type)}`}
-                    draggable={true}
+                    draggable
                     onDragStart={(e) => {
                       e.dataTransfer?.setData("text/plain", String(index));
                     }}

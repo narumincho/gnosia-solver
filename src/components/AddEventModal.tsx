@@ -30,7 +30,7 @@ interface AddEventModalProps {
   initialType?: EventType;
   initialPlayerId?: string;
   playerStatuses: Record<string, PlayerStatus>;
-  claimedRoles: Record<string, Role[]>;
+  claimedRoles: Record<string, Array<Role>>;
   myRole?: Role;
 }
 
@@ -102,7 +102,7 @@ export function AddEventModal({
 
   // 設定上登場するCO役職の一覧
   const availableCORoles = useMemo(() => {
-    const list: ("ENGINEER" | "DOCTOR" | "GUARD_DUTY")[] = [];
+    const list: Array<"ENGINEER" | "DOCTOR" | "GUARD_DUTY"> = [];
     if (settings.roles.hasEngineer) list.push("ENGINEER");
     if (settings.roles.hasDoctor) list.push("DOCTOR");
     if (settings.roles.hasGuardDuty) list.push("GUARD_DUTY");
@@ -111,7 +111,7 @@ export function AddEventModal({
 
   // フォーム用入力ステート
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
-  const [selectedGuardDuty, setSelectedGuardDuty] = useState<string[]>([]);
+  const [selectedGuardDuty, setSelectedGuardDuty] = useState<Array<string>>([]);
   const [targetPlayer, setTargetPlayer] = useState<string>("");
   const [claimedRole, setClaimedRole] = useState<
     "ENGINEER" | "DOCTOR" | "GUARD_DUTY"
@@ -126,7 +126,7 @@ export function AddEventModal({
   );
   const [reportResult, setReportResult] = useState<ReportJudgement>("HUMAN");
   const [witnessPlayer, setWitnessPlayer] = useState<string>("player");
-  const [disappearedPlayerIds, setDisappearedPlayerIds] = useState<string[]>(
+  const [disappearedPlayerIds, setDisappearedPlayerIds] = useState<Array<string>>(
     [],
   );
   const [noAttackNote, setNoAttackNote] = useState<string>(

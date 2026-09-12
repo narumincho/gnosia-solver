@@ -7,7 +7,7 @@ Deno.test("GnosiaSolver - 基本的な探索と確率計算", () => {
     players: [
       { id: "p1", name: "プレイヤー" },
       { id: "p2", name: "セツ" },
-      { id: "p3", name: "ジーナ" },
+      { id: "p3", name: "ジナ" },
       { id: "p4", name: "SQ" },
       { id: "p5", name: "ラキオ" },
     ],
@@ -39,7 +39,7 @@ Deno.test("GnosiaSolver - エンジニアCOと調査結果、襲撃による確�
     players: [
       { id: "p1", name: "自分" },
       { id: "p2", name: "セツ" },
-      { id: "p3", name: "ジーナ" },
+      { id: "p3", name: "ジナ" },
       { id: "p4", name: "SQ" },
       { id: "p5", name: "ラキオ" },
     ],
@@ -69,7 +69,7 @@ Deno.test("GnosiaSolver - エンジニアCOと調査結果、襲撃による確�
       targetId: "p5",
       result: "GNOSIA",
     },
-    // p3 (ジーナ) が夜に襲撃された
+    // p3 (ジナ) が夜に襲撃された
     { id: "4", day: 1, type: "ATTACK", attackedPlayerId: "p3" },
   ];
 
@@ -77,7 +77,7 @@ Deno.test("GnosiaSolver - エンジニアCOと調査結果、襲撃による確�
   const result = solver.solve();
 
   assertEquals(result.hasContradiction, false);
-  // ジーナは襲撃されたのでグノーシア確率 0
+  // ジナは襲撃されたのでグノーシア確率 0
   assertEquals(result.gnosiaProbabilities["p3"], 0);
 
   // プレイヤー視点: 自分が「乗員」の場合
@@ -135,7 +135,7 @@ Deno.test("GnosiaSolver - ドクター判定とバグ・AC主義者を含む15�
     players: [
       { id: "player", name: "自分" },
       { id: "setsu", name: "セツ" },
-      { id: "gina", name: "ジーナ" },
+      { id: "gina", name: "ジナ" },
       { id: "sq", name: "SQ" },
       { id: "raqio", name: "ラキオ" },
       { id: "stella", name: "ステラ" },

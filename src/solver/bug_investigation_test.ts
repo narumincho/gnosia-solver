@@ -7,7 +7,7 @@ Deno.test("再現テスト - エンジニアが調査して生存している対
     players: [
       { id: "player", name: "自分" },
       { id: "setsu", name: "セツ" },
-      { id: "gina", name: "ジーナ" },
+      { id: "gina", name: "ジナ" },
       { id: "sq", name: "SQ" },
       { id: "raqio", name: "ラキオ" },
       { id: "stella", name: "ステラ" },

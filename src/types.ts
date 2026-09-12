@@ -104,7 +104,7 @@ export interface CharacterPreset {
 export const DEFAULT_CHARACTERS: CharacterPreset[] = [
   { id: "player", name: "自分 (Player)", defaultIncluded: true },
   { id: "setsu", name: "セツ", defaultIncluded: true },
-  { id: "gina", name: "ジーナ", defaultIncluded: true },
+  { id: "gina", name: "ジナ", defaultIncluded: true },
   { id: "sq", name: "SQ", defaultIncluded: true },
   { id: "raqio", name: "ラキオ", defaultIncluded: true },
   { id: "stella", name: "ステラ", defaultIncluded: true },

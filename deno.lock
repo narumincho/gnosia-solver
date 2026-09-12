@@ -1,18 +1,15 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@std/assert@1": "1.0.19",
+    "jsr:@std/assert@^1.0.19": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.14",
-    "npm:@preact/preset-vite@^2.10.6": "2.10.6_@babel+core@7.29.7_vite@6.4.2_preact@10.28.1",
-    "npm:lucide-preact@0.475": "0.475.0_preact@10.28.1",
-    "npm:preact@^10.26.4": "10.28.1",
+    "npm:@preact/preset-vite@^2.10.6": "2.10.6_vite@6.4.3_preact@10.29.8",
+    "npm:lucide-preact@0.475": "0.475.0_preact@10.29.8",
+    "npm:preact@^10.29.8": "10.29.8",
     "npm:stylelint-config-standard@37": "37.0.0_stylelint@16.26.1",
-    "npm:stylelint@*": "16.26.1",
-    "npm:stylelint@^16.15.0": "16.26.1",
-    "npm:vite@*": "6.4.2",
-    "npm:vite@^6.2.0": "6.4.2",
-    "npm:wrangler@*": "4.131.1",
-    "npm:wrangler@4": "4.131.1"
+    "npm:stylelint@^16.26.1": "16.26.1",
+    "npm:vite@^6.4.3": "6.4.3",
+    "npm:wrangler@^4.131.1": "4.131.1"
   },
   "jsr": {
     "@std/assert@1.0.19": {
@@ -792,7 +789,7 @@
     "@poppinss/exception@1.2.3": {
       "integrity": "sha512-dCED+QRChTVatE9ibtoaxc+WkdzOSjYTKi/+uacHWIsfodVfpsueo3+DKpgU5Px8qXjgmXkSvhXvSCz3fnP9lw=="
     },
-    "@preact/preset-vite@2.10.6_@babel+core@7.29.7_vite@6.4.2_preact@10.28.1": {
+    "@preact/preset-vite@2.10.6_vite@6.4.3_preact@10.29.8": {
       "integrity": "sha512-ZZ5RIT2ZVXg8UxRA8VZpoT8CdpDG7RFIqOT4bELqNBp85+HKvQBbgmh3gsoW1UOQXx26TLe+ZRNKI7q281Kckw==",
       "dependencies": [
         "@babel/core",
@@ -812,7 +809,7 @@
     "@prefresh/babel-plugin@0.5.3": {
       "integrity": "sha512-57LX2SHs4BX2s1IwCjNzTE2OJeEepRCNf1VTEpbNcUyHfMO68eeOWGDIt4ob9aYlW6PEWZ1SuwNikuoIXANDtQ=="
     },
-    "@prefresh/core@1.5.11_preact@10.28.1": {
+    "@prefresh/core@1.5.11_preact@10.29.8": {
       "integrity": "sha512-Ml00PP8jeHaADxfQqxUs4+M5JS+T5J26UnvPVfsrmlpGw2I3e9XtM0DMeuzkmvg+Tn7VdHSMpLBrDPG0iHoDqQ==",
       "dependencies": [
         "preact"
@@ -821,7 +818,7 @@
     "@prefresh/utils@1.2.1": {
       "integrity": "sha512-vq/sIuN5nYfYzvyayXI4C2QkprfNaHUQ9ZX+3xLD8nL3rWyzpxOm1+K7RtMbhd+66QcaISViK7amjnheQ/4WZw=="
     },
-    "@prefresh/vite@2.4.12_preact@10.28.1_vite@6.4.2": {
+    "@prefresh/vite@2.4.12_preact@10.29.8_vite@6.4.3": {
       "integrity": "sha512-FY1fzXpUjiuosznMV0YM7XAOPZjB5FIdWS0W24+XnlxYkt9hNAwwsiKYn+cuTEoMtD/ZVazS5QVssBr9YhpCQA==",
       "dependencies": [
         "@babel/core",
@@ -1466,7 +1463,7 @@
         "yallist"
       ]
     },
-    "lucide-preact@0.475.0_preact@10.28.1": {
+    "lucide-preact@0.475.0_preact@10.29.8": {
       "integrity": "sha512-i3Os0TOIJxe/UEN8XVyZxjPjpqgeWLZxT/7Pr5m5BilVwnpxQjojQq1UHVRl6hgF+VRDb5sgU149hKJnX+mwOA==",
       "dependencies": [
         "preact"
@@ -1594,8 +1591,8 @@
         "source-map-js"
       ]
     },
-    "preact@10.28.1": {
-      "integrity": "sha512-u1/ixq/lVQI0CakKNvLDEcW5zfCjUQfZdK9qqWuIJtsezuyG6pk9TWj75GMuI/EzRSZB/VAE43sNWWZfiy8psw=="
+    "preact@10.29.8": {
+      "integrity": "sha512-ej2aVZ+vZ8WO7tvlQWRM9N63A0KzF9q4mWJfDUHgYaIofWY9hu74QdnQrjoPMmZi2/nZ5gN0bJCQF49xQqx09Q=="
     },
     "qified@0.10.1": {
       "integrity": "sha512-+Owyggi9IxT1ePKGafcI87ubSmxol6smwJ+RAHDQlx9+9cPwFWDiKFFCPuWhr9ignlGpZ9vDQLw67N4dcTVFEA==",
@@ -1870,7 +1867,7 @@
     "util-deprecate@1.0.2": {
       "integrity": "sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw=="
     },
-    "vite-prerender-plugin@0.5.13_vite@6.4.2": {
+    "vite-prerender-plugin@0.5.13_vite@6.4.3": {
       "integrity": "sha512-IKSpYkzDBsKAxa05naRbj7GvNVMSdww/Z/E89oO3xndz+gWnOBOKOAbEXv7qDhktY/j3vHgJmoV1pPzqU2tx9g==",
       "dependencies": [
         "kolorist",
@@ -1882,8 +1879,8 @@
         "vite"
       ]
     },
-    "vite@6.4.2": {
-      "integrity": "sha512-2N/55r4JDJ4gdrCvGgINMy+HH3iRpNIz8K6SFwVsA+JbQScLiC+clmAxBgwiSPgcG9U15QmvqCGWzMbqda5zGQ==",
+    "vite@6.4.3": {
+      "integrity": "sha512-NTKlcQjlAK7MlQoyb6LgaqHc8sso/pVyUJYWMws3jg21uTJw/LddqIFPcPqP6PzpgbIcZyKI85sFE4HBrQDA8A==",
       "dependencies": [
         "esbuild@0.25.12",
         "fdir",
@@ -1969,14 +1966,14 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@std/assert@1",
+      "jsr:@std/assert@^1.0.19",
       "npm:@preact/preset-vite@^2.10.6",
       "npm:lucide-preact@0.475",
-      "npm:preact@^10.26.4",
+      "npm:preact@^10.29.8",
       "npm:stylelint-config-standard@37",
-      "npm:stylelint@^16.15.0",
-      "npm:vite@^6.2.0",
-      "npm:wrangler@4"
+      "npm:stylelint@^16.26.1",
+      "npm:vite@^6.4.3",
+      "npm:wrangler@^4.131.1"
     ]
   }
 }

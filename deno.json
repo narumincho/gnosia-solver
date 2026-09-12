@@ -16,13 +16,13 @@
   },
   "imports": {
     "@preact/preset-vite": "npm:@preact/preset-vite@^2.10.6",
-    "@std/assert": "jsr:@std/assert@1",
+    "@std/assert": "jsr:@std/assert@^1.0.19",
     "lucide-preact": "npm:lucide-preact@^0.475.0",
-    "preact": "npm:preact@^10.26.4",
-    "preact/hooks": "npm:preact@^10.26.4/hooks",
-    "stylelint": "npm:stylelint@^16.15.0",
+    "preact": "npm:preact@^10.29.8",
+    "preact/hooks": "npm:preact@^10.29.8/hooks",
+    "stylelint": "npm:stylelint@^16.26.1",
     "stylelint-config-standard": "npm:stylelint-config-standard@^37.0.0",
-    "vite": "npm:vite@^6.2.0",
-    "wrangler": "npm:wrangler@^4.0.0"
+    "vite": "npm:vite@^6.4.3",
+    "wrangler": "npm:wrangler@^4.131.1"
   }
 }

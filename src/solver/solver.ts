@@ -116,7 +116,146 @@ export class GnosiaSolver {
       }
     }
 
+    // イベントが0件の場合の高速パス (計算量 O(N) で即座に正確な確率を算出)
+    if (this.events.length === 0) {
+      const allRoles: Role[] = [
+        "CREW",
+        "GNOSIA",
+        "ENGINEER",
+        "DOCTOR",
+        "GUARDIAN_ANGEL",
+        "GUARD_DUTY",
+        "AC_FOLLOWER",
+        "BUG",
+      ];
+
+      const roleProbabilities: Record<string, Record<Role, number>> = {};
+      const gnosiaProbabilities: Record<string, number> = {};
+      const enemyProbabilities: Record<string, number> = {};
+      const definiteRoles: Record<string, Role> = {};
+
+      const fixedPid = options.perspectivePlayerId;
+      const fixedRole = options.perspectiveRole;
+
+      // 視点プレイヤーで役職が固定されている場合
+      if (fixedPid && fixedRole) {
+        definiteRoles[fixedPid] = fixedRole;
+        const otherPlayerCount = totalCount - 1;
+        const remainingCounts = { ...targetRoleCounts };
+        remainingCounts[fixedRole] = Math.max(0, (remainingCounts[fixedRole] || 0) - 1);
+
+        for (const pid of playerIds) {
+          roleProbabilities[pid] = {} as Record<Role, number>;
+          if (pid === fixedPid) {
+            for (const r of allRoles) {
+              roleProbabilities[pid][r] = r === fixedRole ? 1.0 : 0.0;
+            }
+            gnosiaProbabilities[pid] = fixedRole === "GNOSIA" ? 1.0 : 0.0;
+            enemyProbabilities[pid] =
+              fixedRole === "GNOSIA" || fixedRole === "AC_FOLLOWER" || fixedRole === "BUG"
+                ? 1.0
+                : 0.0;
+          } else {
+            for (const r of allRoles) {
+              roleProbabilities[pid][r] =
+                otherPlayerCount > 0
+                  ? (remainingCounts[r] || 0) / otherPlayerCount
+                  : 0;
+            }
+            gnosiaProbabilities[pid] =
+              otherPlayerCount > 0
+                ? (remainingCounts.GNOSIA || 0) / otherPlayerCount
+                : 0;
+            enemyProbabilities[pid] =
+              otherPlayerCount > 0
+                ? ((remainingCounts.GNOSIA || 0) +
+                    (remainingCounts.AC_FOLLOWER || 0) +
+                    (remainingCounts.BUG || 0)) /
+                  otherPlayerCount
+                : 0;
+          }
+        }
+      } else {
+        // 全員フラットな客観視点
+        for (const pid of playerIds) {
+          roleProbabilities[pid] = {} as Record<Role, number>;
+          for (const r of allRoles) {
+            roleProbabilities[pid][r] = (targetRoleCounts[r] || 0) / totalCount;
+          }
+          gnosiaProbabilities[pid] =
+            (targetRoleCounts.GNOSIA || 0) / totalCount;
+          enemyProbabilities[pid] =
+            ((targetRoleCounts.GNOSIA || 0) +
+              (targetRoleCounts.AC_FOLLOWER || 0) +
+              (targetRoleCounts.BUG || 0)) /
+            totalCount;
+        }
+      }
+
+      // サンプル世界を1つ生成
+      const sampleWorld: RoleAssignment = {};
+      const rolePool: Role[] = [];
+      for (const [r, count] of Object.entries(targetRoleCounts)) {
+        for (let i = 0; i < (count || 0); i++) {
+          rolePool.push(r as Role);
+        }
+      }
+      if (fixedPid && fixedRole) {
+        sampleWorld[fixedPid] = fixedRole;
+        const idx = rolePool.indexOf(fixedRole);
+        if (idx !== -1) rolePool.splice(idx, 1);
+        let pIdx = 0;
+        for (const pid of playerIds) {
+          if (pid !== fixedPid) {
+            sampleWorld[pid] = rolePool[pIdx++];
+          }
+        }
+      } else {
+        playerIds.forEach((pid, idx) => {
+          sampleWorld[pid] = rolePool[idx];
+        });
+      }
+
+      // 正確な全組み合わせ数 (多項係数) の計算
+      const factorial = (n: number): number => {
+        let res = 1;
+        for (let i = 2; i <= n; i++) res *= i;
+        return res;
+      };
+
+      let totalComb = 0;
+      if (fixedPid && fixedRole) {
+        const remainingCounts = { ...targetRoleCounts };
+        remainingCounts[fixedRole] = Math.max(0, (remainingCounts[fixedRole] || 0) - 1);
+        let num = factorial(totalCount - 1);
+        let denom = 1;
+        for (const count of Object.values(remainingCounts)) {
+          denom *= factorial(count || 0);
+        }
+        totalComb = Math.round(num / denom);
+      } else {
+        let num = factorial(totalCount);
+        let denom = 1;
+        for (const count of Object.values(targetRoleCounts)) {
+          denom *= factorial(count || 0);
+        }
+        totalComb = Math.round(num / denom);
+      }
+
+      return {
+        totalPossibleWorlds: totalComb,
+        roleProbabilities,
+        gnosiaProbabilities,
+        enemyProbabilities,
+        definiteRoles,
+        hasContradiction: false,
+        sampleWorlds: [sampleWorld],
+      };
+    }
+
+
     // イベントの事前反映
+
     const guardDutyCOs = new Set<string>();
     const engineerCOs = new Set<string>();
     const doctorCOs = new Set<string>();
@@ -157,7 +296,7 @@ export class GnosiaSolver {
     }
 
     // 留守番の制約
-    if (this.settings.roles.hasGuardDuty) {
+    if (this.settings.roles.hasGuardDuty && guardDutyCOs.size > 0) {
       // 留守番COしていないプレイヤーは真留守番にはなれない
       for (const pid of playerIds) {
         if (!guardDutyCOs.has(pid) && candidateRoles[pid]) {
@@ -174,6 +313,7 @@ export class GnosiaSolver {
         }
       }
     }
+
 
     // 潜伏なし設定の場合: COしていないプレイヤーは真ENGINEER/真DOCTORになれない
     if (!this.settings.allowHiddenRoles) {

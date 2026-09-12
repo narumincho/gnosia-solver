@@ -143,19 +143,30 @@ export function PlayerCard({
 
       {/* クイックアクション */}
       <div className="player-quick-actions">
+        {!isCurrentPerspective ? (
+          <button
+            className="quick-btn"
+            style={{ color: "var(--text-accent)", borderColor: "rgba(56, 189, 248, 0.4)" }}
+            onClick={() => onQuickInvestigate(player.id)} // 調査は別ボタン
+            title="視点切り替えや調査"
+          >
+            調査
+          </button>
+        ) : (
+          <button
+            className="quick-btn"
+            onClick={() => onQuickInvestigate(player.id)}
+            title="調査結果を入力"
+          >
+            調査
+          </button>
+        )}
         <button
           className="quick-btn quick-btn-lie"
           onClick={() => onQuickLie(player.id)}
           title="このプレイヤーが嘘をついているとマーク"
         >
           嘘看破
-        </button>
-        <button
-          className="quick-btn"
-          onClick={() => onQuickInvestigate(player.id)}
-          title="調査結果を入力"
-        >
-          調査
         </button>
         {status === "ALIVE" && (
           <>
@@ -176,6 +187,7 @@ export function PlayerCard({
           </>
         )}
       </div>
+
     </div>
   );
 }

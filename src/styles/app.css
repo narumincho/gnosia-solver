@@ -652,8 +652,8 @@ body {
 
 /* Pending Reports Box inside Timeline */
 .pending-reports-box {
-  background: rgba(56, 189, 248, 0.05);
-  border: 1px dashed rgba(56, 189, 248, 0.35);
+  background: rgb(56 189 248 / 5%);
+  border: 1px dashed rgb(56 189 248 / 35%);
   border-radius: 8px;
   padding: 0.65rem 0.75rem;
   margin: 0.5rem 0;
@@ -673,8 +673,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(15, 23, 42, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgb(15 23 42 / 50%);
+  border: 1px solid rgb(255 255 255 / 7%);
   padding: 0.35rem 0.6rem;
   border-radius: 6px;
   margin-bottom: 0.35rem;
@@ -694,8 +694,8 @@ body {
 }
 
 .btn-engineer-report {
-  background: rgba(6, 182, 212, 0.15);
-  border: 1px solid rgba(6, 182, 212, 0.4);
+  background: rgb(6 182 212 / 15%);
+  border: 1px solid rgb(6 182 212 / 40%);
   color: #22d3ee;
   font-size: 0.75rem;
   padding: 0.25rem 0.6rem;
@@ -706,12 +706,12 @@ body {
 }
 
 .btn-engineer-report:hover {
-  background: rgba(6, 182, 212, 0.28);
+  background: rgb(6 182 212 / 28%);
 }
 
 .btn-doctor-report {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: rgb(16 185 129 / 15%);
+  border: 1px solid rgb(16 185 129 / 40%);
   color: #34d399;
   font-size: 0.75rem;
   padding: 0.25rem 0.6rem;
@@ -722,7 +722,7 @@ body {
 }
 
 .btn-doctor-report:hover {
-  background: rgba(16, 185, 129, 0.28);
+  background: rgb(16 185 129 / 28%);
 }
 
 /* Timeline Bottom Action Bar */
@@ -732,7 +732,7 @@ body {
   gap: 0.5rem;
   margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgb(255 255 255 / 10%);
 }
 
 .btn-add-event-bottom {
@@ -745,13 +745,13 @@ body {
   font-size: 0.95rem;
   font-weight: 700;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.25);
+  box-shadow: 0 2px 8px rgb(56 189 248 / 25%);
 }
 
 .btn-night-action {
-  background: rgba(168, 85, 247, 0.12);
+  background: rgb(168 85 247 / 12%);
   color: #c084fc;
-  border: 1px solid rgba(168, 85, 247, 0.35);
+  border: 1px solid rgb(168 85 247 / 35%);
   padding: 0.35rem 0.5rem;
   font-size: 0.8rem;
   border-radius: 6px;
@@ -761,14 +761,14 @@ body {
 }
 
 .btn-night-action:hover {
-  background: rgba(168, 85, 247, 0.25);
+  background: rgb(168 85 247 / 25%);
   border-color: #c084fc;
 }
 
 .btn-gnosia-action {
-  background: rgba(244, 63, 94, 0.12);
+  background: rgb(244 63 94 / 12%);
   color: #fb7185;
-  border: 1px solid rgba(244, 63, 94, 0.35);
+  border: 1px solid rgb(244 63 94 / 35%);
   padding: 0.35rem 0.5rem;
   font-size: 0.8rem;
   border-radius: 6px;
@@ -778,7 +778,7 @@ body {
 }
 
 .btn-gnosia-action:hover {
-  background: rgba(244, 63, 94, 0.25);
+  background: rgb(244 63 94 / 25%);
   border-color: #fb7185;
 }
 

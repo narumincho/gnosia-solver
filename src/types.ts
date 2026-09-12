@@ -145,7 +145,9 @@ export type EventType =
   | "DEFINITE_LIE"      // 嘘をついていることが確定
   | "VOTE"              // コールドスリープ (投票)
   | "ATTACK"            // 襲撃・消滅 (夜)
+  | "NO_ATTACK"         // 襲撃なし (守護天使護衛 / バグ襲撃)
   | "NOTE";             // メモ・その他
+
 
 // 調査・ドクター判定結果
 export type ReportJudgement = "HUMAN" | "GNOSIA";
@@ -194,13 +196,21 @@ export interface AttackEvent extends BaseGameEvent {
   attackedPlayerId: string; // 消滅したプレイヤー
 }
 
+export interface NoAttackEvent extends BaseGameEvent {
+  type: "NO_ATTACK";
+  guardedPlayerId?: string; // 守護天使が護衛した対象（任意）
+  note?: string; // メモ（「犠牲者なし」「バグ襲撃？」「天使護衛成功？」など）
+}
+
 export type GameEvent =
   | COEvent
   | InvestigationEvent
   | DoctorReportEvent
   | DefiniteLieEvent
   | VoteEvent
-  | AttackEvent;
+  | AttackEvent
+  | NoAttackEvent;
+
 
 // 1つの配役パターン (World)
 export type RoleAssignment = Record<string, Role>;
@@ -237,6 +247,9 @@ export interface SessionData {
   events: GameEvent[];
   currentDay: number;
   perspective: PerspectiveOption;
+  myRole?: Role;
+  perspectiveRoles?: Record<string, Role>;
   playerStatuses?: Record<string, PlayerStatus>;
 }
+
 

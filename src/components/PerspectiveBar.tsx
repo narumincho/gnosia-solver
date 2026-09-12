@@ -1,18 +1,22 @@
-import { Eye, UserCheck } from "lucide-preact";
+import { Eye, UserCheck, Shield } from "lucide-preact";
 import { GameSettings, PerspectiveOption, Role, ROLE_DEFINITIONS } from "../types.ts";
 
 interface PerspectiveBarProps {
   settings: GameSettings;
   perspective: PerspectiveOption;
-  onSelectPerspective: (opt: PerspectiveOption) => void;
+  myRole?: Role;
+  onSelectPerspective: (id: string, name: string) => void;
   onSelectRole: (role?: Role) => void;
+  onSetMyRole: (role?: Role) => void;
 }
 
 export function PerspectiveBar({
   settings,
   perspective,
+  myRole,
   onSelectPerspective,
   onSelectRole,
+  onSetMyRole,
 }: PerspectiveBarProps) {
   const isObjective = perspective.id === "objective";
 
@@ -35,57 +39,80 @@ export function PerspectiveBar({
           <span>推論視点 (Perspective)</span>
         </div>
 
-        {!isObjective && (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-              {perspective.name} の仮定役職:
+        <div style={{ display: "flex", alignItems: "center", gap: "1.2rem", flexWrap: "wrap" }}>
+          {/* 自分の役職（常設設定） */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", background: "rgba(56, 189, 248, 0.1)", padding: "0.25rem 0.6rem", borderRadius: "6px", border: "1px solid rgba(56, 189, 248, 0.25)" }}>
+            <Shield size={14} color="var(--text-accent)" />
+            <span style={{ fontSize: "0.8rem", color: "var(--text-accent)", fontWeight: "bold" }}>
+              自分の本当の役職:
             </span>
             <select
               className="role-lock-select"
-              value={perspective.role || ""}
+              style={{ padding: "0.25rem 0.5rem" }}
+              value={myRole || ""}
               onChange={(e) => {
                 const val = (e.target as HTMLSelectElement).value;
-                onSelectRole(val ? (val as Role) : undefined);
+                onSetMyRole(val ? (val as Role) : undefined);
               }}
             >
-              <option value="">(役職を指定しない・候補すべて)</option>
+              <option value="">(未定・指定なし)</option>
               {availableRoles.map((r) => (
                 <option key={r} value={r}>
-                  {ROLE_DEFINITIONS[r].name} ({ROLE_DEFINITIONS[r].side === "HUMAN" ? "人間" : "敵対"})
+                  {ROLE_DEFINITIONS[r].name}
                 </option>
               ))}
             </select>
           </div>
-        )}
+
+          {/* 選択中キャラの仮定役職 */}
+          {!isObjective && (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                {perspective.name} の仮定役職:
+              </span>
+              <select
+                className="role-lock-select"
+                value={perspective.role || ""}
+                onChange={(e) => {
+                  const val = (e.target as HTMLSelectElement).value;
+                  onSelectRole(val ? (val as Role) : undefined);
+                }}
+              >
+                <option value="">(指定なし・候補すべて)</option>
+                {availableRoles.map((r) => (
+                  <option key={r} value={r}>
+                    {ROLE_DEFINITIONS[r].name} ({ROLE_DEFINITIONS[r].side === "HUMAN" ? "人間" : "敵対"})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="perspective-selector-row">
         <button
           className={`perspective-btn ${isObjective ? "active" : ""}`}
-          onClick={() =>
-            onSelectPerspective({ id: "objective", name: "全体 (客観神視点)" })
-          }
+          onClick={() => onSelectPerspective("objective", "全体 (客観神視点)")}
         >
           全体 (客観神視点)
         </button>
 
-        {settings.players.map((p) => (
-          <button
-            key={p.id}
-            className={`perspective-btn ${
-              perspective.id === p.id ? "active" : ""
-            }`}
-            onClick={() =>
-              onSelectPerspective({
-                id: p.id,
-                name: p.name,
-                role: perspective.id === p.id ? perspective.role : undefined,
-              })
-            }
-          >
-            {p.name} 視点
-          </button>
-        ))}
+        {settings.players.map((p) => {
+          const isMe = p.id === "player";
+          return (
+            <button
+              key={p.id}
+              className={`perspective-btn ${
+                perspective.id === p.id ? "active" : ""
+              }`}
+              onClick={() => onSelectPerspective(p.id, p.name)}
+            >
+              {p.name} 視点
+              {isMe && myRole ? ` (${ROLE_DEFINITIONS[myRole].name})` : ""}
+            </button>
+          );
+        })}
       </div>
 
       <div className="status-summary">

@@ -18,7 +18,10 @@ export function App() {
     currentDay,
     setCurrentDay,
     perspective,
-    setPerspective,
+    selectPerspective,
+    updatePerspectiveRole,
+    myRole,
+    setMyRole,
     playerStatuses,
     solverResult,
     claimedRoles,
@@ -29,6 +32,7 @@ export function App() {
     exportSession,
     importSession,
   } = useGameStore();
+
 
   // モーダル管理
   const [isSetupOpen, setIsSetupOpen] = useState(false);
@@ -82,9 +86,12 @@ export function App() {
       <PerspectiveBar
         settings={settings}
         perspective={perspective}
-        onSelectPerspective={setPerspective}
-        onSelectRole={(role) => setPerspective((prev) => ({ ...prev, role }))}
+        myRole={myRole}
+        onSelectPerspective={selectPerspective}
+        onSelectRole={updatePerspectiveRole}
+        onSetMyRole={setMyRole}
       />
+
 
       <div className="main-grid">
         <main className="main-content">

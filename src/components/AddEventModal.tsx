@@ -94,6 +94,14 @@ export function AddEventModal({
           attackedPlayerId: selectedPlayer,
         });
         break;
+      case "NO_ATTACK":
+        onAddEvent({
+          day,
+          type: "NO_ATTACK",
+          guardedPlayerId: selectedPlayer ? selectedPlayer : undefined,
+          note: lieReason,
+        });
+        break;
     }
 
     onClose();
@@ -131,7 +139,14 @@ export function AddEventModal({
               <select
                 className="form-select"
                 value={eventType}
-                onChange={(e) => setEventType((e.target as HTMLSelectElement).value as EventType)}
+                onChange={(e) => {
+                  const val = (e.target as HTMLSelectElement).value as EventType;
+                  setEventType(val);
+                  if (val === "NO_ATTACK") {
+                    setSelectedPlayer("");
+                    setLieReason("夜間の犠牲者なし (天使護衛成功 または バグ襲撃)");
+                  }
+                }}
               >
                 <option value="DEFINITE_LIE">【重要】嘘をついていることが確定</option>
                 <option value="CO">役職名乗り出 (CO)</option>
@@ -139,9 +154,11 @@ export function AddEventModal({
                 <option value="DOCTOR_REPORT">ドクター医療報告</option>
                 <option value="VOTE">コールドスリープ (投票)</option>
                 <option value="ATTACK">夜間に消滅 (襲撃死)</option>
+                <option value="NO_ATTACK">夜間の襲撃なし (犠牲者ゼロ / 護衛・バグ)</option>
               </select>
             </div>
           </div>
+
 
           {/* 嘘をついていることが確定 */}
           {eventType === "DEFINITE_LIE" && (
@@ -343,6 +360,46 @@ export function AddEventModal({
               </select>
             </div>
           )}
+
+          {/* 襲撃なし (NO_ATTACK) */}
+          {eventType === "NO_ATTACK" && (
+            <div style={{ background: "rgba(168, 85, 247, 0.08)", padding: "1rem", borderRadius: "8px", border: "1px solid rgba(168, 85, 247, 0.3)", marginBottom: "1rem" }}>
+              <div style={{ color: "#c084fc", fontSize: "0.85rem", fontWeight: "bold", marginBottom: "0.75rem" }}>
+                夜間に誰も消滅しませんでした (犠牲者ゼロ)
+              </div>
+              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.75rem" }}>
+                守護天使が護衛に成功したか、またはグノーシアがバグを襲撃した可能性があります。
+              </p>
+
+              <div className="form-group">
+                <label className="form-label">護衛対象の人物 (守護天使視点などで分かっている場合、任意)</label>
+                <select
+                  className="form-select"
+                  value={selectedPlayer}
+                  onChange={(e) => setSelectedPlayer((e.target as HTMLSelectElement).value)}
+                >
+                  <option value="">(不明・指定なし: 単に犠牲者なし)</option>
+                  {settings.players.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} (護衛されたため非グノーシア確定)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">メモ</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={lieReason}
+                  onInput={(e) => setLieReason((e.target as HTMLInputElement).value)}
+                  placeholder="例: 天使護衛成功？ / バグ襲撃？"
+                />
+              </div>
+            </div>
+          )}
+
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem" }}>
             <button type="button" className="btn" onClick={onClose}>

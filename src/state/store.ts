@@ -29,11 +29,54 @@ export function useGameStore() {
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [currentDay, setCurrentDay] = useState<number>(1);
+  const [perspectiveRoles, setPerspectiveRoles] = useState<Record<string, Role>>({});
+  const [myRole, setMyRoleState] = useState<Role | undefined>(undefined);
   const [perspective, setPerspective] = useState<PerspectiveOption>({
     id: "objective",
     name: "全体 (客観神視点)",
   });
   const [playerStatuses, setPlayerStatuses] = useState<Record<string, PlayerStatus>>({});
+
+  // 視点選択ハンドラ（保存されている役職を自動復元）
+  const selectPerspective = (id: string, name: string) => {
+    if (id === "objective") {
+      setPerspective({ id: "objective", name: "全体 (客観神視点)" });
+    } else {
+      const savedRole = perspectiveRoles[id] || (id === "player" ? myRole : undefined);
+      setPerspective({ id, name, role: savedRole });
+    }
+  };
+
+  // 視点プレイヤーの役職変更
+  const updatePerspectiveRole = (role?: Role) => {
+    setPerspective((prev) => ({ ...prev, role }));
+    if (perspective.id !== "objective") {
+      setPerspectiveRoles((prev) => {
+        const next = { ...prev };
+        if (role) next[perspective.id] = role;
+        else delete next[perspective.id];
+        return next;
+      });
+      if (perspective.id === "player") {
+        setMyRoleState(role);
+      }
+    }
+  };
+
+  // 自分の役職を直接設定
+  const setMyRole = (role?: Role) => {
+    setMyRoleState(role);
+    setPerspectiveRoles((prev) => {
+      const next = { ...prev };
+      if (role) next["player"] = role;
+      else delete next["player"];
+      return next;
+    });
+    if (perspective.id === "player") {
+      setPerspective((prev) => ({ ...prev, role }));
+    }
+  };
+
 
   // プレイヤーの生存/状態計算 (イベントから自動推定 or 手動オーバーライド)
   const computedStatuses = useMemo(() => {
@@ -109,6 +152,8 @@ export function useGameStore() {
       setCurrentDay(1);
       setPlayerStatuses({});
       setPerspective({ id: "objective", name: "全体 (客観神視点)" });
+      setPerspectiveRoles({});
+      setMyRoleState(undefined);
     }
   };
 
@@ -121,6 +166,8 @@ export function useGameStore() {
       events,
       currentDay,
       perspective,
+      myRole,
+      perspectiveRoles,
       playerStatuses,
     };
   };
@@ -148,6 +195,12 @@ export function useGameStore() {
       if (data.perspective && typeof data.perspective.id === "string") {
         setPerspective(data.perspective);
       }
+      if (data.myRole) {
+        setMyRoleState(data.myRole);
+      }
+      if (data.perspectiveRoles && typeof data.perspectiveRoles === "object") {
+        setPerspectiveRoles(data.perspectiveRoles);
+      }
       if (data.playerStatuses && typeof data.playerStatuses === "object") {
         setPlayerStatuses(data.playerStatuses);
       }
@@ -167,6 +220,10 @@ export function useGameStore() {
     setCurrentDay,
     perspective,
     setPerspective,
+    selectPerspective,
+    updatePerspectiveRole,
+    myRole,
+    setMyRole,
     playerStatuses: computedStatuses,
     setPlayerStatuses,
     solverResult,
@@ -179,4 +236,5 @@ export function useGameStore() {
     importSession,
   };
 }
+
 

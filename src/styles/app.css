@@ -513,9 +513,15 @@ body {
   border-left: 3px solid #fb7185;
 }
 
+.event-card.event-angel {
+  border-left: 3px solid #a855f7;
+  background: rgba(168, 85, 247, 0.08);
+}
+
 .event-card.event-vote {
   border-left: 3px solid #60a5fa;
 }
+
 
 .event-meta {
   display: flex;

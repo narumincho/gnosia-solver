@@ -95,6 +95,23 @@ export function EventTimeline({
           </span>
         );
       }
+      case "NO_ATTACK": {
+        return (
+          <span>
+            夜間の<strong>【襲撃なし】</strong> (犠牲者ゼロ)
+            {ev.guardedPlayerId && (
+              <span style={{ display: "block", color: "var(--color-angel)", fontSize: "0.75rem" }}>
+                護衛対象: <strong>{getPlayerName(ev.guardedPlayerId)}</strong> (非グノーシア確定)
+              </span>
+            )}
+            {ev.note && (
+              <span style={{ color: "var(--text-muted)", fontSize: "0.75rem", display: "block" }}>
+                ({ev.note})
+              </span>
+            )}
+          </span>
+        );
+      }
       default:
         return <span>不明なイベント</span>;
     }
@@ -111,12 +128,15 @@ export function EventTimeline({
         return "event-investigate";
       case "ATTACK":
         return "event-attack";
+      case "NO_ATTACK":
+        return "event-angel";
       case "VOTE":
         return "event-vote";
       default:
         return "";
     }
   };
+
 
   return (
     <div className="sidebar-panel">

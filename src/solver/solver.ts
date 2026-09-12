@@ -260,7 +260,10 @@ export class GnosiaSolver {
     const engineerCOs = new Set<string>();
     const doctorCOs = new Set<string>();
     const attackedPlayers = new Set<string>();
+    const guardedTargetPlayers = new Set<string>();
+    let hasNoAttackEvent = false;
     const definiteLiars = new Set<string>();
+
 
     for (const ev of this.events) {
       if (ev.type === "CO") {
@@ -269,12 +272,28 @@ export class GnosiaSolver {
         if (ev.claimedRole === "DOCTOR") doctorCOs.add(ev.playerId);
       } else if (ev.type === "ATTACK") {
         attackedPlayers.add(ev.attackedPlayerId);
+      } else if (ev.type === "NO_ATTACK") {
+        hasNoAttackEvent = true;
+        if (ev.guardedPlayerId) {
+          guardedTargetPlayers.add(ev.guardedPlayerId);
+        }
       } else if (ev.type === "DEFINITE_LIE") {
-        // 視点フィルタ: witnessId が指定されていて、かつ視点プレイヤーが別人の場合どう扱うか
-        // プレイヤー自身が視点の場合で自分以外の目撃で共有されてないなら除外できるが、
-        // グノーシアでは「嘘をついている」が全体周知されたイベントとして記録されることが多いため、デフォルトで適用
         definiteLiars.add(ev.targetId);
       }
+    }
+
+    // 襲撃なしの可能性チェック
+    if (hasNoAttackEvent && !this.settings.roles.hasGuardianAngel && !this.settings.roles.hasBug) {
+      return {
+        totalPossibleWorlds: 0,
+        roleProbabilities: {},
+        gnosiaProbabilities: {},
+        enemyProbabilities: {},
+        definiteRoles: {},
+        hasContradiction: true,
+        contradictionReason: "守護天使もバグも存在しない設定のため、襲撃なし（犠牲者なし）は発生し得ません。",
+        sampleWorlds: [],
+      };
     }
 
     // 襲撃されたプレイヤーは GNOSIA ではない
@@ -283,6 +302,14 @@ export class GnosiaSolver {
         candidateRoles[pid].delete("GNOSIA");
       }
     }
+
+    // 護衛された襲撃対象プレイヤーは GNOSIA ではない
+    for (const pid of guardedTargetPlayers) {
+      if (candidateRoles[pid]) {
+        candidateRoles[pid].delete("GNOSIA");
+      }
+    }
+
 
     // 嘘つき確定者は人間陣営（CREW, ENGINEER, DOCTOR, GUARDIAN_ANGEL, GUARD_DUTY）ではない
     for (const pid of definiteLiars) {
@@ -400,10 +427,13 @@ export class GnosiaSolver {
         involvedPlayerIds.add(ev.targetId);
       } else if (ev.type === "ATTACK") {
         involvedPlayerIds.add(ev.attackedPlayerId);
+      } else if (ev.type === "NO_ATTACK") {
+        if (ev.guardedPlayerId) involvedPlayerIds.add(ev.guardedPlayerId);
       } else if (ev.type === "VOTE") {
         involvedPlayerIds.add(ev.frozenPlayerId);
       }
     }
+
 
     // candidateRolesのサイズが最大のグループ（無制約のデフォルト乗員候補）を特定
     let maxCandidateSize = 0;
@@ -490,10 +520,16 @@ export class GnosiaSolver {
           if (liarRole !== undefined && isHumanSide(liarRole)) {
             return false;
           }
+        } else if (ev.type === "NO_ATTACK") {
+          if (ev.guardedPlayerId) {
+            const targetRole = assignment[ev.guardedPlayerId];
+            if (targetRole === "GNOSIA") return false;
+          }
         }
       }
       return true;
     };
+
 
     const backtrackConstrained = (index: number) => {
       if (index === constrainedPlayerIds.length) {

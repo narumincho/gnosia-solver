@@ -1,13 +1,13 @@
 // 役職の定義
 export type Role =
-  | "CREW"           // 乗員 (人間陣営)
-  | "GNOSIA"         // グノーシア (グノーシア陣営)
-  | "ENGINEER"       // エンジニア (人間陣営)
-  | "DOCTOR"         // ドクター (人間陣営)
+  | "CREW" // 乗員 (人間陣営)
+  | "GNOSIA" // グノーシア (グノーシア陣営)
+  | "ENGINEER" // エンジニア (人間陣営)
+  | "DOCTOR" // ドクター (人間陣営)
   | "GUARDIAN_ANGEL" // 守護天使 (人間陣営)
-  | "GUARD_DUTY"     // 留守番 (人間陣営・2人ペア)
-  | "AC_FOLLOWER"    // AC主義者 (グノーシア陣営・人間判定)
-  | "BUG";           // バグ (第3陣営・人間判定・調査で蒸発)
+  | "GUARD_DUTY" // 留守番 (人間陣営・2人ペア)
+  | "AC_FOLLOWER" // AC主義者 (グノーシア陣営・人間判定)
+  | "BUG"; // バグ (第3陣営・人間判定・調査で蒸発)
 
 export interface RoleInfo {
   id: Role;
@@ -139,18 +139,17 @@ export type PlayerStatus = "ALIVE" | "FROZEN" | "ATTACKED" | "DISAPPEARED";
 
 // イベント種別
 export type EventType =
-  | "CO"                // 役職名乗り出 (ENGINEER, DOCTOR, GUARD_DUTY)
-  | "INVESTIGATION"     // エンジニア調査結果
-  | "DOCTOR_REPORT"     // ドクター判定結果
-  | "DEFINITE_LIE"      // 嘘をついていることが確定
-  | "VOTE"              // コールドスリープ (投票)
-  | "DISAPPEARANCE"     // 消滅もしくは平和 (夜の出来事: 0〜2人消滅)
-  | "GNOSIA_ATTACK"     // グノーシア夜間襲撃対象指定 (自分G視点)
-  | "ATTACK"            // 襲撃・消滅 (夜) - 後方互換用
-  | "NO_ATTACK"         // 襲撃なし (守護天使護衛 / バグ襲撃) - 後方互換用
-  | "DAY_CHANGE"        // 翌日へ進行 (日付切り替え)
-  | "NOTE";             // メモ・その他
-
+  | "CO" // 役職名乗り出 (ENGINEER, DOCTOR, GUARD_DUTY)
+  | "INVESTIGATION" // エンジニア調査結果
+  | "DOCTOR_REPORT" // ドクター判定結果
+  | "DEFINITE_LIE" // 嘘をついていることが確定
+  | "VOTE" // コールドスリープ (投票)
+  | "DISAPPEARANCE" // 消滅もしくは平和 (夜の出来事: 0〜2人消滅)
+  | "GNOSIA_ATTACK" // グノーシア夜間襲撃対象指定 (自分G視点)
+  | "ATTACK" // 襲撃・消滅 (夜) - 後方互換用
+  | "NO_ATTACK" // 襲撃なし (守護天使護衛 / バグ襲撃) - 後方互換用
+  | "DAY_CHANGE" // 翌日へ進行 (日付切り替え)
+  | "NOTE"; // メモ・その他
 
 // 調査・ドクター判定結果
 export type ReportJudgement = "HUMAN" | "GNOSIA";
@@ -247,7 +246,6 @@ export type NewGameEvent =
   | (Omit<NoAttackEvent, "id" | "day"> & { day?: number })
   | (Omit<DayChangeEvent, "id" | "day"> & { day?: number });
 
-
 // 1つの配役パターン (World)
 export type RoleAssignment = Record<string, Role>;
 
@@ -287,5 +285,3 @@ export interface SessionData {
   perspectiveRoles?: Record<string, Role>;
   playerStatuses?: Record<string, PlayerStatus>;
 }
-
-

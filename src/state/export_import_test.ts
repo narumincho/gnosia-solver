@@ -76,9 +76,7 @@ Deno.test("Event Update - イベントの編集とソルバー再計算", () => 
 
   // イベント編集 (沙明の調査結果を HUMAN -> GNOSIA に変更)
   const updatedEvents = events.map((e) =>
-    e.id === "ev-2"
-      ? { ...e, result: "GNOSIA" as const }
-      : e
+    e.id === "ev-2" ? { ...e, result: "GNOSIA" as const } : e
   );
 
   const solver2 = new GnosiaSolver(DEFAULT_SETTINGS, updatedEvents);
@@ -93,10 +91,23 @@ Deno.test("Event Update - イベントの編集とソルバー再計算", () => 
 
 Deno.test("Event Order & recalculateDays - 並び順からのDay自動計算と並び替え", () => {
   const initialEvents: GameEvent[] = [
-    { id: "1", day: 0, type: "CO", playerId: "player", claimedRole: "ENGINEER" },
+    {
+      id: "1",
+      day: 0,
+      type: "CO",
+      playerId: "player",
+      claimedRole: "ENGINEER",
+    },
     { id: "2", day: 0, type: "VOTE", frozenPlayerId: "raqio" },
     { id: "3", day: 0, type: "ATTACK", attackedPlayerId: "gina" },
-    { id: "4", day: 0, type: "INVESTIGATION", investigatorId: "player", targetId: "shigemichi", result: "HUMAN" },
+    {
+      id: "4",
+      day: 0,
+      type: "INVESTIGATION",
+      investigatorId: "player",
+      targetId: "shigemichi",
+      result: "HUMAN",
+    },
   ];
 
   const calculated = recalculateDays(initialEvents);
@@ -110,7 +121,12 @@ Deno.test("Event Order & recalculateDays - 並び順からのDay自動計算と�
   assertEquals(calculated[3].day, 2);
 
   // イベント4 (INVESTIGATION) を イベント3 (ATTACK) の前（昼間）へ移動
-  const reordered = [calculated[0], calculated[1], calculated[3], calculated[2]];
+  const reordered = [
+    calculated[0],
+    calculated[1],
+    calculated[3],
+    calculated[2],
+  ];
   const reCalculated = recalculateDays(reordered);
   // 移動後は ATTACK の前なので Day 1 になる
   assertEquals(reCalculated[2].id, "4");
@@ -121,14 +137,30 @@ Deno.test("Event Order & recalculateDays - 並び順からのDay自動計算と�
 
   // DISAPPEARANCE（消滅もしくは平和）でも翌日に進むこと
   const disEvents: GameEvent[] = [
-    { id: "1", day: 0, type: "CO", playerId: "player", claimedRole: "ENGINEER" },
+    {
+      id: "1",
+      day: 0,
+      type: "CO",
+      playerId: "player",
+      claimedRole: "ENGINEER",
+    },
     { id: "2", day: 0, type: "VOTE", frozenPlayerId: "stella" },
-    { id: "3", day: 0, type: "DISAPPEARANCE", disappearedPlayerIds: ["remnan"] },
-    { id: "4", day: 0, type: "INVESTIGATION", investigatorId: "player", targetId: "setsu", result: "HUMAN" },
+    {
+      id: "3",
+      day: 0,
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: ["remnan"],
+    },
+    {
+      id: "4",
+      day: 0,
+      type: "INVESTIGATION",
+      investigatorId: "player",
+      targetId: "setsu",
+      result: "HUMAN",
+    },
   ];
   const disCalculated = recalculateDays(disEvents);
   assertEquals(disCalculated[2].day, 1);
   assertEquals(disCalculated[3].day, 2);
 });
-
-

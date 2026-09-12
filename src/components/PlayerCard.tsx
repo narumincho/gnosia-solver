@@ -1,4 +1,11 @@
-import { AlertTriangle, ShieldAlert, Skull, Snowflake, Target, User } from "lucide-preact";
+import {
+  AlertTriangle,
+  ShieldAlert,
+  Skull,
+  Snowflake,
+  Target,
+  User,
+} from "lucide-preact";
 import {
   PlayerStatus,
   Role,
@@ -60,7 +67,11 @@ export function PlayerCard({
       case "FROZEN":
         return <span className="player-status-badge status-frozen">冷凍</span>;
       case "ATTACKED":
-        return <span className="player-status-badge status-attacked">消滅</span>;
+        return (
+          <span className="player-status-badge status-attacked">
+            消滅
+          </span>
+        );
       default:
         return <span className="player-status-badge status-alive">生存</span>;
     }
@@ -72,7 +83,9 @@ export function PlayerCard({
         <div className="player-name-row">
           <User
             size={18}
-            color={isCurrentPerspective ? "var(--text-accent)" : "var(--text-muted)"}
+            color={isCurrentPerspective
+              ? "var(--text-accent)"
+              : "var(--text-muted)"}
           />
           <span className="player-name">{player.name}</span>
           {isCurrentPerspective && (
@@ -85,7 +98,14 @@ export function PlayerCard({
       </div>
 
       {/* COバッジや嘘確定バッジ */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginBottom: "0.6rem" }}>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0.35rem",
+          marginBottom: "0.6rem",
+        }}
+      >
         {claimedRoles.map((r) => (
           <span key={r} className={`badge ${ROLE_DEFINITIONS[r].badgeClass}`}>
             {ROLE_DEFINITIONS[r].name}CO
@@ -93,7 +113,10 @@ export function PlayerCard({
         ))}
 
         {definiteRole && (
-          <span className={`badge ${ROLE_DEFINITIONS[definiteRole].badgeClass}`} style={{ boxShadow: "0 0 8px currentColor" }}>
+          <span
+            className={`badge ${ROLE_DEFINITIONS[definiteRole].badgeClass}`}
+            style={{ boxShadow: "0 0 8px currentColor" }}
+          >
             確定: {ROLE_DEFINITIONS[definiteRole].name}
           </span>
         )}
@@ -101,11 +124,17 @@ export function PlayerCard({
         {definiteLieReasons && definiteLieReasons.length > 0 && (
           <span
             className="badge"
-            style={{ background: "rgba(244, 63, 94, 0.3)", color: "#fb7185", border: "1px solid #f43f5e" }}
+            style={{
+              background: "rgba(244, 63, 94, 0.3)",
+              color: "#fb7185",
+              border: "1px solid #f43f5e",
+            }}
             title={definiteLieReasons.join("\n")}
           >
             <AlertTriangle size={12} />
-            {definiteLieReasons.some((r) => r.includes("自分")) ? "嘘つき確定" : "密告あり"}
+            {definiteLieReasons.some((r) => r.includes("自分"))
+              ? "嘘つき確定"
+              : "密告あり"}
           </span>
         )}
       </div>
@@ -114,7 +143,16 @@ export function PlayerCard({
       <div className="role-stacked-bar-container">
         <div className="meter-labels">
           <span className="meter-val-enemy">
-            敵対: <strong style={{ color: enemyPct > 50 ? "var(--color-gnosia)" : "var(--text-main)" }}>{enemyPct}%</strong>
+            敵対:{" "}
+            <strong
+              style={{
+                color: enemyPct > 50
+                  ? "var(--color-gnosia)"
+                  : "var(--text-main)",
+              }}
+            >
+              {enemyPct}%
+            </strong>
           </span>
           <span className="meter-val-gnosia">
             G確率: {gnosiaPct}%
@@ -140,7 +178,11 @@ export function PlayerCard({
                   }}
                   title={`${def.name}: ${pct}%`}
                 >
-                  {pct >= 14 ? `${def.shortName} ${pct}%` : pct >= 7 ? def.shortName : ""}
+                  {pct >= 14
+                    ? `${def.shortName} ${pct}%`
+                    : pct >= 7
+                    ? def.shortName
+                    : ""}
                 </div>
               );
             })}
@@ -154,7 +196,10 @@ export function PlayerCard({
             <button
               className="quick-btn"
               onClick={() => onQuickInvestigate(player.id)}
-              style={{ color: "var(--color-engineer)", borderColor: "rgba(56, 189, 248, 0.4)" }}
+              style={{
+                color: "var(--color-engineer)",
+                borderColor: "rgba(56, 189, 248, 0.4)",
+              }}
               title="このエンジニアの調査報告を作成"
             >
               🔍 調査
@@ -164,7 +209,10 @@ export function PlayerCard({
             <button
               className="quick-btn"
               onClick={() => onQuickDoctorReport?.(player.id)}
-              style={{ color: "var(--color-doctor)", borderColor: "rgba(52, 211, 153, 0.4)" }}
+              style={{
+                color: "var(--color-doctor)",
+                borderColor: "rgba(52, 211, 153, 0.4)",
+              }}
               title="このドクターの医療報告を作成"
             >
               🩺 報告
@@ -184,11 +232,15 @@ export function PlayerCard({
           >
             <Skull size={11} /> 消滅
           </button>
-          {myRole === "GNOSIA" && player.id !== "player" && onQuickGnosiaAttack && (
+          {myRole === "GNOSIA" && player.id !== "player" &&
+            onQuickGnosiaAttack && (
             <button
               className="quick-btn"
               onClick={() => onQuickGnosiaAttack(player.id)}
-              style={{ color: "#fb7185", borderColor: "rgba(244, 63, 94, 0.4)" }}
+              style={{
+                color: "#fb7185",
+                borderColor: "rgba(244, 63, 94, 0.4)",
+              }}
               title="この乗員を夜の襲撃対象に指定 (グノーシア視点)"
             >
               <Target size={11} /> 襲撃

@@ -36,16 +36,21 @@ export function App() {
     importSession,
   } = useGameStore();
 
-
   // モーダル管理
   const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [isWorldsOpen, setIsWorldsOpen] = useState(false);
   const [isExportImportOpen, setIsExportImportOpen] = useState(false);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<GameEvent | undefined>(undefined);
+  const [editingEvent, setEditingEvent] = useState<GameEvent | undefined>(
+    undefined,
+  );
 
-  const [addEventInitialType, setAddEventInitialType] = useState<EventType>("DEFINITE_LIE");
-  const [addEventInitialPlayerId, setAddEventInitialPlayerId] = useState<string | undefined>(undefined);
+  const [addEventInitialType, setAddEventInitialType] = useState<EventType>(
+    "DEFINITE_LIE",
+  );
+  const [addEventInitialPlayerId, setAddEventInitialPlayerId] = useState<
+    string | undefined
+  >(undefined);
 
   // クイックアクション用ハンドラ
   const handleQuickLie = (playerId: string) => {
@@ -100,7 +105,6 @@ export function App() {
         possibleWorldsCount={solverResult.totalPossibleWorlds}
       />
 
-
       <PerspectiveBar
         settings={settings}
         perspective={perspective}
@@ -109,7 +113,6 @@ export function App() {
         onSelectRole={updatePerspectiveRole}
         onSetMyRole={setMyRole}
       />
-
 
       <div className="main-grid">
         <main className="main-content">
@@ -120,10 +123,8 @@ export function App() {
             <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
               {settings.players.length}名中 生存:{" "}
               <strong style={{ color: "#34d399" }}>
-                {
-                  Object.values(playerStatuses).filter((s) => s === "ALIVE")
-                    .length
-                }名
+                {Object.values(playerStatuses).filter((s) => s === "ALIVE")
+                  .length}名
               </strong>
             </span>
           </div>
@@ -209,7 +210,6 @@ export function App() {
         myRole={myRole}
       />
 
-
       <WorldListModal
         isOpen={isWorldsOpen}
         onClose={() => setIsWorldsOpen(false)}
@@ -227,4 +227,3 @@ export function App() {
     </div>
   );
 }
-

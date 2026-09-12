@@ -1,4 +1,4 @@
-import { Settings, RefreshCw, Globe, ArrowUpDown } from "lucide-preact";
+import { ArrowUpDown, Globe, RefreshCw, Settings } from "lucide-preact";
 
 interface HeaderProps {
   onOpenSettings: () => void;
@@ -17,10 +17,7 @@ export function Header({
 }: HeaderProps) {
   return (
     <header className="header">
-      <div className="logo-area">
-        <h1 className="logo-title">GNOSIA SOLVER</h1>
-        <span className="logo-subtitle">電脳人狼推理支援ツール</span>
-      </div>
+      <h1 className="logo-title">GNOSIA SOLVER</h1>
 
       <div className="header-actions">
         <button
@@ -29,7 +26,9 @@ export function Header({
           title="成立する配役パターン一覧を表示"
         >
           <Globe size={16} />
-          <span>可能世界: <strong>{possibleWorldsCount}</strong> 通り</span>
+          <span>
+            可能世界: <strong>{possibleWorldsCount}</strong> 通り
+          </span>
         </button>
 
         <button
@@ -49,7 +48,6 @@ export function Header({
           <Settings size={16} />
           <span>ゲーム設定</span>
         </button>
-
 
         <button
           className="btn btn-danger btn-sm"

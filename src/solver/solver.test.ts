@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { GnosiaSolver } from "./solver.ts";
-import { GameSettings, GameEvent } from "../types.ts";
+import { GameEvent, GameSettings } from "../types.ts";
 
 Deno.test("GnosiaSolver - 基本的な探索と確率計算", () => {
   const settings: GameSettings = {
@@ -54,7 +54,6 @@ Deno.test("GnosiaSolver - エンジニアCOと調査結果、襲撃による確�
     },
     allowHiddenRoles: false,
   };
-
 
   const events: GameEvent[] = [
     // p2 (セツ) と p4 (SQ) がエンジニアCO
@@ -117,7 +116,13 @@ Deno.test("GnosiaSolver - 嘘看破イベントによる人間陣営除外", () 
 
   // SQ (p3) が嘘をついたことが確定した（自分が直感で看破、敵対役職＝グノーシアのみの設定）
   const events: GameEvent[] = [
-    { id: "1", day: 1, type: "DEFINITE_LIE", targetId: "p3", witnessId: "player" },
+    {
+      id: "1",
+      day: 1,
+      type: "DEFINITE_LIE",
+      targetId: "p3",
+      witnessId: "player",
+    },
   ];
 
   const solver = new GnosiaSolver(settings, events);
@@ -265,9 +270,27 @@ Deno.test("GnosiaSolver - 消滅もしくは平和 (0人消滅/平和 と 2人�
 
   // 2) 2人消滅: エンジニアがp3を調査し、朝にp2とp3が消滅 -> p3がバグ確定
   const twoDisappearedEvents: GameEvent[] = [
-    { id: "1", day: 1, type: "CO", playerId: "player", claimedRole: "ENGINEER" },
-    { id: "2", day: 1, type: "INVESTIGATION", investigatorId: "player", targetId: "p3", result: "HUMAN" },
-    { id: "3", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: ["p2", "p3"] },
+    {
+      id: "1",
+      day: 1,
+      type: "CO",
+      playerId: "player",
+      claimedRole: "ENGINEER",
+    },
+    {
+      id: "2",
+      day: 1,
+      type: "INVESTIGATION",
+      investigatorId: "player",
+      targetId: "p3",
+      result: "HUMAN",
+    },
+    {
+      id: "3",
+      day: 1,
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: ["p2", "p3"],
+    },
   ];
   const solverTwo = new GnosiaSolver(settings, twoDisappearedEvents);
   const resultTwo = solverTwo.solve();
@@ -304,7 +327,14 @@ Deno.test("GnosiaSolver - グノーシア視点で襲撃対象と違う人物が
   // 朝、消滅したのはSQ（襲撃対象のセツではない！）
   const events: GameEvent[] = [
     { id: "1", day: 1, type: "CO", playerId: "raqio", claimedRole: "ENGINEER" },
-    { id: "2", day: 1, type: "INVESTIGATION", investigatorId: "raqio", targetId: "sq", result: "HUMAN" },
+    {
+      id: "2",
+      day: 1,
+      type: "INVESTIGATION",
+      investigatorId: "raqio",
+      targetId: "sq",
+      result: "HUMAN",
+    },
     { id: "3", day: 1, type: "GNOSIA_ATTACK", targetId: "setsu" },
     { id: "4", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: ["sq"] },
   ];
@@ -744,37 +774,161 @@ Deno.test("GnosiaSolver - note例題: エンジニアとドクターの対応（
 
   const events: GameEvent[] = [
     // 1日目: ククルシカ・レムナンがエンジニアCO、ジョナス・夕里子がドクターCO。セツが冷凍。
-    { id: "1", day: 1, type: "CO", playerId: "kukrushka", claimedRole: "ENGINEER" },
-    { id: "2", day: 1, type: "CO", playerId: "remnan", claimedRole: "ENGINEER" },
+    {
+      id: "1",
+      day: 1,
+      type: "CO",
+      playerId: "kukrushka",
+      claimedRole: "ENGINEER",
+    },
+    {
+      id: "2",
+      day: 1,
+      type: "CO",
+      playerId: "remnan",
+      claimedRole: "ENGINEER",
+    },
     { id: "3", day: 1, type: "CO", playerId: "jonas", claimedRole: "DOCTOR" },
     { id: "4", day: 1, type: "CO", playerId: "yuriko", claimedRole: "DOCTOR" },
     { id: "5", day: 1, type: "VOTE", frozenPlayerId: "setsu" },
 
     // 2日目: 消失無し。ククルシカ「沙明は人間」、レムナン「ジナは人間」。ジョナス「セツはグノーシア」、夕里子「セツは人間」。ジナが冷凍。
     { id: "6", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: [] },
-    { id: "7", day: 2, type: "INVESTIGATION", investigatorId: "kukrushka", targetId: "sha_ming", result: "HUMAN" },
-    { id: "8", day: 2, type: "INVESTIGATION", investigatorId: "remnan", targetId: "gina", result: "HUMAN" },
-    { id: "9", day: 2, type: "DOCTOR_REPORT", reporterId: "jonas", targetId: "setsu", result: "GNOSIA" },
-    { id: "10", day: 2, type: "DOCTOR_REPORT", reporterId: "yuriko", targetId: "setsu", result: "HUMAN" },
+    {
+      id: "7",
+      day: 2,
+      type: "INVESTIGATION",
+      investigatorId: "kukrushka",
+      targetId: "sha_ming",
+      result: "HUMAN",
+    },
+    {
+      id: "8",
+      day: 2,
+      type: "INVESTIGATION",
+      investigatorId: "remnan",
+      targetId: "gina",
+      result: "HUMAN",
+    },
+    {
+      id: "9",
+      day: 2,
+      type: "DOCTOR_REPORT",
+      reporterId: "jonas",
+      targetId: "setsu",
+      result: "GNOSIA",
+    },
+    {
+      id: "10",
+      day: 2,
+      type: "DOCTOR_REPORT",
+      reporterId: "yuriko",
+      targetId: "setsu",
+      result: "HUMAN",
+    },
     { id: "11", day: 2, type: "VOTE", frozenPlayerId: "gina" },
 
     // 3日目: 沙明が消失。ククルシカ「レムナンはグノーシア」、レムナン「沙明は人間」。ジョナス「ジナは人間」、夕里子「ジナはグノーシア」。主人公がステラの嘘看破。ステラが冷凍。夜SQがジョナス密告。
-    { id: "12", day: 2, type: "DISAPPEARANCE", disappearedPlayerIds: ["sha_ming"] },
-    { id: "13", day: 3, type: "INVESTIGATION", investigatorId: "kukrushka", targetId: "remnan", result: "GNOSIA" },
-    { id: "14", day: 3, type: "INVESTIGATION", investigatorId: "remnan", targetId: "sha_ming", result: "HUMAN" },
-    { id: "15", day: 3, type: "DOCTOR_REPORT", reporterId: "jonas", targetId: "gina", result: "HUMAN" },
-    { id: "16", day: 3, type: "DOCTOR_REPORT", reporterId: "yuriko", targetId: "gina", result: "GNOSIA" },
-    { id: "17", day: 3, type: "DEFINITE_LIE", targetId: "stella", witnessId: "player" },
+    {
+      id: "12",
+      day: 2,
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: ["sha_ming"],
+    },
+    {
+      id: "13",
+      day: 3,
+      type: "INVESTIGATION",
+      investigatorId: "kukrushka",
+      targetId: "remnan",
+      result: "GNOSIA",
+    },
+    {
+      id: "14",
+      day: 3,
+      type: "INVESTIGATION",
+      investigatorId: "remnan",
+      targetId: "sha_ming",
+      result: "HUMAN",
+    },
+    {
+      id: "15",
+      day: 3,
+      type: "DOCTOR_REPORT",
+      reporterId: "jonas",
+      targetId: "gina",
+      result: "HUMAN",
+    },
+    {
+      id: "16",
+      day: 3,
+      type: "DOCTOR_REPORT",
+      reporterId: "yuriko",
+      targetId: "gina",
+      result: "GNOSIA",
+    },
+    {
+      id: "17",
+      day: 3,
+      type: "DEFINITE_LIE",
+      targetId: "stella",
+      witnessId: "player",
+    },
     { id: "18", day: 3, type: "VOTE", frozenPlayerId: "stella" },
-    { id: "19", day: 3, type: "DEFINITE_LIE", targetId: "jonas", witnessId: "sq" },
+    {
+      id: "19",
+      day: 3,
+      type: "DEFINITE_LIE",
+      targetId: "jonas",
+      witnessId: "sq",
+    },
 
     // 4日目: ラキオが消失。ククルシカ「ジョナスは人間」、レムナン「オトメはグノーシア」。ジョナス「ステラはグノーシア」、夕里子「ステラは人間」。夜シピがククルシカ密告。
-    { id: "20", day: 3, type: "DISAPPEARANCE", disappearedPlayerIds: ["raqio"] },
-    { id: "21", day: 4, type: "INVESTIGATION", investigatorId: "kukrushka", targetId: "jonas", result: "HUMAN" },
-    { id: "22", day: 4, type: "INVESTIGATION", investigatorId: "remnan", targetId: "otome", result: "GNOSIA" },
-    { id: "23", day: 4, type: "DOCTOR_REPORT", reporterId: "jonas", targetId: "stella", result: "GNOSIA" },
-    { id: "24", day: 4, type: "DOCTOR_REPORT", reporterId: "yuriko", targetId: "stella", result: "HUMAN" },
-    { id: "25", day: 4, type: "DEFINITE_LIE", targetId: "kukrushka", witnessId: "chipie" },
+    {
+      id: "20",
+      day: 3,
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: ["raqio"],
+    },
+    {
+      id: "21",
+      day: 4,
+      type: "INVESTIGATION",
+      investigatorId: "kukrushka",
+      targetId: "jonas",
+      result: "HUMAN",
+    },
+    {
+      id: "22",
+      day: 4,
+      type: "INVESTIGATION",
+      investigatorId: "remnan",
+      targetId: "otome",
+      result: "GNOSIA",
+    },
+    {
+      id: "23",
+      day: 4,
+      type: "DOCTOR_REPORT",
+      reporterId: "jonas",
+      targetId: "stella",
+      result: "GNOSIA",
+    },
+    {
+      id: "24",
+      day: 4,
+      type: "DOCTOR_REPORT",
+      reporterId: "yuriko",
+      targetId: "stella",
+      result: "HUMAN",
+    },
+    {
+      id: "25",
+      day: 4,
+      type: "DEFINITE_LIE",
+      targetId: "kukrushka",
+      witnessId: "chipie",
+    },
   ];
 
   const solver = new GnosiaSolver(settings, events);
@@ -808,6 +962,3 @@ Deno.test("GnosiaSolver - note例題: エンジニアとドクターの対応（
   assertEquals(result.definiteRoles["kukrushka"], "ENGINEER");
   assertEquals(result.definiteRoles["yuriko"], "DOCTOR");
 });
-
-
-

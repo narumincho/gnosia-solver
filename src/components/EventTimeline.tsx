@@ -577,7 +577,8 @@ export function EventTimeline({
           )}
 
         {/* 翌日に進行していてその日のイベントがまだない場合、進行中Dayのセパレータを表示 */}
-        {events.length > 0 && currentDay > (events[events.length - 1]?.day || 0) && (
+        {events.length > 0 &&
+          currentDay > (events[events.length - 1]?.day || 0) && (
           <div
             id={`timeline-day-${currentDay}`}
             className="timeline-day-separator"
@@ -588,11 +589,13 @@ export function EventTimeline({
         )}
 
         {/* Day X 朝の未入力報告スロット (イベント一覧の枠内に直接配置) */}
-        {currentDay >= 2 && (pendingEngineers.length > 0 || pendingDoctors.length > 0) && (
+        {currentDay >= 2 &&
+          (pendingEngineers.length > 0 || pendingDoctors.length > 0) && (
           <div className="pending-reports-box">
             <div className="pending-reports-header">
               <span className="pending-reports-title">
-                🌅 Day {currentDay} 朝の報告 (未入力: 残り {pendingEngineers.length + pendingDoctors.length} 件)
+                🌅 Day {currentDay} 朝の報告 (未入力: 残り{" "}
+                {pendingEngineers.length + pendingDoctors.length} 件)
               </span>
             </div>
 
@@ -606,12 +609,14 @@ export function EventTimeline({
                   >
                     調査
                   </span>
-                  <strong className="pending-report-name">{p.name}</strong> の調査報告:
+                  <strong className="pending-report-name">{p.name}</strong>{" "}
+                  の調査報告:
                 </div>
                 <button
                   type="button"
                   className="btn btn-sm btn-engineer-report"
-                  onClick={() => onOpenAddEvent("INVESTIGATION", p.id)}
+                  onClick={() =>
+                    onOpenAddEvent("INVESTIGATION", p.id)}
                   title={`${p.name} の調査結果を記録`}
                 >
                   🔍 調査結果を入力
@@ -629,48 +634,51 @@ export function EventTimeline({
                   >
                     医療
                   </span>
-                  <strong className="pending-report-name">{p.name}</strong> の医療報告
+                  <strong className="pending-report-name">{p.name}</strong>{" "}
+                  の医療報告
                   {lastFrozenPlayer ? ` (${lastFrozenPlayer.name}):` : ":"}
                 </div>
-                {lastFrozenPlayer ? (
-                  <div style={{ display: "flex", gap: "0.3rem" }}>
+                {lastFrozenPlayer
+                  ? (
+                    <div style={{ display: "flex", gap: "0.3rem" }}>
+                      <button
+                        type="button"
+                        className="btn-doc-human"
+                        onClick={() =>
+                          onQuickDoctorReport(
+                            p.id,
+                            lastFrozenPlayer.id,
+                            "HUMAN",
+                          )}
+                        title={`${p.name} の医療報告: ${lastFrozenPlayer.name} は【人間】`}
+                      >
+                        人間
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-doc-gnosia"
+                        onClick={() =>
+                          onQuickDoctorReport(
+                            p.id,
+                            lastFrozenPlayer.id,
+                            "GNOSIA",
+                          )}
+                        title={`${p.name} の医療報告: ${lastFrozenPlayer.name} は【グノーシア】`}
+                      >
+                        グノーシア
+                      </button>
+                    </div>
+                  )
+                  : (
                     <button
                       type="button"
-                      className="btn-doc-human"
-                      onClick={() =>
-                        onQuickDoctorReport(
-                          p.id,
-                          lastFrozenPlayer.id,
-                          "HUMAN",
-                        )}
-                      title={`${p.name} の医療報告: ${lastFrozenPlayer.name} は【人間】`}
+                      className="btn btn-sm btn-doctor-report"
+                      onClick={() => onOpenAddEvent("DOCTOR_REPORT", p.id)}
+                      title={`${p.name} の医療報告を入力`}
                     >
-                      人間
+                      🩺 報告を入力
                     </button>
-                    <button
-                      type="button"
-                      className="btn-doc-gnosia"
-                      onClick={() =>
-                        onQuickDoctorReport(
-                          p.id,
-                          lastFrozenPlayer.id,
-                          "GNOSIA",
-                        )}
-                      title={`${p.name} の医療報告: ${lastFrozenPlayer.name} は【グノーシア】`}
-                    >
-                      グノーシア
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-doctor-report"
-                    onClick={() => onOpenAddEvent("DOCTOR_REPORT", p.id)}
-                    title={`${p.name} の医療報告を入力`}
-                  >
-                    🩺 報告を入力
-                  </button>
-                )}
+                  )}
               </div>
             ))}
           </div>

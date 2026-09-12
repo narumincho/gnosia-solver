@@ -3,7 +3,6 @@ import { GnosiaSolver } from "./solver.ts";
 import { DEFAULT_SETTINGS } from "../state/store.ts";
 import { GameEvent } from "../types.ts";
 
-
 Deno.test("再現テスト - 自分と沙明がエンジニアCOしたとき、しげみちがグノーシア100%になるか", () => {
   const events: GameEvent[] = [
     {
@@ -30,7 +29,10 @@ Deno.test("再現テスト - 自分と沙明がエンジニアCOしたとき、�
   });
 
   console.log("totalPossibleWorlds:", result.totalPossibleWorlds);
-  console.log("shigemichi gnosia prob:", result.gnosiaProbabilities["shigemichi"]);
+  console.log(
+    "shigemichi gnosia prob:",
+    result.gnosiaProbabilities["shigemichi"],
+  );
   console.log("sha_ming gnosia prob:", result.gnosiaProbabilities["sha_ming"]);
   console.log("sha_ming role probs:", result.roleProbabilities["sha_ming"]);
   console.log("sample worlds count:", result.sampleWorlds.length);
@@ -40,6 +42,12 @@ Deno.test("再現テスト - 自分と沙明がエンジニアCOしたとき、�
 
   // 客観視点も見てみる
   const objResult = solver.solve();
-  console.log("Objective shigemichi gnosia prob:", objResult.gnosiaProbabilities["shigemichi"]);
-  console.log("Objective sha_ming role probs:", objResult.roleProbabilities["sha_ming"]);
+  console.log(
+    "Objective shigemichi gnosia prob:",
+    objResult.gnosiaProbabilities["shigemichi"],
+  );
+  console.log(
+    "Objective sha_ming role probs:",
+    objResult.roleProbabilities["sha_ming"],
+  );
 });

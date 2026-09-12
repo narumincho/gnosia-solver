@@ -1,5 +1,10 @@
-import { Eye, UserCheck, Shield } from "lucide-preact";
-import { GameSettings, PerspectiveOption, Role, ROLE_DEFINITIONS } from "../types.ts";
+import { Eye, Shield, UserCheck } from "lucide-preact";
+import {
+  GameSettings,
+  PerspectiveOption,
+  Role,
+  ROLE_DEFINITIONS,
+} from "../types.ts";
 
 interface PerspectiveBarProps {
   settings: GameSettings;
@@ -39,11 +44,34 @@ export function PerspectiveBar({
           <span>推論視点 (Perspective)</span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "1.2rem", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "1.2rem",
+            flexWrap: "wrap",
+          }}
+        >
           {/* 自分の役職（常設設定） */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", background: "rgba(56, 189, 248, 0.1)", padding: "0.25rem 0.6rem", borderRadius: "6px", border: "1px solid rgba(56, 189, 248, 0.25)" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              background: "rgba(56, 189, 248, 0.1)",
+              padding: "0.25rem 0.6rem",
+              borderRadius: "6px",
+              border: "1px solid rgba(56, 189, 248, 0.25)",
+            }}
+          >
             <Shield size={14} color="var(--text-accent)" />
-            <span style={{ fontSize: "0.8rem", color: "var(--text-accent)", fontWeight: "bold" }}>
+            <span
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--text-accent)",
+                fontWeight: "bold",
+              }}
+            >
               自分の本当の役職:
             </span>
             <select
@@ -66,7 +94,9 @@ export function PerspectiveBar({
 
           {/* 選択中キャラの仮定役職 */}
           {!isObjective && (
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+            >
               <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
                 {perspective.name} の仮定役職:
               </span>
@@ -81,7 +111,8 @@ export function PerspectiveBar({
                 <option value="">(指定なし・候補すべて)</option>
                 {availableRoles.map((r) => (
                   <option key={r} value={r}>
-                    {ROLE_DEFINITIONS[r].name} ({ROLE_DEFINITIONS[r].side === "HUMAN" ? "人間" : "敵対"})
+                    {ROLE_DEFINITIONS[r].name}{" "}
+                    ({ROLE_DEFINITIONS[r].side === "HUMAN" ? "人間" : "敵対"})
                   </option>
                 ))}
               </select>

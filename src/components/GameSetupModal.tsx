@@ -1,5 +1,5 @@
-import { useState, useMemo } from "preact/hooks";
-import { X, Check, Sliders, Users } from "lucide-preact";
+import { useMemo, useState } from "preact/hooks";
+import { Check, Sliders, Users, X } from "lucide-preact";
 import {
   DEFAULT_CHARACTERS,
   GameSettings,
@@ -21,9 +21,11 @@ export function GameSetupModal({
 }: GameSetupModalProps) {
   if (!isOpen) return null;
 
-  const [settings, setSettings] = useState<GameSettings>({ ...currentSettings });
+  const [settings, setSettings] = useState<GameSettings>({
+    ...currentSettings,
+  });
   const [selectedCharIds, setSelectedCharIds] = useState<Set<string>>(
-    new Set(currentSettings.players.map((p) => p.id))
+    new Set(currentSettings.players.map((p) => p.id)),
   );
 
   // 役職人数の合計と一般乗員数の計算
@@ -116,7 +118,9 @@ export function GameSetupModal({
 
   const handleSave = () => {
     if (!roleSummary.isValid) {
-      alert("役職の合計人数が参加人数を超えています。役職数または参加人数を調整してください。");
+      alert(
+        "役職の合計人数が参加人数を超えています。役職数または参加人数を調整してください。",
+      );
       return;
     }
 
@@ -174,19 +178,51 @@ export function GameSetupModal({
 
         {/* 役職の有無 */}
         <div style={{ marginBottom: "1.2rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <label className="form-label" style={{ marginBottom: 0 }}>役職構成</label>
-            <span style={{ fontSize: "0.8rem", color: roleSummary.isValid ? "var(--text-muted)" : "var(--color-gnosia)" }}>
-              参加人数: <strong>{roleSummary.totalPlayers}人</strong> | 乗員枠:{" "}
-              <strong style={{ color: roleSummary.isValid ? "var(--color-crew)" : "var(--color-gnosia)" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <label className="form-label" style={{ marginBottom: 0 }}>
+              役職構成
+            </label>
+            <span
+              style={{
+                fontSize: "0.8rem",
+                color: roleSummary.isValid
+                  ? "var(--text-muted)"
+                  : "var(--color-gnosia)",
+              }}
+            >
+              参加人数: <strong>{roleSummary.totalPlayers}人</strong> | 乗員枠:
+              {" "}
+              <strong
+                style={{
+                  color: roleSummary.isValid
+                    ? "var(--color-crew)"
+                    : "var(--color-gnosia)",
+                }}
+              >
                 {roleSummary.crewCount}人
               </strong>
             </span>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginTop: "0.5rem" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "1rem",
+              marginTop: "0.5rem",
+            }}
+          >
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ color: "var(--color-gnosia)" }}>
+              <label
+                className="form-label"
+                style={{ color: "var(--color-gnosia)" }}
+              >
                 グノーシア人数: {settings.roles.gnosiaCount}人
               </label>
               <input
@@ -201,8 +237,7 @@ export function GameSetupModal({
                       ...settings.roles,
                       gnosiaCount: Number((e.target as HTMLInputElement).value),
                     },
-                  })
-                }
+                  })}
                 style={{ width: "100%" }}
               />
             </div>
@@ -219,10 +254,11 @@ export function GameSetupModal({
                         ...settings.roles,
                         hasEngineer: (e.target as HTMLInputElement).checked,
                       },
-                    })
-                  }
+                    })}
                 />
-                <span style={{ color: ROLE_DEFINITIONS.ENGINEER.color }}>エンジニア (1)</span>
+                <span style={{ color: ROLE_DEFINITIONS.ENGINEER.color }}>
+                  エンジニア (1)
+                </span>
               </label>
 
               <label className="role-checkbox-item">
@@ -236,10 +272,11 @@ export function GameSetupModal({
                         ...settings.roles,
                         hasDoctor: (e.target as HTMLInputElement).checked,
                       },
-                    })
-                  }
+                    })}
                 />
-                <span style={{ color: ROLE_DEFINITIONS.DOCTOR.color }}>ドクター (1)</span>
+                <span style={{ color: ROLE_DEFINITIONS.DOCTOR.color }}>
+                  ドクター (1)
+                </span>
               </label>
 
               <label className="role-checkbox-item">
@@ -251,12 +288,14 @@ export function GameSetupModal({
                       ...settings,
                       roles: {
                         ...settings.roles,
-                        hasGuardianAngel: (e.target as HTMLInputElement).checked,
+                        hasGuardianAngel:
+                          (e.target as HTMLInputElement).checked,
                       },
-                    })
-                  }
+                    })}
                 />
-                <span style={{ color: ROLE_DEFINITIONS.GUARDIAN_ANGEL.color }}>守護天使 (1)</span>
+                <span style={{ color: ROLE_DEFINITIONS.GUARDIAN_ANGEL.color }}>
+                  守護天使 (1)
+                </span>
               </label>
 
               <label className="role-checkbox-item">
@@ -270,10 +309,11 @@ export function GameSetupModal({
                         ...settings.roles,
                         hasGuardDuty: (e.target as HTMLInputElement).checked,
                       },
-                    })
-                  }
+                    })}
                 />
-                <span style={{ color: ROLE_DEFINITIONS.GUARD_DUTY.color }}>留守番 (2)</span>
+                <span style={{ color: ROLE_DEFINITIONS.GUARD_DUTY.color }}>
+                  留守番 (2)
+                </span>
               </label>
 
               <label className="role-checkbox-item">
@@ -287,10 +327,11 @@ export function GameSetupModal({
                         ...settings.roles,
                         hasACFollower: (e.target as HTMLInputElement).checked,
                       },
-                    })
-                  }
+                    })}
                 />
-                <span style={{ color: ROLE_DEFINITIONS.AC_FOLLOWER.color }}>AC主義者 (1)</span>
+                <span style={{ color: ROLE_DEFINITIONS.AC_FOLLOWER.color }}>
+                  AC主義者 (1)
+                </span>
               </label>
 
               <label className="role-checkbox-item">
@@ -304,10 +345,11 @@ export function GameSetupModal({
                         ...settings.roles,
                         hasBug: (e.target as HTMLInputElement).checked,
                       },
-                    })
-                  }
+                    })}
                 />
-                <span style={{ color: ROLE_DEFINITIONS.BUG.color }}>バグ (1)</span>
+                <span style={{ color: ROLE_DEFINITIONS.BUG.color }}>
+                  バグ (1)
+                </span>
               </label>
             </div>
           </div>
@@ -315,7 +357,14 @@ export function GameSetupModal({
 
         {/* 参加キャラクターの選択 */}
         <div style={{ marginBottom: "1.5rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "0.4rem",
+            }}
+          >
             <label className="form-label" style={{ marginBottom: 0 }}>
               参加キャラクター ({selectedCharIds.size}人選択中 / 最大15人)
             </label>
@@ -323,7 +372,10 @@ export function GameSetupModal({
               <button
                 type="button"
                 className="btn btn-sm"
-                onClick={() => setSelectedCharIds(new Set(DEFAULT_CHARACTERS.map((c) => c.id)))}
+                onClick={() =>
+                  setSelectedCharIds(
+                    new Set(DEFAULT_CHARACTERS.map((c) => c.id)),
+                  )}
               >
                 全員選択
               </button>
@@ -361,8 +413,7 @@ export function GameSetupModal({
                 setSettings({
                   ...settings,
                   allowHiddenRoles: (e.target as HTMLInputElement).checked,
-                })
-              }
+                })}
             />
             <span style={{ fontSize: "0.85rem" }}>
               真役職（エンジニア/ドクター）の潜伏（未CO）を許容する
@@ -370,7 +421,13 @@ export function GameSetupModal({
           </label>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "0.75rem",
+          }}
+        >
           <button type="button" className="btn" onClick={onClose}>
             キャンセル
           </button>

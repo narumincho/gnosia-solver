@@ -71,7 +71,8 @@ export function AddEventModal({
       const alreadyClaimed = (claimedRoles[p.id]?.length ?? 0) > 0;
       if (
         editingEvent && editingEvent.type === "CO" &&
-        (editingEvent.playerId === p.id || editingEvent.partnerPlayerId === p.id)
+        (editingEvent.playerId === p.id ||
+          editingEvent.partnerPlayerId === p.id)
       ) {
         return true;
       }
@@ -125,7 +126,9 @@ export function AddEventModal({
   );
   const [reportResult, setReportResult] = useState<ReportJudgement>("HUMAN");
   const [witnessPlayer, setWitnessPlayer] = useState<string>("player");
-  const [disappearedPlayerIds, setDisappearedPlayerIds] = useState<string[]>([]);
+  const [disappearedPlayerIds, setDisappearedPlayerIds] = useState<string[]>(
+    [],
+  );
   const [noAttackNote, setNoAttackNote] = useState<string>(
     "夜間の犠牲者なし (天使護衛成功 または バグ襲撃)",
   );
@@ -140,7 +143,9 @@ export function AddEventModal({
           setClaimedRole(editingEvent.claimedRole);
           if (editingEvent.claimedRole === "GUARD_DUTY") {
             const list = [editingEvent.playerId];
-            if (editingEvent.partnerPlayerId) list.push(editingEvent.partnerPlayerId);
+            if (editingEvent.partnerPlayerId) {
+              list.push(editingEvent.partnerPlayerId);
+            }
             setSelectedGuardDuty(list);
           } else {
             setSelectedGuardDuty([]);
@@ -187,7 +192,8 @@ export function AddEventModal({
     } else if (initialType === "GNOSIA_ATTACK") {
       const defaultTarget = initialPlayerId && initialPlayerId !== "player"
         ? initialPlayerId
-        : alivePlayers.find((p) => p.id !== "player")?.id || settings.players[0]?.id || "";
+        : alivePlayers.find((p) => p.id !== "player")?.id ||
+          settings.players[0]?.id || "";
       setSelectedPlayer(defaultTarget);
     } else if (initialType === "DEFINITE_LIE") {
       setWitnessPlayer("player");
@@ -337,16 +343,20 @@ export function AddEventModal({
                 const val = (e.target as HTMLSelectElement).value as EventType;
                 setEventType(val);
                 if (val === "DISAPPEARANCE") {
-                  setDisappearedPlayerIds(selectedPlayer ? [selectedPlayer] : []);
+                  setDisappearedPlayerIds(
+                    selectedPlayer ? [selectedPlayer] : [],
+                  );
                 } else if (val === "GNOSIA_ATTACK") {
                   const defaultTarget =
-                    alivePlayers.find((p) => p.id !== "player")?.id || settings.players[0]?.id || "";
+                    alivePlayers.find((p) => p.id !== "player")?.id ||
+                    settings.players[0]?.id || "";
                   setSelectedPlayer(defaultTarget);
                 } else if (val === "DEFINITE_LIE") {
                   setWitnessPlayer("player");
                   if (!selectedPlayer || selectedPlayer === "player") {
-                    const defaultTarget =
-                      settings.players.find((p) => p.id !== "player")?.id ||
+                    const defaultTarget = settings.players.find((p) =>
+                      p.id !== "player"
+                    )?.id ||
                       settings.players[0]?.id || "";
                     setSelectedPlayer(defaultTarget);
                   }
@@ -371,9 +381,13 @@ export function AddEventModal({
                 }
               }}
             >
-              <option value="DISAPPEARANCE">消滅もしくは平和 (夜の出来事: 0〜2人)</option>
+              <option value="DISAPPEARANCE">
+                消滅もしくは平和 (夜の出来事: 0〜2人)
+              </option>
               {myRole === "GNOSIA" && (
-                <option value="GNOSIA_ATTACK">【グノーシア視点】夜の襲撃対象指定</option>
+                <option value="GNOSIA_ATTACK">
+                  【グノーシア視点】夜の襲撃対象指定
+                </option>
               )}
               <option value="DEFINITE_LIE">嘘に気づいた</option>
               {availableCORoles.length > 0 && (
@@ -455,7 +469,9 @@ export function AddEventModal({
                     setSelectedPlayer((e.target as HTMLSelectElement).value)}
                 >
                   {settings.players
-                    .filter((p) => p.id !== witnessPlayer)
+                    .filter((p) =>
+                      p.id !== witnessPlayer
+                    )
                     .map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name} {playerStatuses[p.id] === "FROZEN"
@@ -495,155 +511,171 @@ export function AddEventModal({
                 </select>
               </div>
 
-              {claimedRole === "GUARD_DUTY" ? (
-                <div className="form-group">
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "0.4rem",
-                    }}
-                  >
-                    <label className="form-label" style={{ marginBottom: 0 }}>
-                      名乗り出た留守番 (2人をチェック)
-                    </label>
-                    <span
-                      className={`badge ${
-                        selectedGuardDuty.length === 2
-                          ? "badge-human"
-                          : "badge-enemy"
-                      }`}
-                      style={{ fontSize: "0.75rem" }}
-                    >
-                      {selectedGuardDuty.length} / 2人 選択中
-                    </span>
-                  </div>
-                  <p
-                    style={{
-                      fontSize: "0.75rem",
-                      color: "var(--text-muted)",
-                      marginBottom: "0.6rem",
-                    }}
-                  >
-                    ※ 留守番COは必ず2人同時に行われます。名乗り出た2人にチェックを入れてください。
-                  </p>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fill, minmax(130px, 1fr))",
-                      gap: "0.5rem",
-                      background: "var(--bg-secondary)",
-                      padding: "0.75rem",
-                      borderRadius: "8px",
-                      border: "1px solid var(--border-color)",
-                      maxHeight: "220px",
-                      overflowY: "auto",
-                    }}
-                  >
-                    {(coCandidates.length >= 2 ? coCandidates : alivePlayers).map((p) => {
-                      const isChecked = selectedGuardDuty.includes(p.id);
-                      const isDisabled = !isChecked && selectedGuardDuty.length >= 2;
-                      return (
-                        <label
-                          key={p.id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            padding: "0.45rem 0.65rem",
-                            borderRadius: "6px",
-                            background: isChecked
-                              ? "rgba(56, 189, 248, 0.15)"
-                              : "var(--bg-tertiary)",
-                            border: isChecked
-                              ? "1px solid var(--accent-primary, #38bdf8)"
-                              : "1px solid transparent",
-                            cursor: isDisabled ? "not-allowed" : "pointer",
-                            opacity: isDisabled ? 0.5 : 1,
-                            fontSize: "0.85rem",
-                            userSelect: "none",
-                            transition: "all 0.15s ease",
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            disabled={isDisabled}
-                            onChange={() => {
-                              if (isChecked) {
-                                setSelectedGuardDuty(
-                                  selectedGuardDuty.filter((id) => id !== p.id),
-                                );
-                              } else if (selectedGuardDuty.length < 2) {
-                                setSelectedGuardDuty([...selectedGuardDuty, p.id]);
-                              }
-                            }}
-                            style={{ cursor: isDisabled ? "not-allowed" : "pointer" }}
-                          />
-                          <span
-                            style={{
-                              fontWeight: isChecked ? 600 : "normal",
-                              color: isChecked
-                                ? "var(--accent-primary, #38bdf8)"
-                                : "inherit",
-                            }}
-                          >
-                            {p.name}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  {selectedGuardDuty.length !== 2 && (
-                    <span
+              {claimedRole === "GUARD_DUTY"
+                ? (
+                  <div className="form-group">
+                    <div
                       style={{
-                        color: "var(--color-gnosia)",
-                        fontSize: "0.75rem",
-                        marginTop: "0.35rem",
-                        display: "block",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "0.4rem",
                       }}
                     >
-                      ※ 留守番は必ず2人選択してください
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <div className="form-group">
-                  <label className="form-label">
-                    名乗り出た人物 (未CO者のみ)
-                  </label>
-                  <select
-                    className="form-select"
-                    value={selectedPlayer}
-                    onChange={(e) =>
-                      setSelectedPlayer((e.target as HTMLSelectElement).value)}
-                    disabled={coCandidates.length === 0}
-                  >
-                    {coCandidates.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                    {coCandidates.length === 0 && (
-                      <option value="">(全員すでにCO済みです)</option>
-                    )}
-                  </select>
-                  {coCandidates.length === 0 && (
-                    <span
+                      <label className="form-label" style={{ marginBottom: 0 }}>
+                        名乗り出た留守番 (2人をチェック)
+                      </label>
+                      <span
+                        className={`badge ${
+                          selectedGuardDuty.length === 2
+                            ? "badge-human"
+                            : "badge-enemy"
+                        }`}
+                        style={{ fontSize: "0.75rem" }}
+                      >
+                        {selectedGuardDuty.length} / 2人 選択中
+                      </span>
+                    </div>
+                    <p
                       style={{
+                        fontSize: "0.75rem",
                         color: "var(--text-muted)",
-                        fontSize: "0.75rem",
-                        marginTop: "0.25rem",
-                        display: "block",
+                        marginBottom: "0.6rem",
                       }}
                     >
-                      ※ 生存している全員がすでに役職CO済みです
-                    </span>
-                  )}
-                </div>
-              )}
+                      ※
+                      留守番COは必ず2人同時に行われます。名乗り出た2人にチェックを入れてください。
+                    </p>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fill, minmax(130px, 1fr))",
+                        gap: "0.5rem",
+                        background: "var(--bg-secondary)",
+                        padding: "0.75rem",
+                        borderRadius: "8px",
+                        border: "1px solid var(--border-color)",
+                        maxHeight: "220px",
+                        overflowY: "auto",
+                      }}
+                    >
+                      {(coCandidates.length >= 2 ? coCandidates : alivePlayers)
+                        .map((p) => {
+                          const isChecked = selectedGuardDuty.includes(p.id);
+                          const isDisabled = !isChecked &&
+                            selectedGuardDuty.length >= 2;
+                          return (
+                            <label
+                              key={p.id}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                                padding: "0.45rem 0.65rem",
+                                borderRadius: "6px",
+                                background: isChecked
+                                  ? "rgba(56, 189, 248, 0.15)"
+                                  : "var(--bg-tertiary)",
+                                border: isChecked
+                                  ? "1px solid var(--accent-primary, #38bdf8)"
+                                  : "1px solid transparent",
+                                cursor: isDisabled ? "not-allowed" : "pointer",
+                                opacity: isDisabled ? 0.5 : 1,
+                                fontSize: "0.85rem",
+                                userSelect: "none",
+                                transition: "all 0.15s ease",
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                disabled={isDisabled}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedGuardDuty(
+                                      selectedGuardDuty.filter((id) =>
+                                        id !== p.id
+                                      ),
+                                    );
+                                  } else if (selectedGuardDuty.length < 2) {
+                                    setSelectedGuardDuty([
+                                      ...selectedGuardDuty,
+                                      p.id,
+                                    ]);
+                                  }
+                                }}
+                                style={{
+                                  cursor: isDisabled
+                                    ? "not-allowed"
+                                    : "pointer",
+                                }}
+                              />
+                              <span
+                                style={{
+                                  fontWeight: isChecked ? 600 : "normal",
+                                  color: isChecked
+                                    ? "var(--accent-primary, #38bdf8)"
+                                    : "inherit",
+                                }}
+                              >
+                                {p.name}
+                              </span>
+                            </label>
+                          );
+                        })}
+                    </div>
+                    {selectedGuardDuty.length !== 2 && (
+                      <span
+                        style={{
+                          color: "var(--color-gnosia)",
+                          fontSize: "0.75rem",
+                          marginTop: "0.35rem",
+                          display: "block",
+                        }}
+                      >
+                        ※ 留守番は必ず2人選択してください
+                      </span>
+                    )}
+                  </div>
+                )
+                : (
+                  <div className="form-group">
+                    <label className="form-label">
+                      名乗り出た人物 (未CO者のみ)
+                    </label>
+                    <select
+                      className="form-select"
+                      value={selectedPlayer}
+                      onChange={(e) =>
+                        setSelectedPlayer(
+                          (e.target as HTMLSelectElement).value,
+                        )}
+                      disabled={coCandidates.length === 0}
+                    >
+                      {coCandidates.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                      {coCandidates.length === 0 && (
+                        <option value="">(全員すでにCO済みです)</option>
+                      )}
+                    </select>
+                    {coCandidates.length === 0 && (
+                      <span
+                        style={{
+                          color: "var(--text-muted)",
+                          fontSize: "0.75rem",
+                          marginTop: "0.25rem",
+                          display: "block",
+                        }}
+                      >
+                        ※ 生存している全員がすでに役職CO済みです
+                      </span>
+                    )}
+                  </div>
+                )}
             </div>
           )}
 
@@ -881,7 +913,8 @@ export function AddEventModal({
                   lineHeight: "1.4",
                 }}
               >
-                夜間に消滅した乗員を <strong>0〜2人</strong> 選択してください。<br />
+                夜間に消滅した乗員を <strong>0〜2人</strong>{" "}
+                選択してください。<br />
                 ※誰も選ばない（0人）場合は「犠牲者なし（平和）」となります。
               </p>
 
@@ -894,8 +927,8 @@ export function AddEventModal({
               >
                 {alivePlayers.map((p) => {
                   const isSelected = disappearedPlayerIds.includes(p.id);
-                  const isMaxReached =
-                    disappearedPlayerIds.length >= 2 && !isSelected;
+                  const isMaxReached = disappearedPlayerIds.length >= 2 &&
+                    !isSelected;
                   return (
                     <button
                       key={p.id}
@@ -997,7 +1030,9 @@ export function AddEventModal({
                   lineHeight: "1.4",
                 }}
               >
-                襲撃対象と異なる人物が朝に消滅した場合、その消滅者は<strong>【バグ確定】</strong>となり、守護天使が生存して襲撃対象を守った世界のみが導出されます。
+                襲撃対象と異なる人物が朝に消滅した場合、その消滅者は<strong>
+                  【バグ確定】
+                </strong>となり、守護天使が生存して襲撃対象を守った世界のみが導出されます。
               </p>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">襲撃対象 (生存者)</label>

@@ -1,12 +1,12 @@
-import { useState, useMemo } from "preact/hooks";
+import { useMemo, useState } from "preact/hooks";
 import {
-  GameEvent,
-  NewGameEvent,
-  GameSettings,
-  Role,
   DEFAULT_CHARACTERS,
-  PlayerStatus,
+  GameEvent,
+  GameSettings,
+  NewGameEvent,
   PerspectiveOption,
+  PlayerStatus,
+  Role,
   SessionData,
 } from "../types.ts";
 
@@ -58,13 +58,17 @@ export function recalculateDays(events: GameEvent[]): GameEvent[] {
 export function useGameStore() {
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [events, setEvents] = useState<GameEvent[]>([]);
-  const [perspectiveRoles, setPerspectiveRoles] = useState<Record<string, Role>>({});
+  const [perspectiveRoles, setPerspectiveRoles] = useState<
+    Record<string, Role>
+  >({});
   const [myRole, setMyRoleState] = useState<Role | undefined>(undefined);
   const [perspective, setPerspective] = useState<PerspectiveOption>({
     id: "objective",
     name: "全体 (客観神視点)",
   });
-  const [playerStatuses, setPlayerStatuses] = useState<Record<string, PlayerStatus>>({});
+  const [playerStatuses, setPlayerStatuses] = useState<
+    Record<string, PlayerStatus>
+  >({});
 
   // イベントの並び順から現在の日付 (currentDay) を算出
   const currentDay = useMemo(() => {
@@ -86,7 +90,8 @@ export function useGameStore() {
     if (id === "objective") {
       setPerspective({ id: "objective", name: "全体 (客観神視点)" });
     } else {
-      const savedRole = perspectiveRoles[id] || (id === "player" ? myRole : undefined);
+      const savedRole = perspectiveRoles[id] ||
+        (id === "player" ? myRole : undefined);
       setPerspective({ id, name, role: savedRole });
     }
   };
@@ -121,7 +126,6 @@ export function useGameStore() {
     }
   };
 
-
   // プレイヤーの生存/状態計算 (イベントから自動推定 or 手動オーバーライド)
   const computedStatuses = useMemo(() => {
     const statuses: Record<string, PlayerStatus> = {};
@@ -147,8 +151,9 @@ export function useGameStore() {
   const solverResult = useMemo(() => {
     const solver = new GnosiaSolver(settings, events);
     return solver.solve({
-      perspectivePlayerId:
-        perspective.id === "objective" ? undefined : perspective.id,
+      perspectivePlayerId: perspective.id === "objective"
+        ? undefined
+        : perspective.id,
       perspectiveRole: perspective.role,
     });
   }, [settings, events, perspective]);
@@ -182,7 +187,8 @@ export function useGameStore() {
         const isSelf = ev.witnessId === "player" || !ev.witnessId;
         const witnessName = isSelf
           ? "自分"
-          : settings.players.find((p) => p.id === ev.witnessId)?.name || ev.witnessId;
+          : settings.players.find((p) => p.id === ev.witnessId)?.name ||
+            ev.witnessId;
         const label = isSelf ? "嘘看破 (自分)" : `密告 (${witnessName})`;
         map[ev.targetId].push(label);
       }
@@ -204,7 +210,7 @@ export function useGameStore() {
   const updateEvent = (updatedEvent: GameEvent) => {
     setEvents((prev) =>
       recalculateDays(
-        prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e))
+        prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)),
       )
     );
   };
@@ -274,12 +280,21 @@ export function useGameStore() {
         return { success: false, error: "無効なデータ形式です。" };
       }
 
-      if (!data.settings || !Array.isArray(data.settings.players) || !data.settings.roles) {
-        return { success: false, error: "ゲーム設定 (settings) が正しく含まれていません。" };
+      if (
+        !data.settings || !Array.isArray(data.settings.players) ||
+        !data.settings.roles
+      ) {
+        return {
+          success: false,
+          error: "ゲーム設定 (settings) が正しく含まれていません。",
+        };
       }
 
       if (!Array.isArray(data.events)) {
-        return { success: false, error: "イベント一覧 (events) が正しく含まれていません。" };
+        return {
+          success: false,
+          error: "イベント一覧 (events) が正しく含まれていません。",
+        };
       }
 
       setSettings(data.settings);
@@ -299,7 +314,10 @@ export function useGameStore() {
 
       return { success: true };
     } catch (e: any) {
-      return { success: false, error: e.message || "インポート中にエラーが発生しました。" };
+      return {
+        success: false,
+        error: e.message || "インポート中にエラーが発生しました。",
+      };
     }
   };
 
@@ -330,5 +348,3 @@ export function useGameStore() {
     importSession,
   };
 }
-
-

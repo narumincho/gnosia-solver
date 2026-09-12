@@ -1,5 +1,13 @@
 import { useState } from "preact/hooks";
-import { X, Download, Upload, Copy, Check, FileText, AlertCircle } from "lucide-preact";
+import {
+  AlertCircle,
+  Check,
+  Copy,
+  Download,
+  FileText,
+  Upload,
+  X,
+} from "lucide-preact";
 import { SessionData } from "../types.ts";
 
 interface ExportImportModalProps {
@@ -47,7 +55,9 @@ export function ExportImportModal({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      alert("クリップボードへのコピーに失敗しました。下のテキストを直接選択してコピーしてください。");
+      alert(
+        "クリップボードへのコピーに失敗しました。下のテキストを直接選択してコピーしてください。",
+      );
     }
   };
 
@@ -117,7 +127,9 @@ export function ExportImportModal({
         <div className="modal-header">
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <FileText size={20} color="var(--text-accent)" />
-            <h3 className="modal-title">セッションのエキスポート / インポート</h3>
+            <h3 className="modal-title">
+              セッションのエキスポート / インポート
+            </h3>
           </div>
           <button className="modal-close-btn" onClick={onClose}>
             <X size={20} />
@@ -125,9 +137,19 @@ export function ExportImportModal({
         </div>
 
         {/* タブ切り替え */}
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.2rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "0.5rem" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "0.5rem",
+            marginBottom: "1.2rem",
+            borderBottom: "1px solid var(--border-color)",
+            paddingBottom: "0.5rem",
+          }}
+        >
           <button
-            className={`btn btn-sm ${activeTab === "export" ? "btn-primary" : ""}`}
+            className={`btn btn-sm ${
+              activeTab === "export" ? "btn-primary" : ""
+            }`}
             onClick={() => {
               setActiveTab("export");
               setErrorMessage(null);
@@ -138,7 +160,9 @@ export function ExportImportModal({
             <span>エクスポート (保存)</span>
           </button>
           <button
-            className={`btn btn-sm ${activeTab === "import" ? "btn-primary" : ""}`}
+            className={`btn btn-sm ${
+              activeTab === "import" ? "btn-primary" : ""
+            }`}
             onClick={() => {
               setActiveTab("import");
               setErrorMessage(null);
@@ -180,18 +204,31 @@ export function ExportImportModal({
         {/* エクスポートタブ */}
         {activeTab === "export" && (
           <div>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
-              現在のゲーム設定、記録されたイベント（{sessionData.events.length}件）、現在の日数、視点状態を保存します。
+            <p
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--text-muted)",
+                marginBottom: "1rem",
+              }}
+            >
+              現在のゲーム設定、記録されたイベント（{sessionData.events
+                .length}件）、現在の日数、視点状態を保存します。
             </p>
 
-            <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem" }}>
+            <div
+              style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem" }}
+            >
               <button className="btn btn-primary" onClick={handleDownload}>
                 <Download size={16} />
                 <span>JSONファイルをダウンロード</span>
               </button>
               <button className="btn" onClick={handleCopy}>
-                {copied ? <Check size={16} color="#34d399" /> : <Copy size={16} />}
-                <span>{copied ? "コピーしました！" : "クリップボードにコピー"}</span>
+                {copied
+                  ? <Check size={16} color="#34d399" />
+                  : <Copy size={16} />}
+                <span>
+                  {copied ? "コピーしました！" : "クリップボードにコピー"}
+                </span>
               </button>
             </div>
 
@@ -216,7 +253,13 @@ export function ExportImportModal({
         {/* インポートタブ */}
         {activeTab === "import" && (
           <div>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
+            <p
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--text-muted)",
+                marginBottom: "1rem",
+              }}
+            >
               保存したJSONファイル、またはコピーしたJSONテキストからゲーム状況を完全に復元します。
             </p>
 
@@ -239,7 +282,9 @@ export function ExportImportModal({
             </div>
 
             <div className="form-group">
-              <label className="form-label">方法2: JSONテキストを貼り付けて読み込む</label>
+              <label className="form-label">
+                方法2: JSONテキストを貼り付けて読み込む
+              </label>
               <textarea
                 className="form-input"
                 style={{
@@ -249,13 +294,20 @@ export function ExportImportModal({
                   resize: "vertical",
                   lineHeight: "1.4",
                 }}
-                placeholder='ここにエクスポートしたJSONを貼り付けてください...'
+                placeholder="ここにエクスポートしたJSONを貼り付けてください..."
                 value={importText}
-                onInput={(e) => setImportText((e.target as HTMLTextAreaElement).value)}
+                onInput={(e) =>
+                  setImportText((e.target as HTMLTextAreaElement).value)}
               />
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "0.75rem",
+              }}
+            >
               <button className="btn btn-primary" onClick={handleTextImport}>
                 <Upload size={16} />
                 <span>テキストからインポート実行</span>
@@ -264,7 +316,15 @@ export function ExportImportModal({
           </div>
         )}
 
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1.5rem", borderTop: "1px solid var(--border-color)", paddingTop: "0.75rem" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginTop: "1.5rem",
+            borderTop: "1px solid var(--border-color)",
+            paddingTop: "0.75rem",
+          }}
+        >
           <button className="btn" onClick={onClose}>
             閉じる
           </button>

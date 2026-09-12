@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { GnosiaSolver } from "./solver.ts";
-import { GameSettings, GameEvent } from "../types.ts";
+import { GameEvent, GameSettings } from "../types.ts";
 
 Deno.test("再現テスト - エンジニアが調査して生存している対象はバグ確率0%になるべき", () => {
   const settings: GameSettings = {
@@ -34,8 +34,20 @@ Deno.test("再現テスト - エンジニアが調査して生存している対
   };
 
   const events: GameEvent[] = [
-    { day: 1, type: "CO", playerId: "player", claimedRole: "ENGINEER", id: "1" },
-    { day: 1, type: "CO", playerId: "sha_ming", claimedRole: "ENGINEER", id: "2" },
+    {
+      day: 1,
+      type: "CO",
+      playerId: "player",
+      claimedRole: "ENGINEER",
+      id: "1",
+    },
+    {
+      day: 1,
+      type: "CO",
+      playerId: "sha_ming",
+      claimedRole: "ENGINEER",
+      id: "2",
+    },
     { day: 1, type: "CO", playerId: "raqio", claimedRole: "ENGINEER", id: "3" },
     { day: 1, type: "VOTE", frozenPlayerId: "raqio", id: "4" },
     { day: 1, type: "NO_ATTACK", note: "夜間の犠牲者なし", id: "5" },

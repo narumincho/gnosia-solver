@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { GnosiaSolver } from "./solver.ts";
-import { GameSettings, GameEvent } from "../types.ts";
+import { GameEvent, GameSettings } from "../types.ts";
 
 Deno.test("NO_ATTACK - 守護天使の護衛成功による非グノーシア確定と破綻検知", () => {
   const settings: GameSettings = {

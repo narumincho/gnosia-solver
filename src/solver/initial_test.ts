@@ -7,6 +7,8 @@ Deno.test("GnosiaSolver - 15人初期状態（イベント0件）で破綻しな
   const startTime = performance.now();
   const result = solver.solve();
   const duration = performance.now() - startTime;
-  console.log(`Execution time: ${duration}ms, worlds: ${result.totalPossibleWorlds}, contradiction: ${result.hasContradiction}`);
+  console.log(
+    `Execution time: ${duration}ms, worlds: ${result.totalPossibleWorlds}, contradiction: ${result.hasContradiction}`,
+  );
   assertEquals(result.hasContradiction, false);
 });

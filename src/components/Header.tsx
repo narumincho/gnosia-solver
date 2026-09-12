@@ -1,9 +1,10 @@
-import { Settings, RefreshCw, Globe, HelpCircle } from "lucide-preact";
+import { Settings, RefreshCw, Globe, ArrowUpDown } from "lucide-preact";
 
 interface HeaderProps {
   onOpenSettings: () => void;
   onReset: () => void;
   onOpenWorlds: () => void;
+  onOpenExportImport: () => void;
   possibleWorldsCount: number;
 }
 
@@ -11,6 +12,7 @@ export function Header({
   onOpenSettings,
   onReset,
   onOpenWorlds,
+  onOpenExportImport,
   possibleWorldsCount,
 }: HeaderProps) {
   return (
@@ -32,12 +34,22 @@ export function Header({
 
         <button
           className="btn"
+          onClick={onOpenExportImport}
+          title="現在の入力状況をファイルやテキストで保存・復元"
+        >
+          <ArrowUpDown size={16} />
+          <span>保存 / 読込</span>
+        </button>
+
+        <button
+          className="btn"
           onClick={onOpenSettings}
           title="参加者や役職設定を変更"
         >
           <Settings size={16} />
           <span>ゲーム設定</span>
         </button>
+
 
         <button
           className="btn btn-danger btn-sm"

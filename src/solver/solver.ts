@@ -315,6 +315,26 @@ export class GnosiaSolver {
     }
 
 
+    // エンジニアCOしたプレイヤーは、真エンジニアか敵陣営（GNOSIA, AC, BUG）
+    for (const pid of engineerCOs) {
+      if (candidateRoles[pid]) {
+        candidateRoles[pid].delete("CREW");
+        candidateRoles[pid].delete("DOCTOR");
+        candidateRoles[pid].delete("GUARDIAN_ANGEL");
+        candidateRoles[pid].delete("GUARD_DUTY");
+      }
+    }
+
+    // ドクターCOしたプレイヤーは、真ドクターか敵陣営（GNOSIA, AC, BUG）
+    for (const pid of doctorCOs) {
+      if (candidateRoles[pid]) {
+        candidateRoles[pid].delete("CREW");
+        candidateRoles[pid].delete("ENGINEER");
+        candidateRoles[pid].delete("GUARDIAN_ANGEL");
+        candidateRoles[pid].delete("GUARD_DUTY");
+      }
+    }
+
     // 潜伏なし設定の場合: COしていないプレイヤーは真ENGINEER/真DOCTORになれない
     if (!this.settings.allowHiddenRoles) {
       if (this.settings.roles.hasEngineer && engineerCOs.size > 0) {
@@ -362,65 +382,198 @@ export class GnosiaSolver {
       }
     }
 
-    // バックトラッキングによる世界探索
-    const validWorlds: RoleAssignment[] = [];
+    // --- 対称性縮約 & 高速厳密解エンジン ---
+    // イベントや個別制約に関与しているキーパーソン（制約あり）を抽出
+    const involvedPlayerIds = new Set<string>();
+    if (options.perspectivePlayerId) {
+      involvedPlayerIds.add(options.perspectivePlayerId);
+    }
+    for (const ev of this.events) {
+      if (ev.type === "CO") involvedPlayerIds.add(ev.playerId);
+      else if (ev.type === "INVESTIGATION") {
+        involvedPlayerIds.add(ev.investigatorId);
+        involvedPlayerIds.add(ev.targetId);
+      } else if (ev.type === "DOCTOR_REPORT") {
+        involvedPlayerIds.add(ev.reporterId);
+        involvedPlayerIds.add(ev.targetId);
+      } else if (ev.type === "DEFINITE_LIE") {
+        involvedPlayerIds.add(ev.targetId);
+      } else if (ev.type === "ATTACK") {
+        involvedPlayerIds.add(ev.attackedPlayerId);
+      } else if (ev.type === "VOTE") {
+        involvedPlayerIds.add(ev.frozenPlayerId);
+      }
+    }
+
+    // candidateRolesのサイズが最大のグループ（無制約のデフォルト乗員候補）を特定
+    let maxCandidateSize = 0;
+    for (const pid of playerIds) {
+      if (candidateRoles[pid].size > maxCandidateSize) {
+        maxCandidateSize = candidateRoles[pid].size;
+      }
+    }
+
+    const constrainedPlayerIds: string[] = [];
+    const unconstrainedPlayerIds: string[] = [];
+
+    for (const pid of playerIds) {
+      if (involvedPlayerIds.has(pid) || candidateRoles[pid].size < maxCandidateSize) {
+        constrainedPlayerIds.push(pid);
+      } else {
+        unconstrainedPlayerIds.push(pid);
+      }
+    }
+
+    // 階乗計算
+    const factorial = (n: number): number => {
+      let res = 1;
+      for (let i = 2; i <= n; i++) res *= i;
+      return res;
+    };
+
+    const allRoles: Role[] = [
+      "CREW",
+      "GNOSIA",
+      "ENGINEER",
+      "DOCTOR",
+      "GUARDIAN_ANGEL",
+      "GUARD_DUTY",
+      "AC_FOLLOWER",
+      "BUG",
+    ];
+
+    let totalWorldsCount = 0;
+    const sampleWorlds: RoleAssignment[] = [];
+
+    // 重み付きカウント集計（厳密解）
+    const roleWeightedCounts: Record<string, Record<Role, number>> = {};
+    const gnosiaWeightedCounts: Record<string, number> = {};
+    const enemyWeightedCounts: Record<string, number> = {};
+
+    for (const pid of playerIds) {
+      roleWeightedCounts[pid] = {} as Record<Role, number>;
+      for (const r of allRoles) {
+        roleWeightedCounts[pid][r] = 0;
+      }
+      gnosiaWeightedCounts[pid] = 0;
+      enemyWeightedCounts[pid] = 0;
+    }
+
     const currentAssignment: RoleAssignment = {};
     const remainingRoleCounts = { ...(targetRoleCounts as Record<Role, number>) };
 
-    // 探索順序: 候補役職数が少ないプレイヤー順 (MRVヒューリスティック)
-    const sortedPlayerIds = [...playerIds].sort(
+    // キーパーソンをMRV順にソート
+    constrainedPlayerIds.sort(
       (a, b) => candidateRoles[a].size - candidateRoles[b].size
     );
 
     const checkEventConsistency = (assignment: RoleAssignment): boolean => {
-      // 役職が確定しているプレイヤー間でのイベント整合性をチェック
       for (const ev of this.events) {
         if (ev.type === "INVESTIGATION") {
           const invRole = assignment[ev.investigatorId];
           const targetRole = assignment[ev.targetId];
-          // 調査者が真エンジニアの場合
           if (invRole === "ENGINEER" && targetRole !== undefined) {
             const isTargetGnosia = targetRole === "GNOSIA";
-            if (ev.result === "GNOSIA" && !isTargetGnosia) {
-              return false; // 真エンジニアが人間/バグをグノーシアと誤報した
-            }
-            if (ev.result === "HUMAN" && isTargetGnosia) {
-              return false; // 真エンジニアがグノーシアを人間と誤報した
-            }
+            if (ev.result === "GNOSIA" && !isTargetGnosia) return false;
+            if (ev.result === "HUMAN" && isTargetGnosia) return false;
           }
         } else if (ev.type === "DOCTOR_REPORT") {
           const docRole = assignment[ev.reporterId];
           const targetRole = assignment[ev.targetId];
-          // 報告者が真ドクターの場合
           if (docRole === "DOCTOR" && targetRole !== undefined) {
             const isTargetGnosia = targetRole === "GNOSIA";
-            if (ev.result === "GNOSIA" && !isTargetGnosia) {
-              return false;
-            }
-            if (ev.result === "HUMAN" && isTargetGnosia) {
-              return false;
-            }
+            if (ev.result === "GNOSIA" && !isTargetGnosia) return false;
+            if (ev.result === "HUMAN" && isTargetGnosia) return false;
           }
         } else if (ev.type === "DEFINITE_LIE") {
           const liarRole = assignment[ev.targetId];
           if (liarRole !== undefined && isHumanSide(liarRole)) {
-            return false; // 人間陣営が嘘をつくことはない
+            return false;
           }
         }
       }
       return true;
     };
 
-    const backtrack = (index: number) => {
-      if (index === sortedPlayerIds.length) {
-        // 全員割り当て完了。最終整合性チェック
-        if (checkEventConsistency(currentAssignment)) {
-          validWorlds.push({ ...currentAssignment });
+    const backtrackConstrained = (index: number) => {
+      if (index === constrainedPlayerIds.length) {
+        // キーパーソン割り当て完了
+        if (!checkEventConsistency(currentAssignment)) return;
+
+        // 残りの無制約プレイヤーへの役職プール割り当て（多項係数）
+        const unconstrainedCount = unconstrainedPlayerIds.length;
+        let weight = 1;
+
+        if (unconstrainedCount > 0) {
+          // 残っている役職が、無制約プレイヤーの候補に含まれているかチェック
+          const samplePid = unconstrainedPlayerIds[0];
+          const allowedCandidates = candidateRoles[samplePid];
+          for (const [r, count] of Object.entries(remainingRoleCounts)) {
+            if ((count || 0) > 0 && !allowedCandidates.has(r as Role)) {
+              return; // unconstrainedプレイヤーがなれない役職が余っているため破綻
+            }
+          }
+
+          let denom = 1;
+          for (const count of Object.values(remainingRoleCounts)) {
+            denom *= factorial(count || 0);
+          }
+          weight = Math.round(factorial(unconstrainedCount) / denom);
+          if (weight <= 0) return;
+        }
+
+
+        totalWorldsCount += weight;
+
+        // サンプル世界の生成（上位50件）
+        if (sampleWorlds.length < 50) {
+          const fullSample = { ...currentAssignment };
+          if (unconstrainedCount > 0) {
+            const pool: Role[] = [];
+            for (const [r, cnt] of Object.entries(remainingRoleCounts)) {
+              for (let i = 0; i < (cnt || 0); i++) {
+                pool.push(r as Role);
+              }
+            }
+            unconstrainedPlayerIds.forEach((pid, idx) => {
+              fullSample[pid] = pool[idx];
+            });
+          }
+          sampleWorlds.push(fullSample);
+        }
+
+        // キーパーソンたちの集計
+        for (const pid of constrainedPlayerIds) {
+          const r = currentAssignment[pid];
+          roleWeightedCounts[pid][r] += weight;
+          if (r === "GNOSIA") {
+            gnosiaWeightedCounts[pid] += weight;
+          }
+          if (r === "GNOSIA" || r === "AC_FOLLOWER" || r === "BUG") {
+            enemyWeightedCounts[pid] += weight;
+          }
+        }
+
+        // 無制約プレイヤーたちの集計（残りの役職枠を均等配分）
+        if (unconstrainedCount > 0) {
+          for (const pid of unconstrainedPlayerIds) {
+            for (const r of allRoles) {
+              const rCount = remainingRoleCounts[r] || 0;
+              const probFraction = rCount / unconstrainedCount;
+              roleWeightedCounts[pid][r] += probFraction * weight;
+              if (r === "GNOSIA") {
+                gnosiaWeightedCounts[pid] += probFraction * weight;
+              }
+              if (r === "GNOSIA" || r === "AC_FOLLOWER" || r === "BUG") {
+                enemyWeightedCounts[pid] += probFraction * weight;
+              }
+            }
+          }
         }
         return;
       }
 
-      const pid = sortedPlayerIds[index];
+      const pid = constrainedPlayerIds[index];
       const candidates = candidateRoles[pid];
 
       for (const role of candidates) {
@@ -429,9 +582,8 @@ export class GnosiaSolver {
         currentAssignment[pid] = role;
         remainingRoleCounts[role]--;
 
-        // 途中チェック（枝刈り）
         if (checkEventConsistency(currentAssignment)) {
-          backtrack(index + 1);
+          backtrackConstrained(index + 1);
         }
 
         delete currentAssignment[pid];
@@ -439,10 +591,9 @@ export class GnosiaSolver {
       }
     };
 
-    backtrack(0);
+    backtrackConstrained(0);
 
-    const totalWorlds = validWorlds.length;
-    if (totalWorlds === 0) {
+    if (totalWorldsCount === 0) {
       return {
         totalPossibleWorlds: 0,
         roleProbabilities: {},
@@ -456,64 +607,35 @@ export class GnosiaSolver {
       };
     }
 
-    // 確率計算の集計
+    // 確率計算の正規化
     const roleProbabilities: Record<string, Record<Role, number>> = {};
     const gnosiaProbabilities: Record<string, number> = {};
     const enemyProbabilities: Record<string, number> = {};
     const definiteRoles: Record<string, Role> = {};
 
-    const allRoles: Role[] = [
-      "CREW",
-      "GNOSIA",
-      "ENGINEER",
-      "DOCTOR",
-      "GUARDIAN_ANGEL",
-      "GUARD_DUTY",
-      "AC_FOLLOWER",
-      "BUG",
-    ];
-
     for (const pid of playerIds) {
       roleProbabilities[pid] = {} as Record<Role, number>;
       for (const r of allRoles) {
-        roleProbabilities[pid][r] = 0;
-      }
-      gnosiaProbabilities[pid] = 0;
-      enemyProbabilities[pid] = 0;
-    }
-
-    for (const world of validWorlds) {
-      for (const pid of playerIds) {
-        const role = world[pid];
-        roleProbabilities[pid][role] = (roleProbabilities[pid][role] || 0) + 1;
-        if (role === "GNOSIA") {
-          gnosiaProbabilities[pid]++;
-        }
-        if (role === "GNOSIA" || role === "AC_FOLLOWER" || role === "BUG") {
-          enemyProbabilities[pid]++;
-        }
-      }
-    }
-
-    for (const pid of playerIds) {
-      for (const r of allRoles) {
-        roleProbabilities[pid][r] /= totalWorlds;
-        if (roleProbabilities[pid][r] === 1) {
+        const prob = roleWeightedCounts[pid][r] / totalWorldsCount;
+        roleProbabilities[pid][r] = prob;
+        if (prob >= 0.999999) {
           definiteRoles[pid] = r;
         }
       }
-      gnosiaProbabilities[pid] /= totalWorlds;
-      enemyProbabilities[pid] /= totalWorlds;
+      gnosiaProbabilities[pid] = gnosiaWeightedCounts[pid] / totalWorldsCount;
+      enemyProbabilities[pid] = enemyWeightedCounts[pid] / totalWorldsCount;
     }
 
     return {
-      totalPossibleWorlds: totalWorlds,
+      totalPossibleWorlds: totalWorldsCount,
       roleProbabilities,
       gnosiaProbabilities,
       enemyProbabilities,
       definiteRoles,
       hasContradiction: false,
-      sampleWorlds: validWorlds.slice(0, 50),
+      sampleWorlds,
     };
   }
 }
+
+

@@ -6,7 +6,9 @@ import {
   DEFAULT_CHARACTERS,
   PlayerStatus,
   PerspectiveOption,
+  SessionData,
 } from "../types.ts";
+
 import { GnosiaSolver } from "../solver/solver.ts";
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -110,6 +112,52 @@ export function useGameStore() {
     }
   };
 
+  // エクスポート用データ生成
+  const exportSession = (): SessionData => {
+    return {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      settings,
+      events,
+      currentDay,
+      perspective,
+      playerStatuses,
+    };
+  };
+
+  // インポート実行
+  const importSession = (data: any): { success: boolean; error?: string } => {
+    try {
+      if (!data || typeof data !== "object") {
+        return { success: false, error: "無効なデータ形式です。" };
+      }
+
+      if (!data.settings || !Array.isArray(data.settings.players) || !data.settings.roles) {
+        return { success: false, error: "ゲーム設定 (settings) が正しく含まれていません。" };
+      }
+
+      if (!Array.isArray(data.events)) {
+        return { success: false, error: "イベント一覧 (events) が正しく含まれていません。" };
+      }
+
+      setSettings(data.settings);
+      setEvents(data.events);
+      if (typeof data.currentDay === "number") {
+        setCurrentDay(data.currentDay);
+      }
+      if (data.perspective && typeof data.perspective.id === "string") {
+        setPerspective(data.perspective);
+      }
+      if (data.playerStatuses && typeof data.playerStatuses === "object") {
+        setPlayerStatuses(data.playerStatuses);
+      }
+
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || "インポート中にエラーが発生しました。" };
+    }
+  };
+
   return {
     settings,
     setSettings,
@@ -127,5 +175,8 @@ export function useGameStore() {
     addEvent,
     removeEvent,
     resetGame,
+    exportSession,
+    importSession,
   };
 }
+

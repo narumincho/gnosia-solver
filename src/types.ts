@@ -228,3 +228,15 @@ export interface PerspectiveOption {
   name: string;
   role?: Role; // その視点での自身の役職（指定時）
 }
+
+// エクスポート / インポート用セッションデータ
+export interface SessionData {
+  version: number;
+  exportedAt: string;
+  settings: GameSettings;
+  events: GameEvent[];
+  currentDay: number;
+  perspective: PerspectiveOption;
+  playerStatuses?: Record<string, PlayerStatus>;
+}
+

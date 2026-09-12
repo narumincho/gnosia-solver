@@ -7,6 +7,7 @@ import { EventTimeline } from "./components/EventTimeline.tsx";
 import { AddEventModal } from "./components/AddEventModal.tsx";
 import { GameSetupModal } from "./components/GameSetupModal.tsx";
 import { WorldListModal } from "./components/WorldListModal.tsx";
+import { ExportImportModal } from "./components/ExportImportModal.tsx";
 import { EventType, Role } from "./types.ts";
 
 export function App() {
@@ -25,12 +26,16 @@ export function App() {
     addEvent,
     removeEvent,
     resetGame,
+    exportSession,
+    importSession,
   } = useGameStore();
 
   // モーダル管理
   const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [isWorldsOpen, setIsWorldsOpen] = useState(false);
+  const [isExportImportOpen, setIsExportImportOpen] = useState(false);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+
   const [addEventInitialType, setAddEventInitialType] = useState<EventType>("DEFINITE_LIE");
   const [addEventInitialPlayerId, setAddEventInitialPlayerId] = useState<string | undefined>(undefined);
 
@@ -69,8 +74,10 @@ export function App() {
         onOpenSettings={() => setIsSetupOpen(true)}
         onReset={resetGame}
         onOpenWorlds={() => setIsWorldsOpen(true)}
+        onOpenExportImport={() => setIsExportImportOpen(true)}
         possibleWorldsCount={solverResult.totalPossibleWorlds}
       />
+
 
       <PerspectiveBar
         settings={settings}
@@ -158,6 +165,14 @@ export function App() {
         totalWorlds={solverResult.totalPossibleWorlds}
         settings={settings}
       />
+
+      <ExportImportModal
+        isOpen={isExportImportOpen}
+        onClose={() => setIsExportImportOpen(false)}
+        onExport={exportSession}
+        onImport={importSession}
+      />
     </div>
   );
 }
+

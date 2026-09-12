@@ -49,11 +49,12 @@ Deno.test("GnosiaSolver - エンジニアCOと調査結果、襲撃による確�
       hasDoctor: false,
       hasGuardianAngel: false,
       hasGuardDuty: false,
-      hasACFollower: false,
+      hasACFollower: true,
       hasBug: false,
     },
     allowHiddenRoles: false,
   };
+
 
   const events: GameEvent[] = [
     // p2 (セツ) と p4 (SQ) がエンジニアCO

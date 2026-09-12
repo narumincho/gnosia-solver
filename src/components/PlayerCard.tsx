@@ -1,4 +1,4 @@
-import { AlertTriangle, ShieldAlert, Skull, Snowflake, User } from "lucide-preact";
+import { AlertTriangle, ShieldAlert, Skull, Snowflake, Target, User } from "lucide-preact";
 import {
   PlayerStatus,
   Role,
@@ -13,9 +13,11 @@ interface PlayerCardProps {
   definiteLieReasons?: string[];
   isCurrentPerspective: boolean;
   solverResult: SolverResult;
+  myRole?: Role;
   onQuickLie: (playerId: string) => void;
   onQuickFreeze: (playerId: string) => void;
   onQuickAttack: (playerId: string) => void;
+  onQuickGnosiaAttack?: (playerId: string) => void;
   onQuickInvestigate: (playerId: string) => void;
   onQuickDoctorReport?: (playerId: string) => void;
 }
@@ -27,9 +29,11 @@ export function PlayerCard({
   definiteLieReasons,
   isCurrentPerspective,
   solverResult,
+  myRole,
   onQuickLie,
   onQuickFreeze,
   onQuickAttack,
+  onQuickGnosiaAttack,
   onQuickInvestigate,
   onQuickDoctorReport,
 }: PlayerCardProps) {
@@ -176,10 +180,20 @@ export function PlayerCard({
           <button
             className="quick-btn"
             onClick={() => onQuickAttack(player.id)}
-            title="夜間に消滅 (襲撃死)"
+            title="夜間に消滅"
           >
             <Skull size={11} /> 消滅
           </button>
+          {myRole === "GNOSIA" && player.id !== "player" && onQuickGnosiaAttack && (
+            <button
+              className="quick-btn"
+              onClick={() => onQuickGnosiaAttack(player.id)}
+              style={{ color: "#fb7185", borderColor: "rgba(244, 63, 94, 0.4)" }}
+              title="この乗員を夜の襲撃対象に指定 (グノーシア視点)"
+            >
+              <Target size={11} /> 襲撃
+            </button>
+          )}
           <button
             className="quick-btn quick-btn-lie"
             onClick={() => onQuickLie(player.id)}

@@ -144,8 +144,10 @@ export type EventType =
   | "DOCTOR_REPORT"     // ドクター判定結果
   | "DEFINITE_LIE"      // 嘘をついていることが確定
   | "VOTE"              // コールドスリープ (投票)
-  | "ATTACK"            // 襲撃・消滅 (夜)
-  | "NO_ATTACK"         // 襲撃なし (守護天使護衛 / バグ襲撃)
+  | "DISAPPEARANCE"     // 消滅もしくは平和 (夜の出来事: 0〜2人消滅)
+  | "GNOSIA_ATTACK"     // グノーシア夜間襲撃対象指定 (自分G視点)
+  | "ATTACK"            // 襲撃・消滅 (夜) - 後方互換用
+  | "NO_ATTACK"         // 襲撃なし (守護天使護衛 / バグ襲撃) - 後方互換用
   | "DAY_CHANGE"        // 翌日へ進行 (日付切り替え)
   | "NOTE";             // メモ・その他
 
@@ -192,15 +194,27 @@ export interface VoteEvent extends BaseGameEvent {
   votes?: Record<string, string>; // voterId -> targetId
 }
 
+// 消滅もしくは平和 (夜の出来事: 0〜2人消滅)
+export interface DisappearanceEvent extends BaseGameEvent {
+  type: "DISAPPEARANCE";
+  disappearedPlayerIds: string[]; // 0人(平和/犠牲者なし), 1人消滅, 2人消滅
+}
+
+// グノーシア夜間襲撃対象指定 (自分がグノーシアの場合の視点入力)
+export interface GnosiaAttackEvent extends BaseGameEvent {
+  type: "GNOSIA_ATTACK";
+  targetId: string; // 襲撃対象
+}
+
 export interface AttackEvent extends BaseGameEvent {
   type: "ATTACK";
-  attackedPlayerId: string; // 消滅したプレイヤー
+  attackedPlayerId: string; // 消滅したプレイヤー (後方互換用)
 }
 
 export interface NoAttackEvent extends BaseGameEvent {
   type: "NO_ATTACK";
-  guardedPlayerId?: string; // 守護天使が護衛した対象（任意）
-  note?: string; // メモ（「犠牲者なし」「バグ襲撃？」「天使護衛成功？」など）
+  guardedPlayerId?: string; // 守護天使が護衛した対象（任意） (後方互換用)
+  note?: string; // メモ (後方互換用)
 }
 
 export interface DayChangeEvent extends BaseGameEvent {
@@ -214,6 +228,8 @@ export type GameEvent =
   | DoctorReportEvent
   | DefiniteLieEvent
   | VoteEvent
+  | DisappearanceEvent
+  | GnosiaAttackEvent
   | AttackEvent
   | NoAttackEvent
   | DayChangeEvent;
@@ -224,6 +240,8 @@ export type NewGameEvent =
   | (Omit<DoctorReportEvent, "id" | "day"> & { day?: number })
   | (Omit<DefiniteLieEvent, "id" | "day"> & { day?: number })
   | (Omit<VoteEvent, "id" | "day"> & { day?: number })
+  | (Omit<DisappearanceEvent, "id" | "day"> & { day?: number })
+  | (Omit<GnosiaAttackEvent, "id" | "day"> & { day?: number })
   | (Omit<AttackEvent, "id" | "day"> & { day?: number })
   | (Omit<NoAttackEvent, "id" | "day"> & { day?: number })
   | (Omit<DayChangeEvent, "id" | "day"> & { day?: number });

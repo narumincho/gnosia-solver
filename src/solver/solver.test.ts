@@ -234,3 +234,107 @@ Deno.test("GnosiaSolver - 他者による密告 (密告者が人間なら対象�
   assertEquals(result2.gnosiaProbabilities["p3"], 1.0);
 });
 
+Deno.test("GnosiaSolver - 消滅もしくは平和 (0人消滅/平和 と 2人消滅)", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "自分" },
+      { id: "p2", name: "セツ" },
+      { id: "p3", name: "SQ" },
+      { id: "p4", name: "ラキオ" },
+      { id: "p5", name: "ジナ" },
+    ],
+    roles: {
+      gnosiaCount: 1,
+      hasEngineer: true,
+      hasDoctor: false,
+      hasGuardianAngel: true,
+      hasGuardDuty: false,
+      hasACFollower: false,
+      hasBug: true,
+    },
+    allowHiddenRoles: false,
+  };
+
+  // 1) 0人消滅（平和）: 破綻せず計算できる
+  const peaceEvents: GameEvent[] = [
+    { id: "1", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: [] },
+  ];
+  const solverPeace = new GnosiaSolver(settings, peaceEvents);
+  const resultPeace = solverPeace.solve();
+  assertEquals(resultPeace.hasContradiction, false);
+
+  // 2) 2人消滅: エンジニアがp3を調査し、朝にp2とp3が消滅 -> p3がバグ確定
+  const twoDisappearedEvents: GameEvent[] = [
+    { id: "1", day: 1, type: "CO", playerId: "player", claimedRole: "ENGINEER" },
+    { id: "2", day: 1, type: "INVESTIGATION", investigatorId: "player", targetId: "p3", result: "HUMAN" },
+    { id: "3", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: ["p2", "p3"] },
+  ];
+  const solverTwo = new GnosiaSolver(settings, twoDisappearedEvents);
+  const resultTwo = solverTwo.solve();
+  assertEquals(resultTwo.hasContradiction, false);
+  assertEquals(resultTwo.definiteRoles["p3"], "BUG");
+  assertEquals(resultTwo.definiteRoles["p2"] !== "GNOSIA", true);
+});
+
+Deno.test("GnosiaSolver - グノーシア視点で襲撃対象と違う人物が消滅した場合、その人物はバグ確定＆守護天使生存確定", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "自分" },
+      { id: "setsu", name: "セツ" },
+      { id: "sq", name: "SQ" },
+      { id: "raqio", name: "ラキオ" },
+      { id: "gina", name: "ジナ" },
+      { id: "stella", name: "ステラ" },
+    ],
+    roles: {
+      gnosiaCount: 1,
+      hasEngineer: true,
+      hasDoctor: false,
+      hasGuardianAngel: true,
+      hasGuardDuty: false,
+      hasACFollower: false,
+      hasBug: true,
+    },
+    allowHiddenRoles: false,
+  };
+
+  // 自分がグノーシア視点
+  // ラキオがエンジニアCOし、SQを調査
+  // 夜、グノーシアとしてセツを襲撃対象に指定
+  // 朝、消滅したのはSQ（襲撃対象のセツではない！）
+  const events: GameEvent[] = [
+    { id: "1", day: 1, type: "CO", playerId: "raqio", claimedRole: "ENGINEER" },
+    { id: "2", day: 1, type: "INVESTIGATION", investigatorId: "raqio", targetId: "sq", result: "HUMAN" },
+    { id: "3", day: 1, type: "GNOSIA_ATTACK", targetId: "setsu" },
+    { id: "4", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: ["sq"] },
+  ];
+
+  const solver = new GnosiaSolver(settings, events);
+  const result = solver.solve({
+    perspectivePlayerId: "player",
+    perspectiveRole: "GNOSIA",
+  });
+
+  assertEquals(result.hasContradiction, false);
+
+  // SQ は確実にバグ！
+  assertEquals(result.definiteRoles["sq"], "BUG");
+  assertEquals(result.roleProbabilities["sq"]["BUG"], 1.0);
+
+  // セツは襲撃されたが守護天使に守られたため非グノーシアかつ非バグ
+  assertEquals(result.gnosiaProbabilities["setsu"], 0.0);
+  assertEquals(result.roleProbabilities["setsu"]["BUG"], 0.0);
+
+  // ラキオはSQ（バグ）を調査して消滅させたため真エンジニア確定
+  assertEquals(result.definiteRoles["raqio"], "ENGINEER");
+
+  // もし守護天使が存在しない設定なら、セツが生き残ることはあり得ないため破綻する
+  const noAngelSettings: GameSettings = {
+    ...settings,
+    roles: { ...settings.roles, hasGuardianAngel: false },
+  };
+  const solverContradiction = new GnosiaSolver(noAngelSettings, events);
+  const resultContradiction = solverContradiction.solve();
+  assertEquals(resultContradiction.hasContradiction, true);
+});
+

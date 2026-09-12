@@ -5,6 +5,7 @@ import {
   Search,
   ShieldCheck,
   Skull,
+  Target,
   UserCheck,
   X,
 } from "lucide-preact";
@@ -29,7 +30,7 @@ interface AddEventModalProps {
   initialType?: EventType;
   initialPlayerId?: string;
   playerStatuses: Record<string, PlayerStatus>;
-  claimedRoles: Record<string, ("ENGINEER" | "DOCTOR" | "GUARD_DUTY")[]>;
+  claimedRoles: Record<string, Role[]>;
   myRole?: Role;
 }
 
@@ -40,6 +41,7 @@ export function AddEventModal({
   onUpdateEvent,
   editingEvent,
   settings,
+  currentDay = 1,
   initialType = "DEFINITE_LIE",
   initialPlayerId,
   playerStatuses,
@@ -105,6 +107,7 @@ export function AddEventModal({
   >("ENGINEER");
   const [reportResult, setReportResult] = useState<ReportJudgement>("HUMAN");
   const [witnessPlayer, setWitnessPlayer] = useState<string>("player");
+  const [disappearedPlayerIds, setDisappearedPlayerIds] = useState<string[]>([]);
   const [noAttackNote, setNoAttackNote] = useState<string>(
     "夜間の犠牲者なし (天使護衛成功 または バグ襲撃)",
   );
@@ -135,12 +138,17 @@ export function AddEventModal({
         case "VOTE":
           setSelectedPlayer(editingEvent.frozenPlayerId);
           break;
+        case "DISAPPEARANCE":
+          setDisappearedPlayerIds(editingEvent.disappearedPlayerIds);
+          break;
+        case "GNOSIA_ATTACK":
+          setSelectedPlayer(editingEvent.targetId);
+          break;
         case "ATTACK":
-          setSelectedPlayer(editingEvent.attackedPlayerId);
+          setDisappearedPlayerIds([editingEvent.attackedPlayerId]);
           break;
         case "NO_ATTACK":
-          setSelectedPlayer(editingEvent.guardedPlayerId || "");
-          setNoAttackNote(editingEvent.note || "");
+          setDisappearedPlayerIds([]);
           break;
       }
       return;
@@ -149,7 +157,14 @@ export function AddEventModal({
     // 新規登録時の初期化
     if (initialType) setEventType(initialType);
 
-    if (initialType === "DEFINITE_LIE") {
+    if (initialType === "DISAPPEARANCE") {
+      setDisappearedPlayerIds(initialPlayerId ? [initialPlayerId] : []);
+    } else if (initialType === "GNOSIA_ATTACK") {
+      const defaultTarget = initialPlayerId && initialPlayerId !== "player"
+        ? initialPlayerId
+        : alivePlayers.find((p) => p.id !== "player")?.id || settings.players[0]?.id || "";
+      setSelectedPlayer(defaultTarget);
+    } else if (initialType === "DEFINITE_LIE") {
       setWitnessPlayer("player");
       const defaultLiar = initialPlayerId && initialPlayerId !== "player"
         ? initialPlayerId
@@ -183,13 +198,10 @@ export function AddEventModal({
         : doctorCandidates[0]?.id || alivePlayers[0]?.id || "";
       setSelectedPlayer(defaultDoc);
       setTargetPlayer(frozenPlayers[0]?.id || settings.players[0]?.id || "");
-    } else if (initialType === "VOTE" || initialType === "ATTACK") {
+    } else if (initialType === "VOTE") {
       setSelectedPlayer(
         initialPlayerId || alivePlayers[0]?.id || settings.players[0]?.id || "",
       );
-    } else if (initialType === "NO_ATTACK") {
-      setSelectedPlayer("");
-      setNoAttackNote("夜間の犠牲者なし (天使護衛成功 または バグ襲撃)");
     } else {
       setSelectedPlayer(
         initialPlayerId || alivePlayers[0]?.id || settings.players[0]?.id || "",
@@ -238,17 +250,16 @@ export function AddEventModal({
           frozenPlayerId: selectedPlayer,
         };
         break;
-      case "ATTACK":
+      case "DISAPPEARANCE":
         eventData = {
-          type: "ATTACK",
-          attackedPlayerId: selectedPlayer,
+          type: "DISAPPEARANCE",
+          disappearedPlayerIds,
         };
         break;
-      case "NO_ATTACK":
+      case "GNOSIA_ATTACK":
         eventData = {
-          type: "NO_ATTACK",
-          guardedPlayerId: selectedPlayer ? selectedPlayer : undefined,
-          note: noAttackNote,
+          type: "GNOSIA_ATTACK",
+          targetId: selectedPlayer,
         };
         break;
       default:
@@ -289,7 +300,13 @@ export function AddEventModal({
               onChange={(e) => {
                 const val = (e.target as HTMLSelectElement).value as EventType;
                 setEventType(val);
-                if (val === "DEFINITE_LIE") {
+                if (val === "DISAPPEARANCE") {
+                  setDisappearedPlayerIds(selectedPlayer ? [selectedPlayer] : []);
+                } else if (val === "GNOSIA_ATTACK") {
+                  const defaultTarget =
+                    alivePlayers.find((p) => p.id !== "player")?.id || settings.players[0]?.id || "";
+                  setSelectedPlayer(defaultTarget);
+                } else if (val === "DEFINITE_LIE") {
                   setWitnessPlayer("player");
                   if (!selectedPlayer || selectedPlayer === "player") {
                     const defaultTarget =
@@ -313,25 +330,18 @@ export function AddEventModal({
                     doctorCandidates[0]?.id || alivePlayers[0]?.id || "",
                   );
                   setTargetPlayer(frozenPlayers[0]?.id || "");
-                } else if (val === "NO_ATTACK") {
-                  setSelectedPlayer("");
-                  setNoAttackNote(
-                    "夜間の犠牲者なし (天使護衛成功 または バグ襲撃)",
-                  );
-                } else if (val === "VOTE" || val === "ATTACK") {
+                } else if (val === "VOTE") {
                   setSelectedPlayer(alivePlayers[0]?.id || "");
                 }
               }}
             >
+              <option value="DISAPPEARANCE">消滅もしくは平和 (夜の出来事: 0〜2人)</option>
+              <option value="GNOSIA_ATTACK">【グノーシア視点】夜の襲撃対象指定</option>
               <option value="DEFINITE_LIE">嘘に気づいた</option>
               <option value="CO">役職名乗り出 (CO)</option>
               <option value="INVESTIGATION">エンジニア調査報告</option>
               <option value="DOCTOR_REPORT">ドクター医療報告</option>
               <option value="VOTE">コールドスリープ (投票)</option>
-              <option value="ATTACK">夜間に消滅 (襲撃死)</option>
-              <option value="NO_ATTACK">
-                夜間の襲撃なし (犠牲者ゼロ / 護衛・バグ)
-              </option>
             </select>
           </div>
 
@@ -652,29 +662,8 @@ export function AddEventModal({
             </div>
           )}
 
-          {/* 消滅 (ATTACK) */}
-          {eventType === "ATTACK" && (
-            <div className="form-group">
-              <label className="form-label">
-                夜間に消滅した人物 (生存者のみ / 非グノーシア確定)
-              </label>
-              <select
-                className="form-select"
-                value={selectedPlayer}
-                onChange={(e) =>
-                  setSelectedPlayer((e.target as HTMLSelectElement).value)}
-              >
-                {alivePlayers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* 襲撃なし (NO_ATTACK) */}
-          {eventType === "NO_ATTACK" && (
+          {/* 消滅もしくは平和 (DISAPPEARANCE) */}
+          {eventType === "DISAPPEARANCE" && (
             <div
               style={{
                 background: "rgba(168, 85, 247, 0.08)",
@@ -686,53 +675,180 @@ export function AddEventModal({
             >
               <div
                 style={{
-                  color: "#c084fc",
-                  fontSize: "0.85rem",
-                  fontWeight: "bold",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
                   marginBottom: "0.75rem",
                 }}
               >
-                夜間に誰も消滅しませんでした (犠牲者ゼロ)
+                <div
+                  style={{
+                    color: "#c084fc",
+                    fontSize: "0.9rem",
+                    fontWeight: "bold",
+                  }}
+                >
+                  夜の出来事 (消滅もしくは平和)
+                </div>
+                <span
+                  className="badge"
+                  style={{
+                    background: disappearedPlayerIds.length === 0
+                      ? "rgba(34, 197, 94, 0.2)"
+                      : "rgba(244, 63, 94, 0.2)",
+                    color: disappearedPlayerIds.length === 0
+                      ? "#4ade80"
+                      : "#fb7185",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {disappearedPlayerIds.length === 0
+                    ? "🕊️ 犠牲者ゼロ (平和)"
+                    : `💀 ${disappearedPlayerIds.length}人消滅`}
+                </span>
+              </div>
+              <p
+                style={{
+                  fontSize: "0.8rem",
+                  color: "var(--text-muted)",
+                  marginBottom: "0.75rem",
+                  lineHeight: "1.4",
+                }}
+              >
+                夜間に消滅した乗員を <strong>0〜2人</strong> 選択してください。<br />
+                ※誰も選ばない（0人）場合は「犠牲者なし（平和）」となります。
+              </p>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
+                  gap: "0.5rem",
+                }}
+              >
+                {alivePlayers.map((p) => {
+                  const isSelected = disappearedPlayerIds.includes(p.id);
+                  const isMaxReached =
+                    disappearedPlayerIds.length >= 2 && !isSelected;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      disabled={isMaxReached}
+                      onClick={() => {
+                        if (isSelected) {
+                          setDisappearedPlayerIds((prev) =>
+                            prev.filter((id) => id !== p.id)
+                          );
+                        } else {
+                          if (disappearedPlayerIds.length < 2) {
+                            setDisappearedPlayerIds((prev) => [...prev, p.id]);
+                          }
+                        }
+                      }}
+                      style={{
+                        padding: "0.6rem 0.5rem",
+                        borderRadius: "6px",
+                        border: isSelected
+                          ? "2px solid #f43f5e"
+                          : "1px solid var(--border-color)",
+                        background: isSelected
+                          ? "rgba(244, 63, 94, 0.25)"
+                          : "var(--bg-secondary)",
+                        color: isSelected
+                          ? "#fff"
+                          : isMaxReached
+                          ? "var(--text-muted)"
+                          : "var(--text-main)",
+                        cursor: isMaxReached ? "not-allowed" : "pointer",
+                        fontSize: "0.85rem",
+                        fontWeight: isSelected ? "bold" : "normal",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "0.35rem",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      {isSelected ? "💀 " : ""}
+                      {p.name}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {disappearedPlayerIds.length > 0 && (
+                <div
+                  style={{
+                    marginTop: "0.75rem",
+                    display: "flex",
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    onClick={() => setDisappearedPlayerIds([])}
+                    style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}
+                  >
+                    選択をクリア (犠牲者ゼロにする)
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* グノーシア襲撃対象 (GNOSIA_ATTACK) */}
+          {eventType === "GNOSIA_ATTACK" && (
+            <div
+              style={{
+                background: "rgba(244, 63, 94, 0.08)",
+                padding: "1rem",
+                borderRadius: "8px",
+                border: "1px solid rgba(244, 63, 94, 0.3)",
+                marginBottom: "1rem",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  color: "#fb7185",
+                  marginBottom: "0.5rem",
+                  fontSize: "0.85rem",
+                  fontWeight: "bold",
+                }}
+              >
+                <Target size={16} />
+                <span>自分がグノーシア陣営の場合の襲撃先指定</span>
               </div>
               <p
                 style={{
                   fontSize: "0.75rem",
                   color: "var(--text-muted)",
                   marginBottom: "0.75rem",
+                  lineHeight: "1.4",
                 }}
               >
-                守護天使が護衛に成功したか、またはグノーシアがバグを襲撃した可能性があります。
+                襲撃対象と異なる人物が朝に消滅した場合、その消滅者は<strong>【バグ確定】</strong>となり、守護天使が生存して襲撃対象を守った世界のみが導出されます。
               </p>
-
-              <div className="form-group">
-                <label className="form-label">
-                  護衛対象の人物 (守護天使視点などで分かっている場合、任意)
-                </label>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">襲撃対象 (生存者)</label>
                 <select
                   className="form-select"
                   value={selectedPlayer}
                   onChange={(e) =>
                     setSelectedPlayer((e.target as HTMLSelectElement).value)}
                 >
-                  <option value="">(不明・指定なし: 単に犠牲者なし)</option>
-                  {alivePlayers.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} (護衛されたため非グノーシア確定)
-                    </option>
-                  ))}
+                  {alivePlayers
+                    .filter((p) => p.id !== "player")
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
                 </select>
-              </div>
-
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">メモ</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={noAttackNote}
-                  onInput={(e) =>
-                    setNoAttackNote((e.target as HTMLInputElement).value)}
-                  placeholder="例: 天使護衛成功？ / バグ襲撃？"
-                />
               </div>
             </div>
           )}
@@ -754,8 +870,9 @@ export function AddEventModal({
               disabled={(eventType === "CO" && coCandidates.length === 0) ||
                 (eventType === "DOCTOR_REPORT" && frozenPlayers.length === 0) ||
                 (eventType === "INVESTIGATION" && alivePlayers.length === 0) ||
-                ((eventType === "VOTE" || eventType === "ATTACK") &&
-                  alivePlayers.length === 0)}
+                (eventType === "VOTE" && alivePlayers.length === 0) ||
+                (eventType === "GNOSIA_ATTACK" &&
+                  alivePlayers.filter((p) => p.id !== "player").length === 0)}
             >
               {editingEvent ? "変更を保存する" : "イベントを記録する"}
             </button>

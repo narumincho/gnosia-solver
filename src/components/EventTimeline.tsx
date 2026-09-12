@@ -115,6 +115,44 @@ export function EventTimeline({
           </span>
         );
       }
+      case "DISAPPEARANCE": {
+        if (ev.disappearedPlayerIds.length === 0) {
+          return (
+            <span>
+              夜間に <strong style={{ color: "var(--color-crew)" }}>犠牲者なし (平和)</strong>
+            </span>
+          );
+        } else if (ev.disappearedPlayerIds.length === 1) {
+          return (
+            <span>
+              夜間に <strong>{getPlayerName(ev.disappearedPlayerIds[0])}</strong> が{" "}
+              <span style={{ color: "var(--color-gnosia)" }}>消滅</span> (非グノーシア確定)
+            </span>
+          );
+        } else {
+          return (
+            <span>
+              夜間に <strong>{getPlayerName(ev.disappearedPlayerIds[0])}</strong> と{" "}
+              <strong>{getPlayerName(ev.disappearedPlayerIds[1])}</strong> が{" "}
+              <span style={{ color: "var(--color-gnosia)" }}>消滅</span>{" "}
+              <span className="badge" style={{ fontSize: "0.7rem", padding: "1px 6px", background: "rgba(168, 85, 247, 0.2)", color: "#c084fc" }}>
+                2人消滅
+              </span>
+            </span>
+          );
+        }
+      }
+      case "GNOSIA_ATTACK": {
+        return (
+          <span>
+            夜間に <strong style={{ color: "var(--color-gnosia)" }}>{getPlayerName(ev.targetId)}</strong> を{" "}
+            <strong>【襲撃対象に指定】</strong>{" "}
+            <span className="badge badge-enemy" style={{ fontSize: "0.7rem", padding: "1px 6px" }}>
+              G視点
+            </span>
+          </span>
+        );
+      }
       case "ATTACK": {
         return (
           <span>
@@ -166,8 +204,11 @@ export function EventTimeline({
       case "INVESTIGATION":
       case "DOCTOR_REPORT":
         return "event-investigate";
+      case "DISAPPEARANCE":
       case "ATTACK":
         return "event-attack";
+      case "GNOSIA_ATTACK":
+        return "event-lie";
       case "NO_ATTACK":
         return "event-angel";
       case "VOTE":
@@ -226,14 +267,42 @@ export function EventTimeline({
           </h2>
         </div>
 
-        <button
-          className="btn btn-primary btn-sm"
-          onClick={() => onOpenAddEvent()}
-          title="任意のイベントを追加"
-        >
-          <Plus size={14} />
-          <span>イベント追加</span>
-        </button>
+        <div style={{ display: "flex", gap: "0.4rem" }}>
+          <button
+            className="btn btn-sm"
+            style={{
+              background: "rgba(168, 85, 247, 0.15)",
+              color: "#c084fc",
+              border: "1px solid rgba(168, 85, 247, 0.4)",
+            }}
+            onClick={() => onOpenAddEvent("DISAPPEARANCE")}
+            title="夜の出来事 (消滅または平和) を記録"
+          >
+            <span>🌙 消滅/平和</span>
+          </button>
+          {myRole === "GNOSIA" && (
+            <button
+              className="btn btn-sm"
+              style={{
+                background: "rgba(244, 63, 94, 0.15)",
+                color: "#fb7185",
+                border: "1px solid rgba(244, 63, 94, 0.4)",
+              }}
+              onClick={() => onOpenAddEvent("GNOSIA_ATTACK")}
+              title="自分がグノーシアの際の襲撃対象を記録"
+            >
+              <span>🎯 襲撃先</span>
+            </button>
+          )}
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => onOpenAddEvent()}
+            title="任意のイベントを追加"
+          >
+            <Plus size={14} />
+            <span>イベント追加</span>
+          </button>
+        </div>
       </div>
 
       {/* 生存エンジニア・ドクターのクイック報告パネル */}

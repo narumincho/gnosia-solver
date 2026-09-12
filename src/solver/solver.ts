@@ -4,7 +4,19 @@ import {
   Role,
   SolverResult,
   RoleAssignment,
+  GnosiaAttackEvent,
 } from "../types.ts";
+
+export const ALL_ROLES: Role[] = [
+  "CREW",
+  "GNOSIA",
+  "ENGINEER",
+  "DOCTOR",
+  "GUARDIAN_ANGEL",
+  "GUARD_DUTY",
+  "AC_FOLLOWER",
+  "BUG",
+];
 
 export interface SolverOptions {
   perspectivePlayerId?: string; // 視点プレイヤー (指定なし = 客観・神視点)
@@ -263,17 +275,31 @@ export class GnosiaSolver {
     const guardedTargetPlayers = new Set<string>();
     let hasNoAttackEvent = false;
     const definiteLiars = new Set<string>();
-
+    const disappearedPlayers = new Set<string>();
+    let hasZeroDisappearedEvent = false;
+    let hasTwoDisappearedEvent = false;
 
     for (const ev of this.events) {
       if (ev.type === "CO") {
         if (ev.claimedRole === "GUARD_DUTY") guardDutyCOs.add(ev.playerId);
         if (ev.claimedRole === "ENGINEER") engineerCOs.add(ev.playerId);
         if (ev.claimedRole === "DOCTOR") doctorCOs.add(ev.playerId);
+      } else if (ev.type === "DISAPPEARANCE") {
+        if (ev.disappearedPlayerIds.length === 0) {
+          hasZeroDisappearedEvent = true;
+        } else if (ev.disappearedPlayerIds.length === 2) {
+          hasTwoDisappearedEvent = true;
+          for (const pid of ev.disappearedPlayerIds) disappearedPlayers.add(pid);
+        } else {
+          for (const pid of ev.disappearedPlayerIds) disappearedPlayers.add(pid);
+        }
+      } else if (ev.type === "GNOSIA_ATTACK") {
+        // グノーシアは仲間を襲撃しないため非グノーシア
+        candidateRoles[ev.targetId]?.delete("GNOSIA");
       } else if (ev.type === "ATTACK") {
-        attackedPlayers.add(ev.attackedPlayerId);
+        disappearedPlayers.add(ev.attackedPlayerId);
       } else if (ev.type === "NO_ATTACK") {
-        hasNoAttackEvent = true;
+        hasZeroDisappearedEvent = true;
         if (ev.guardedPlayerId) {
           guardedTargetPlayers.add(ev.guardedPlayerId);
         }
@@ -285,8 +311,8 @@ export class GnosiaSolver {
       }
     }
 
-    // 襲撃なしの可能性チェック
-    if (hasNoAttackEvent && !this.settings.roles.hasGuardianAngel && !this.settings.roles.hasBug) {
+    // 襲撃なし（犠牲者ゼロ / 平和）の可能性チェック
+    if (hasZeroDisappearedEvent && !this.settings.roles.hasGuardianAngel && !this.settings.roles.hasBug) {
       return {
         totalPossibleWorlds: 0,
         roleProbabilities: {},
@@ -294,13 +320,106 @@ export class GnosiaSolver {
         enemyProbabilities: {},
         definiteRoles: {},
         hasContradiction: true,
-        contradictionReason: "守護天使もバグも存在しない設定のため、襲撃なし（犠牲者なし）は発生し得ません。",
+        contradictionReason: "守護天使もバグも存在しない設定のため、夜間に犠牲者が出ない（平和）状況は発生し得ません。",
         sampleWorlds: [],
       };
     }
 
-    // 襲撃されたプレイヤーは GNOSIA ではない
-    for (const pid of attackedPlayers) {
+    // 一晩に2人消滅の可能性チェック (襲撃死＋バグ調査死)
+    if (hasTwoDisappearedEvent && !this.settings.roles.hasBug) {
+      return {
+        totalPossibleWorlds: 0,
+        roleProbabilities: {},
+        gnosiaProbabilities: {},
+        enemyProbabilities: {},
+        definiteRoles: {},
+        hasContradiction: true,
+        contradictionReason: "バグが存在しない設定のため、一晩に2人が消滅することはあり得ません。",
+        sampleWorlds: [],
+      };
+    }
+
+    // グノーシア襲撃対象と消滅者の関係からの事前演繹
+    for (const ev of this.events) {
+      if (ev.type === "DISAPPEARANCE") {
+        const gAttack = this.events.find(
+          (e): e is GnosiaAttackEvent =>
+            e.type === "GNOSIA_ATTACK" && (e.day === ev.day || e.day === ev.day - 1)
+        );
+        if (gAttack) {
+          const target = gAttack.targetId;
+          candidateRoles[target]?.delete("GNOSIA");
+
+          if (ev.disappearedPlayerIds.length === 1 && !ev.disappearedPlayerIds.includes(target)) {
+            // 襲撃対象と違う人物が1人消滅 -> その消滅者は確実にバグ！
+            const bugPid = ev.disappearedPlayerIds[0];
+            if (!this.settings.roles.hasBug) {
+              return {
+                totalPossibleWorlds: 0,
+                roleProbabilities: {},
+                gnosiaProbabilities: {},
+                enemyProbabilities: {},
+                definiteRoles: {},
+                hasContradiction: true,
+                contradictionReason: "襲撃対象と異なる人物が消滅しましたが、バグが存在しない設定です。",
+                sampleWorlds: [],
+              };
+            }
+            if (!this.settings.roles.hasGuardianAngel) {
+              return {
+                totalPossibleWorlds: 0,
+                roleProbabilities: {},
+                gnosiaProbabilities: {},
+                enemyProbabilities: {},
+                definiteRoles: {},
+                hasContradiction: true,
+                contradictionReason: "襲撃対象が生き残りましたが、守護天使が存在しない設定です。",
+                sampleWorlds: [],
+              };
+            }
+
+            // bugPid は BUG 確定
+            if (candidateRoles[bugPid]) {
+              for (const r of ALL_ROLES) {
+                if (r !== "BUG") candidateRoles[bugPid].delete(r);
+              }
+            }
+            for (const pid of playerIds) {
+              if (pid !== bugPid) candidateRoles[pid]?.delete("BUG");
+            }
+            // 襲撃対象はバグではない（守護天使に守られた）
+            candidateRoles[target]?.delete("BUG");
+          } else if (ev.disappearedPlayerIds.length === 2) {
+            if (!ev.disappearedPlayerIds.includes(target)) {
+              return {
+                totalPossibleWorlds: 0,
+                roleProbabilities: {},
+                gnosiaProbabilities: {},
+                enemyProbabilities: {},
+                definiteRoles: {},
+                hasContradiction: true,
+                contradictionReason: "2人消滅しましたが、どちらもグノーシアの襲撃対象ではありません。",
+                sampleWorlds: [],
+              };
+            }
+            // もう片方がバグ確定！
+            const bugPid = ev.disappearedPlayerIds.find((p) => p !== target)!;
+            if (candidateRoles[bugPid]) {
+              for (const r of ALL_ROLES) {
+                if (r !== "BUG") candidateRoles[bugPid].delete(r);
+              }
+            }
+            for (const pid of playerIds) {
+              if (pid !== bugPid) candidateRoles[pid]?.delete("BUG");
+            }
+            candidateRoles[target]?.delete("BUG");
+          }
+        }
+      }
+    }
+
+    // 消滅したプレイヤーは GNOSIA ではない (襲撃死またはバグ調査死のため)
+    for (const pid of disappearedPlayers) {
       if (candidateRoles[pid]) {
         candidateRoles[pid].delete("GNOSIA");
       }
@@ -463,6 +582,12 @@ export class GnosiaSolver {
       } else if (ev.type === "DEFINITE_LIE") {
         involvedPlayerIds.add(ev.targetId);
         involvedPlayerIds.add(ev.witnessId || "player");
+      } else if (ev.type === "DISAPPEARANCE") {
+        for (const pid of ev.disappearedPlayerIds) {
+          involvedPlayerIds.add(pid);
+        }
+      } else if (ev.type === "GNOSIA_ATTACK") {
+        involvedPlayerIds.add(ev.targetId);
       } else if (ev.type === "ATTACK") {
         involvedPlayerIds.add(ev.attackedPlayerId);
       } else if (ev.type === "NO_ATTACK") {
@@ -535,7 +660,10 @@ export class GnosiaSolver {
       (a, b) => candidateRoles[a].size - candidateRoles[b].size
     );
 
-    const checkEventConsistency = (assignment: RoleAssignment): boolean => {
+    const checkEventConsistency = (
+      assignment: RoleAssignment,
+      isComplete: boolean = false,
+    ): boolean => {
       for (const ev of this.events) {
         if (ev.type === "INVESTIGATION") {
           const invRole = assignment[ev.investigatorId];
@@ -550,9 +678,12 @@ export class GnosiaSolver {
             if (targetRole === "BUG") {
               const disappearedThatNight = this.events.some(
                 (other) =>
-                  other.type === "ATTACK" &&
-                  (other.day === ev.day || other.day === ev.day - 1) &&
-                  other.attackedPlayerId === ev.targetId
+                  (other.type === "ATTACK" &&
+                    (other.day === ev.day || other.day === ev.day - 1) &&
+                    other.attackedPlayerId === ev.targetId) ||
+                  (other.type === "DISAPPEARANCE" &&
+                    (other.day === ev.day || other.day === ev.day - 1) &&
+                    other.disappearedPlayerIds.includes(ev.targetId))
               );
               if (!disappearedThatNight) return false;
             }
@@ -581,6 +712,153 @@ export class GnosiaSolver {
               }
             }
           }
+        } else if (ev.type === "DISAPPEARANCE") {
+          // 該当の夜までに死亡（冷凍・消滅）したプレイヤーを抽出
+          const deadBefore = new Set<string>();
+          for (const other of this.events) {
+            if (other === ev) break;
+            if (other.type === "VOTE") deadBefore.add(other.frozenPlayerId);
+            else if (other.type === "DISAPPEARANCE") {
+              for (const pid of other.disappearedPlayerIds) deadBefore.add(pid);
+            } else if (other.type === "ATTACK") {
+              deadBefore.add(other.attackedPlayerId);
+            }
+          }
+
+          // 同夜のグノーシア襲撃対象を取得
+          const gAttack = this.events.find(
+            (e): e is GnosiaAttackEvent =>
+              e.type === "GNOSIA_ATTACK" && (e.day === ev.day || e.day === ev.day - 1)
+          );
+
+          if (ev.disappearedPlayerIds.length === 0) {
+            // 平和（犠牲者ゼロ）
+            if (gAttack) {
+              const targetRole = assignment[gAttack.targetId];
+              if (isComplete) {
+                const isTargetBug = targetRole === "BUG";
+                let canBeGuardedByGA = false;
+                if (this.settings.roles.hasGuardianAngel) {
+                  for (const [pid, r] of Object.entries(assignment)) {
+                    if (r === "GUARDIAN_ANGEL" && !deadBefore.has(pid) && pid !== gAttack.targetId) {
+                      canBeGuardedByGA = true;
+                      break;
+                    }
+                  }
+                  if (!canBeGuardedByGA && remainingRoleCounts["GUARDIAN_ANGEL"] > 0) {
+                    canBeGuardedByGA = true;
+                  }
+                }
+                if (!isTargetBug && !canBeGuardedByGA) return false;
+              }
+            }
+
+            // 平和な夜に真エンジニアがバグを調査していたら消滅が発生するはずなので矛盾
+            for (const invEv of this.events) {
+              if (invEv.type === "INVESTIGATION" && (invEv.day === ev.day || invEv.day === ev.day - 1)) {
+                if (assignment[invEv.investigatorId] === "ENGINEER" && assignment[invEv.targetId] === "BUG") {
+                  return false;
+                }
+              }
+            }
+
+          } else if (ev.disappearedPlayerIds.length === 1) {
+            const P = ev.disappearedPlayerIds[0];
+            const pRole = assignment[P];
+            if (gAttack) {
+              const target = gAttack.targetId;
+              if (P === target) {
+                // 襲撃対象が順当に消滅
+                for (const invEv of this.events) {
+                  if (invEv.type === "INVESTIGATION" && (invEv.day === ev.day || invEv.day === ev.day - 1)) {
+                    if (assignment[invEv.investigatorId] === "ENGINEER" && assignment[invEv.targetId] === "BUG") {
+                      return false;
+                    }
+                  }
+                }
+              } else {
+                // 襲撃対象と異なる人物 P が消滅 -> P はバグ確定！
+                if (pRole !== undefined && pRole !== "BUG") return false;
+
+                const targetRole = assignment[target];
+                if (targetRole !== undefined && (targetRole === "BUG" || targetRole === "GNOSIA")) {
+                  return false;
+                }
+
+                if (isComplete) {
+                  if (assignment[P] !== "BUG") return false;
+
+                  let canBeGuardedByGA = false;
+                  if (this.settings.roles.hasGuardianAngel) {
+                    for (const [pid, r] of Object.entries(assignment)) {
+                      if (r === "GUARDIAN_ANGEL" && !deadBefore.has(pid) && pid !== target) {
+                        canBeGuardedByGA = true;
+                        break;
+                      }
+                    }
+                    if (!canBeGuardedByGA && remainingRoleCounts["GUARDIAN_ANGEL"] > 0) {
+                      canBeGuardedByGA = true;
+                    }
+                  }
+                  if (!canBeGuardedByGA) return false;
+
+                  // 真エンジニアが P を調査した世界のみ有効
+                  for (const invEv of this.events) {
+                    if (invEv.type === "INVESTIGATION" && (invEv.day === ev.day || invEv.day === ev.day - 1)) {
+                      if (assignment[invEv.investigatorId] === "ENGINEER" && invEv.targetId !== P) {
+                        return false;
+                      }
+                    }
+                  }
+                }
+              }
+            } else {
+              if (pRole !== undefined && pRole !== "BUG") {
+                for (const invEv of this.events) {
+                  if (invEv.type === "INVESTIGATION" && (invEv.day === ev.day || invEv.day === ev.day - 1)) {
+                    if (assignment[invEv.investigatorId] === "ENGINEER" && assignment[invEv.targetId] === "BUG") {
+                      return false;
+                    }
+                  }
+                }
+              }
+            }
+
+          } else if (ev.disappearedPlayerIds.length === 2) {
+            // 2人消滅: 1人は襲撃死、もう1人はバグ蒸発死
+            const [p1, p2] = ev.disappearedPlayerIds;
+            const r1 = assignment[p1];
+            const r2 = assignment[p2];
+
+            if (r1 !== undefined && r2 !== undefined) {
+              const isP1Bug = r1 === "BUG";
+              const isP2Bug = r2 === "BUG";
+              if (!isP1Bug && !isP2Bug) return false;
+              if (isP1Bug && isP2Bug) return false;
+            }
+
+            if (isComplete) {
+              const isP1Bug = assignment[p1] === "BUG";
+              const isP2Bug = assignment[p2] === "BUG";
+              if (!isP1Bug && !isP2Bug) return false;
+              if (isP1Bug && isP2Bug) return false;
+
+              const bugPid = isP1Bug ? p1 : p2;
+              const attackDeadPid = isP1Bug ? p2 : p1;
+
+              if (gAttack && gAttack.targetId !== attackDeadPid) {
+                return false;
+              }
+
+              for (const invEv of this.events) {
+                if (invEv.type === "INVESTIGATION" && (invEv.day === ev.day || invEv.day === ev.day - 1)) {
+                  if (assignment[invEv.investigatorId] === "ENGINEER" && invEv.targetId !== bugPid) {
+                    return false;
+                  }
+                }
+              }
+            }
+          }
         } else if (ev.type === "NO_ATTACK") {
           if (ev.guardedPlayerId) {
             const targetRole = assignment[ev.guardedPlayerId];
@@ -595,7 +873,7 @@ export class GnosiaSolver {
     const backtrackConstrained = (index: number) => {
       if (index === constrainedPlayerIds.length) {
         // キーパーソン割り当て完了
-        if (!checkEventConsistency(currentAssignment)) return;
+        if (!checkEventConsistency(currentAssignment, true)) return;
 
         // 残りの無制約プレイヤーへの役職プール割り当て（多項係数）
         const unconstrainedCount = unconstrainedPlayerIds.length;

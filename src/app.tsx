@@ -78,8 +78,15 @@ export function App() {
 
   const handleQuickAttack = (playerId: string) => {
     addEvent({
-      type: "ATTACK",
-      attackedPlayerId: playerId,
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: [playerId],
+    });
+  };
+
+  const handleQuickGnosiaAttack = (playerId: string) => {
+    addEvent({
+      type: "GNOSIA_ATTACK",
+      targetId: playerId,
     });
   };
 
@@ -131,9 +138,11 @@ export function App() {
                 definiteLieReasons={definiteLies[p.id]}
                 isCurrentPerspective={perspective.id === p.id}
                 solverResult={solverResult}
+                myRole={myRole}
                 onQuickLie={handleQuickLie}
                 onQuickFreeze={handleQuickFreeze}
                 onQuickAttack={handleQuickAttack}
+                onQuickGnosiaAttack={handleQuickGnosiaAttack}
                 onQuickInvestigate={handleQuickInvestigate}
                 onQuickDoctorReport={handleQuickDoctorReport}
               />

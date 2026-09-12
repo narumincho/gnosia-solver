@@ -42,6 +42,7 @@ export function recalculateDays(events: GameEvent[]): GameEvent[] {
     if (ev.type === "VOTE") {
       hasVote = true;
     } else if (
+      ev.type === "DISAPPEARANCE" ||
       ev.type === "ATTACK" ||
       ev.type === "NO_ATTACK" ||
       ev.type === "DAY_CHANGE"
@@ -130,6 +131,10 @@ export function useGameStore() {
     for (const ev of events) {
       if (ev.type === "VOTE") {
         statuses[ev.frozenPlayerId] = "FROZEN";
+      } else if (ev.type === "DISAPPEARANCE") {
+        for (const pid of ev.disappearedPlayerIds) {
+          statuses[pid] = "ATTACKED";
+        }
       } else if (ev.type === "ATTACK") {
         statuses[ev.attackedPlayerId] = "ATTACKED";
       }

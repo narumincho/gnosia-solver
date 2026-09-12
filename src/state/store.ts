@@ -1,6 +1,7 @@
 import { useState, useMemo } from "preact/hooks";
 import {
   GameEvent,
+  NewGameEvent,
   GameSettings,
   Role,
   DEFAULT_CHARACTERS,
@@ -25,10 +26,37 @@ export const DEFAULT_SETTINGS: GameSettings = {
   allowHiddenRoles: false,
 };
 
+// イベントの並び順から各イベントの発生日 (day) を自動計算する
+export function recalculateDays(events: GameEvent[]): GameEvent[] {
+  let day = 1;
+  let hasVote = false;
+
+  return events.map((ev) => {
+    if (ev.type === "VOTE" && hasVote) {
+      day += 1;
+      hasVote = false;
+    }
+
+    const assigned = { ...ev, day };
+
+    if (ev.type === "VOTE") {
+      hasVote = true;
+    } else if (
+      ev.type === "ATTACK" ||
+      ev.type === "NO_ATTACK" ||
+      ev.type === "DAY_CHANGE"
+    ) {
+      day += 1;
+      hasVote = false;
+    }
+
+    return assigned as GameEvent;
+  });
+}
+
 export function useGameStore() {
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [events, setEvents] = useState<GameEvent[]>([]);
-  const [currentDay, setCurrentDay] = useState<number>(1);
   const [perspectiveRoles, setPerspectiveRoles] = useState<Record<string, Role>>({});
   const [myRole, setMyRoleState] = useState<Role | undefined>(undefined);
   const [perspective, setPerspective] = useState<PerspectiveOption>({
@@ -36,6 +64,20 @@ export function useGameStore() {
     name: "全体 (客観神視点)",
   });
   const [playerStatuses, setPlayerStatuses] = useState<Record<string, PlayerStatus>>({});
+
+  // イベントの並び順から現在の日付 (currentDay) を算出
+  const currentDay = useMemo(() => {
+    if (events.length === 0) return 1;
+    const last = events[events.length - 1];
+    if (
+      last.type === "ATTACK" ||
+      last.type === "NO_ATTACK" ||
+      last.type === "DAY_CHANGE"
+    ) {
+      return last.day + 1;
+    }
+    return last.day;
+  }, [events]);
 
   // 視点選択ハンドラ（保存されている役職を自動復元）
   const selectPerspective = (id: string, name: string) => {
@@ -131,33 +173,61 @@ export function useGameStore() {
     return map;
   }, [events]);
 
-  // イベント追加
-  const addEvent = (event: Omit<GameEvent, "id">) => {
+  // イベント追加 (並び順に応じてDayを自動設定)
+  const addEvent = (event: NewGameEvent) => {
     const newEvent: GameEvent = {
       ...event,
       id: crypto.randomUUID(),
+      day: event.day ?? 1, // recalculateDaysで位置に応じた正しいDayが割り当てられる
     } as GameEvent;
-    setEvents((prev) => [...prev, newEvent]);
+    setEvents((prev) => recalculateDays([...prev, newEvent]));
   };
 
   // イベント更新 (編集)
   const updateEvent = (updatedEvent: GameEvent) => {
     setEvents((prev) =>
-      prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e))
+      recalculateDays(
+        prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e))
+      )
     );
   };
 
   // イベント削除
   const removeEvent = (id: string) => {
-    setEvents((prev) => prev.filter((e) => e.id !== id));
+    setEvents((prev) => recalculateDays(prev.filter((e) => e.id !== id)));
   };
 
+  // イベントの並び替え (fromIndex -> toIndex)
+  const moveEvent = (fromIndex: number, toIndex: number) => {
+    setEvents((prev) => {
+      if (
+        fromIndex < 0 ||
+        fromIndex >= prev.length ||
+        toIndex < 0 ||
+        toIndex >= prev.length ||
+        fromIndex === toIndex
+      ) {
+        return prev;
+      }
+      const next = [...prev];
+      const [item] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, item);
+      return recalculateDays(next);
+    });
+  };
+
+  // 次の日へ進行 (明示的な日付変更イベントを追加)
+  const advanceDay = () => {
+    addEvent({
+      type: "DAY_CHANGE",
+      note: "翌日へ進行",
+    });
+  };
 
   // セッション全体リセット
   const resetGame = () => {
     if (confirm("全てのイベントと状態をリセットしますか？")) {
       setEvents([]);
-      setCurrentDay(1);
       setPlayerStatuses({});
       setPerspective({ id: "objective", name: "全体 (客観神視点)" });
       setPerspectiveRoles({});
@@ -196,10 +266,7 @@ export function useGameStore() {
       }
 
       setSettings(data.settings);
-      setEvents(data.events);
-      if (typeof data.currentDay === "number") {
-        setCurrentDay(data.currentDay);
-      }
+      setEvents(recalculateDays(data.events));
       if (data.perspective && typeof data.perspective.id === "string") {
         setPerspective(data.perspective);
       }
@@ -225,7 +292,6 @@ export function useGameStore() {
     events,
     setEvents,
     currentDay,
-    setCurrentDay,
     perspective,
     setPerspective,
     selectPerspective,
@@ -240,6 +306,8 @@ export function useGameStore() {
     addEvent,
     updateEvent,
     removeEvent,
+    moveEvent,
+    advanceDay,
     resetGame,
     exportSession,
     importSession,

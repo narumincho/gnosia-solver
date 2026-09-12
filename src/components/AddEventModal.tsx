@@ -1,15 +1,15 @@
 import { useState, useEffect, useMemo } from "preact/hooks";
 import { X, AlertTriangle, ShieldCheck, UserCheck, Search, Activity, Skull } from "lucide-preact";
-import { EventType, GameEvent, GameSettings, PlayerStatus, ReportJudgement, Role } from "../types.ts";
+import { EventType, GameEvent, NewGameEvent, GameSettings, PlayerStatus, ReportJudgement, Role } from "../types.ts";
 
 interface AddEventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddEvent: (ev: Omit<GameEvent, "id">) => void;
+  onAddEvent: (ev: NewGameEvent) => void;
   onUpdateEvent?: (ev: GameEvent) => void;
   editingEvent?: GameEvent;
   settings: GameSettings;
-  currentDay: number;
+  currentDay?: number;
   initialType?: EventType;
   initialPlayerId?: string;
   playerStatuses: Record<string, PlayerStatus>;
@@ -24,7 +24,6 @@ export function AddEventModal({
   onUpdateEvent,
   editingEvent,
   settings,
-  currentDay,
   initialType = "DEFINITE_LIE",
   initialPlayerId,
   playerStatuses,
@@ -34,7 +33,6 @@ export function AddEventModal({
   if (!isOpen) return null;
 
   const [eventType, setEventType] = useState<EventType>(editingEvent ? editingEvent.type : initialType);
-  const [day, setDay] = useState<number>(editingEvent ? editingEvent.day : currentDay);
 
   // プレイヤー群のフィルタリング
   const alivePlayers = useMemo(() => {
@@ -87,7 +85,6 @@ export function AddEventModal({
   useEffect(() => {
     if (editingEvent) {
       setEventType(editingEvent.type);
-      setDay(editingEvent.day);
       switch (editingEvent.type) {
         case "CO":
           setSelectedPlayer(editingEvent.playerId);
@@ -122,7 +119,6 @@ export function AddEventModal({
     }
 
     // 新規登録時の初期化
-    setDay(currentDay);
     if (initialType) setEventType(initialType);
 
     if (initialType === "CO") {
@@ -162,11 +158,10 @@ export function AddEventModal({
   const handleSubmit = (e: Event) => {
     e.preventDefault();
 
-    let eventData: Omit<GameEvent, "id">;
+    let eventData: Omit<GameEvent, "id" | "day">;
     switch (eventType) {
       case "CO":
         eventData = {
-          day,
           type: "CO",
           playerId: selectedPlayer,
           claimedRole,
@@ -174,7 +169,6 @@ export function AddEventModal({
         break;
       case "INVESTIGATION":
         eventData = {
-          day,
           type: "INVESTIGATION",
           investigatorId: selectedPlayer,
           targetId: targetPlayer,
@@ -183,7 +177,6 @@ export function AddEventModal({
         break;
       case "DOCTOR_REPORT":
         eventData = {
-          day,
           type: "DOCTOR_REPORT",
           reporterId: selectedPlayer,
           targetId: targetPlayer,
@@ -192,7 +185,6 @@ export function AddEventModal({
         break;
       case "DEFINITE_LIE":
         eventData = {
-          day,
           type: "DEFINITE_LIE",
           targetId: selectedPlayer,
           reason: lieReason,
@@ -200,32 +192,32 @@ export function AddEventModal({
         break;
       case "VOTE":
         eventData = {
-          day,
           type: "VOTE",
           frozenPlayerId: selectedPlayer,
         };
         break;
       case "ATTACK":
         eventData = {
-          day,
           type: "ATTACK",
           attackedPlayerId: selectedPlayer,
         };
         break;
       case "NO_ATTACK":
         eventData = {
-          day,
           type: "NO_ATTACK",
           guardedPlayerId: selectedPlayer ? selectedPlayer : undefined,
           note: lieReason,
         };
         break;
+      default:
+        return;
     }
 
     if (editingEvent && onUpdateEvent) {
       onUpdateEvent({
         ...eventData,
         id: editingEvent.id,
+        day: editingEvent.day,
       } as GameEvent);
     } else {
       onAddEvent(eventData);
@@ -247,58 +239,41 @@ export function AddEventModal({
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">発生日 (Day)</label>
-              <select
-                className="form-select"
-                value={day}
-                onChange={(e) => setDay(Number((e.target as HTMLSelectElement).value))}
-              >
-                {[1, 2, 3, 4, 5, 6, 7].map((d) => (
-                  <option key={d} value={d}>
-                    Day {d}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">イベント種類</label>
-              <select
-                className="form-select"
-                value={eventType}
-                onChange={(e) => {
-                  const val = (e.target as HTMLSelectElement).value as EventType;
-                  setEventType(val);
-                  if (val === "CO") {
-                    if (!coCandidates.some((p) => p.id === selectedPlayer)) {
-                      setSelectedPlayer(coCandidates[0]?.id || "");
-                    }
-                  } else if (val === "INVESTIGATION") {
-                    const inv = engineerCandidates[0]?.id || alivePlayers[0]?.id || "";
-                    setSelectedPlayer(inv);
-                    setTargetPlayer(alivePlayers.find((p) => p.id !== inv)?.id || "");
-                  } else if (val === "DOCTOR_REPORT") {
-                    setSelectedPlayer(doctorCandidates[0]?.id || alivePlayers[0]?.id || "");
-                    setTargetPlayer(frozenPlayers[0]?.id || "");
-                  } else if (val === "NO_ATTACK") {
-                    setSelectedPlayer("");
-                    setLieReason("夜間の犠牲者なし (天使護衛成功 または バグ襲撃)");
-                  } else if (val === "VOTE" || val === "ATTACK") {
-                    setSelectedPlayer(alivePlayers[0]?.id || "");
+          <div className="form-group">
+            <label className="form-label">イベント種類</label>
+            <select
+              className="form-select"
+              value={eventType}
+              onChange={(e) => {
+                const val = (e.target as HTMLSelectElement).value as EventType;
+                setEventType(val);
+                if (val === "CO") {
+                  if (!coCandidates.some((p) => p.id === selectedPlayer)) {
+                    setSelectedPlayer(coCandidates[0]?.id || "");
                   }
-                }}
-              >
-                <option value="DEFINITE_LIE">【重要】嘘をついていることが確定</option>
-                <option value="CO">役職名乗り出 (CO)</option>
-                <option value="INVESTIGATION">エンジニア調査報告</option>
-                <option value="DOCTOR_REPORT">ドクター医療報告</option>
-                <option value="VOTE">コールドスリープ (投票)</option>
-                <option value="ATTACK">夜間に消滅 (襲撃死)</option>
-                <option value="NO_ATTACK">夜間の襲撃なし (犠牲者ゼロ / 護衛・バグ)</option>
-              </select>
-            </div>
+                } else if (val === "INVESTIGATION") {
+                  const inv = engineerCandidates[0]?.id || alivePlayers[0]?.id || "";
+                  setSelectedPlayer(inv);
+                  setTargetPlayer(alivePlayers.find((p) => p.id !== inv)?.id || "");
+                } else if (val === "DOCTOR_REPORT") {
+                  setSelectedPlayer(doctorCandidates[0]?.id || alivePlayers[0]?.id || "");
+                  setTargetPlayer(frozenPlayers[0]?.id || "");
+                } else if (val === "NO_ATTACK") {
+                  setSelectedPlayer("");
+                  setLieReason("夜間の犠牲者なし (天使護衛成功 または バグ襲撃)");
+                } else if (val === "VOTE" || val === "ATTACK") {
+                  setSelectedPlayer(alivePlayers[0]?.id || "");
+                }
+              }}
+            >
+              <option value="DEFINITE_LIE">【重要】嘘をついていることが確定</option>
+              <option value="CO">役職名乗り出 (CO)</option>
+              <option value="INVESTIGATION">エンジニア調査報告</option>
+              <option value="DOCTOR_REPORT">ドクター医療報告</option>
+              <option value="VOTE">コールドスリープ (投票)</option>
+              <option value="ATTACK">夜間に消滅 (襲撃死)</option>
+              <option value="NO_ATTACK">夜間の襲撃なし (犠牲者ゼロ / 護衛・バグ)</option>
+            </select>
           </div>
 
           {/* 嘘をついていることが確定 */}

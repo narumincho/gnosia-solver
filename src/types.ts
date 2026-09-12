@@ -146,6 +146,7 @@ export type EventType =
   | "VOTE"              // コールドスリープ (投票)
   | "ATTACK"            // 襲撃・消滅 (夜)
   | "NO_ATTACK"         // 襲撃なし (守護天使護衛 / バグ襲撃)
+  | "DAY_CHANGE"        // 翌日へ進行 (日付切り替え)
   | "NOTE";             // メモ・その他
 
 
@@ -202,6 +203,11 @@ export interface NoAttackEvent extends BaseGameEvent {
   note?: string; // メモ（「犠牲者なし」「バグ襲撃？」「天使護衛成功？」など）
 }
 
+export interface DayChangeEvent extends BaseGameEvent {
+  type: "DAY_CHANGE";
+  note?: string; // メモ（「翌日へ」「夜の経過」など）
+}
+
 export type GameEvent =
   | COEvent
   | InvestigationEvent
@@ -209,7 +215,18 @@ export type GameEvent =
   | DefiniteLieEvent
   | VoteEvent
   | AttackEvent
-  | NoAttackEvent;
+  | NoAttackEvent
+  | DayChangeEvent;
+
+export type NewGameEvent =
+  | (Omit<COEvent, "id" | "day"> & { day?: number })
+  | (Omit<InvestigationEvent, "id" | "day"> & { day?: number })
+  | (Omit<DoctorReportEvent, "id" | "day"> & { day?: number })
+  | (Omit<DefiniteLieEvent, "id" | "day"> & { day?: number })
+  | (Omit<VoteEvent, "id" | "day"> & { day?: number })
+  | (Omit<AttackEvent, "id" | "day"> & { day?: number })
+  | (Omit<NoAttackEvent, "id" | "day"> & { day?: number })
+  | (Omit<DayChangeEvent, "id" | "day"> & { day?: number });
 
 
 // 1つの配役パターン (World)

@@ -384,7 +384,7 @@ export class GnosiaSolver {
             const disappearedThatNight = this.events.some(
               (other) =>
                 other.type === "ATTACK" &&
-                other.day === ev.day &&
+                (other.day === ev.day || other.day === ev.day - 1) &&
                 other.attackedPlayerId === ev.targetId
             );
             if (!disappearedThatNight) {
@@ -547,7 +547,7 @@ export class GnosiaSolver {
               const disappearedThatNight = this.events.some(
                 (other) =>
                   other.type === "ATTACK" &&
-                  other.day === ev.day &&
+                  (other.day === ev.day || other.day === ev.day - 1) &&
                   other.attackedPlayerId === ev.targetId
               );
               if (!disappearedThatNight) return false;

@@ -17,6 +17,7 @@ interface PlayerCardProps {
   onQuickFreeze: (playerId: string) => void;
   onQuickAttack: (playerId: string) => void;
   onQuickInvestigate: (playerId: string) => void;
+  onQuickDoctorReport?: (playerId: string) => void;
 }
 
 export function PlayerCard({
@@ -30,6 +31,7 @@ export function PlayerCard({
   onQuickFreeze,
   onQuickAttack,
   onQuickInvestigate,
+  onQuickDoctorReport,
 }: PlayerCardProps) {
   const gnosiaProb = solverResult.gnosiaProbabilities[player.id] ?? 0;
   const enemyProb = solverResult.enemyProbabilities[player.id] ?? 0;
@@ -136,6 +138,53 @@ export function PlayerCard({
             })}
         </div>
       </div>
+
+      {/* クイックアクション */}
+      {status === "ALIVE" && (
+        <div className="player-quick-actions">
+          {claimedRoles.includes("ENGINEER") && (
+            <button
+              className="quick-btn"
+              onClick={() => onQuickInvestigate(player.id)}
+              style={{ color: "var(--color-engineer)", borderColor: "rgba(56, 189, 248, 0.4)" }}
+              title="このエンジニアの調査報告を作成"
+            >
+              🔍 調査
+            </button>
+          )}
+          {claimedRoles.includes("DOCTOR") && (
+            <button
+              className="quick-btn"
+              onClick={() => onQuickDoctorReport?.(player.id)}
+              style={{ color: "var(--color-doctor)", borderColor: "rgba(52, 211, 153, 0.4)" }}
+              title="このドクターの医療報告を作成"
+            >
+              🩺 報告
+            </button>
+          )}
+          <button
+            className="quick-btn"
+            onClick={() => onQuickFreeze(player.id)}
+            title="投票でコールドスリープ"
+          >
+            <Snowflake size={11} /> 冷凍
+          </button>
+          <button
+            className="quick-btn"
+            onClick={() => onQuickAttack(player.id)}
+            title="夜間に消滅 (襲撃死)"
+          >
+            <Skull size={11} /> 消滅
+          </button>
+          <button
+            className="quick-btn quick-btn-lie"
+            onClick={() => onQuickLie(player.id)}
+            title="嘘看破"
+          >
+            <AlertTriangle size={11} /> 嘘
+          </button>
+        </div>
+      )}
     </div>
   );
 }

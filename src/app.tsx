@@ -29,6 +29,8 @@ export function App() {
     addEvent,
     updateEvent,
     removeEvent,
+    moveEvent,
+    advanceDay,
     resetGame,
     exportSession,
     importSession,
@@ -60,9 +62,15 @@ export function App() {
     setIsAddEventOpen(true);
   };
 
+  const handleQuickDoctorReport = (playerId: string) => {
+    setEditingEvent(undefined);
+    setAddEventInitialType("DOCTOR_REPORT");
+    setAddEventInitialPlayerId(playerId);
+    setIsAddEventOpen(true);
+  };
+
   const handleQuickFreeze = (playerId: string) => {
     addEvent({
-      day: currentDay,
       type: "VOTE",
       frozenPlayerId: playerId,
     });
@@ -70,7 +78,6 @@ export function App() {
 
   const handleQuickAttack = (playerId: string) => {
     addEvent({
-      day: currentDay,
       type: "ATTACK",
       attackedPlayerId: playerId,
     });
@@ -128,6 +135,7 @@ export function App() {
                 onQuickFreeze={handleQuickFreeze}
                 onQuickAttack={handleQuickAttack}
                 onQuickInvestigate={handleQuickInvestigate}
+                onQuickDoctorReport={handleQuickDoctorReport}
               />
             ))}
           </div>
@@ -138,18 +146,29 @@ export function App() {
             events={events}
             settings={settings}
             currentDay={currentDay}
-            onSetDay={setCurrentDay}
-            onOpenAddEvent={() => {
+            playerStatuses={playerStatuses}
+            claimedRoles={claimedRoles}
+            myRole={myRole}
+            onOpenAddEvent={(type, id) => {
               setEditingEvent(undefined);
-              setAddEventInitialType("CO");
-              setAddEventInitialPlayerId(undefined);
+              setAddEventInitialType(type || "CO");
+              setAddEventInitialPlayerId(id);
               setIsAddEventOpen(true);
+            }}
+            onQuickDoctorReport={(reporterId, targetId, result) => {
+              addEvent({
+                type: "DOCTOR_REPORT",
+                reporterId,
+                targetId,
+                result,
+              });
             }}
             onEditEvent={(ev) => {
               setEditingEvent(ev);
               setIsAddEventOpen(true);
             }}
             onRemoveEvent={removeEvent}
+            onMoveEvent={moveEvent}
             hasContradiction={solverResult.hasContradiction}
             contradictionReason={solverResult.contradictionReason}
           />
@@ -174,7 +193,6 @@ export function App() {
         onUpdateEvent={updateEvent}
         editingEvent={editingEvent}
         settings={settings}
-        currentDay={currentDay}
         initialType={addEventInitialType}
         initialPlayerId={addEventInitialPlayerId}
         playerStatuses={playerStatuses}

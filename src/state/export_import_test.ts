@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { DEFAULT_SETTINGS } from "./store.ts";
+import { DEFAULT_SETTINGS, recalculateDays } from "./store.ts";
 import { GameEvent, SessionData } from "../types.ts";
 import { GnosiaSolver } from "../solver/solver.ts";
 
@@ -90,4 +90,34 @@ Deno.test("Event Update - イベントの編集とソルバー再計算", () => 
     assertEquals(targetEvent.result, "GNOSIA");
   }
 });
+
+Deno.test("Event Order & recalculateDays - 並び順からのDay自動計算と並び替え", () => {
+  const initialEvents: GameEvent[] = [
+    { id: "1", day: 0, type: "CO", playerId: "player", claimedRole: "ENGINEER" },
+    { id: "2", day: 0, type: "VOTE", frozenPlayerId: "raqio" },
+    { id: "3", day: 0, type: "ATTACK", attackedPlayerId: "gina" },
+    { id: "4", day: 0, type: "INVESTIGATION", investigatorId: "player", targetId: "shigemichi", result: "HUMAN" },
+  ];
+
+  const calculated = recalculateDays(initialEvents);
+  // 1 (CO) -> Day 1
+  assertEquals(calculated[0].day, 1);
+  // 2 (VOTE) -> Day 1
+  assertEquals(calculated[1].day, 1);
+  // 3 (ATTACK) -> Day 1 (夜の襲撃)
+  assertEquals(calculated[2].day, 1);
+  // 4 (INVESTIGATION after ATTACK) -> Day 2!
+  assertEquals(calculated[3].day, 2);
+
+  // イベント4 (INVESTIGATION) を イベント3 (ATTACK) の前（昼間）へ移動
+  const reordered = [calculated[0], calculated[1], calculated[3], calculated[2]];
+  const reCalculated = recalculateDays(reordered);
+  // 移動後は ATTACK の前なので Day 1 になる
+  assertEquals(reCalculated[2].id, "4");
+  assertEquals(reCalculated[2].day, 1);
+  // ATTACK も Day 1
+  assertEquals(reCalculated[3].id, "3");
+  assertEquals(reCalculated[3].day, 1);
+});
+
 

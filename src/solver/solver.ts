@@ -362,6 +362,40 @@ export class GnosiaSolver {
       }
     }
 
+    // 視点プレイヤー自身が真エンジニアの場合の調査結果事前反映
+    if (
+      options.perspectivePlayerId &&
+      options.perspectiveRole === "ENGINEER"
+    ) {
+      for (const ev of this.events) {
+        if (
+          ev.type === "INVESTIGATION" &&
+          ev.investigatorId === options.perspectivePlayerId
+        ) {
+          if (candidateRoles[ev.targetId]) {
+            if (ev.result === "HUMAN") {
+              candidateRoles[ev.targetId].delete("GNOSIA");
+            } else if (ev.result === "GNOSIA") {
+              candidateRoles[ev.targetId] = new Set(["GNOSIA"]);
+            }
+
+            // バグ調査消滅の判定:
+            // その夜に targetId が消滅していないなら、対象はバグではあり得ない
+            const disappearedThatNight = this.events.some(
+              (other) =>
+                other.type === "ATTACK" &&
+                other.day === ev.day &&
+                other.attackedPlayerId === ev.targetId
+            );
+            if (!disappearedThatNight) {
+              candidateRoles[ev.targetId].delete("BUG");
+            }
+          }
+        }
+      }
+    }
+
+
     // 潜伏なし設定の場合: COしていないプレイヤーは真ENGINEER/真DOCTORになれない
     if (!this.settings.allowHiddenRoles) {
       if (this.settings.roles.hasEngineer && engineerCOs.size > 0) {
@@ -506,7 +540,20 @@ export class GnosiaSolver {
             const isTargetGnosia = targetRole === "GNOSIA";
             if (ev.result === "GNOSIA" && !isTargetGnosia) return false;
             if (ev.result === "HUMAN" && isTargetGnosia) return false;
+
+            // バグ蒸発ルール:
+            // 真エンジニアが調査した相手がバグなら、その夜に消滅していなければならない
+            if (targetRole === "BUG") {
+              const disappearedThatNight = this.events.some(
+                (other) =>
+                  other.type === "ATTACK" &&
+                  other.day === ev.day &&
+                  other.attackedPlayerId === ev.targetId
+              );
+              if (!disappearedThatNight) return false;
+            }
           }
+
         } else if (ev.type === "DOCTOR_REPORT") {
           const docRole = assignment[ev.reporterId];
           const targetRole = assignment[ev.targetId];

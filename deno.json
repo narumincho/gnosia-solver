@@ -11,7 +11,8 @@
     "preview": "deno run -A --node-modules-dir=auto npm:vite preview",
     "test": "deno test -A src/",
     "lint:css": "deno run -A --node-modules-dir=auto npm:stylelint \"src/**/*.css\"",
-    "lint:css:fix": "deno run -A --node-modules-dir=auto npm:stylelint \"src/**/*.css\" --fix"
+    "lint:css:fix": "deno run -A --node-modules-dir=auto npm:stylelint \"src/**/*.css\" --fix",
+    "deploy": "deno run -A --node-modules-dir=auto npm:wrangler deploy"
   },
   "imports": {
     "@preact/preset-vite": "npm:@preact/preset-vite@^2.10.6",
@@ -21,6 +22,7 @@
     "preact/hooks": "npm:preact@^10.26.4/hooks",
     "stylelint": "npm:stylelint@^16.15.0",
     "stylelint-config-standard": "npm:stylelint-config-standard@^37.0.0",
-    "vite": "npm:vite@^6.2.0"
+    "vite": "npm:vite@^6.2.0",
+    "wrangler": "npm:wrangler@^4.0.0"
   }
 }

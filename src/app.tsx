@@ -8,7 +8,7 @@ import { AddEventModal } from "./components/AddEventModal.tsx";
 import { GameSetupModal } from "./components/GameSetupModal.tsx";
 import { WorldListModal } from "./components/WorldListModal.tsx";
 import { ExportImportModal } from "./components/ExportImportModal.tsx";
-import { EventType, Role } from "./types.ts";
+import { EventType, GameEvent, Role } from "./types.ts";
 
 export function App() {
   const {
@@ -27,6 +27,7 @@ export function App() {
     claimedRoles,
     definiteLies,
     addEvent,
+    updateEvent,
     removeEvent,
     resetGame,
     exportSession,
@@ -39,18 +40,21 @@ export function App() {
   const [isWorldsOpen, setIsWorldsOpen] = useState(false);
   const [isExportImportOpen, setIsExportImportOpen] = useState(false);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<GameEvent | undefined>(undefined);
 
   const [addEventInitialType, setAddEventInitialType] = useState<EventType>("DEFINITE_LIE");
   const [addEventInitialPlayerId, setAddEventInitialPlayerId] = useState<string | undefined>(undefined);
 
   // クイックアクション用ハンドラ
   const handleQuickLie = (playerId: string) => {
+    setEditingEvent(undefined);
     setAddEventInitialType("DEFINITE_LIE");
     setAddEventInitialPlayerId(playerId);
     setIsAddEventOpen(true);
   };
 
   const handleQuickInvestigate = (playerId: string) => {
+    setEditingEvent(undefined);
     setAddEventInitialType("INVESTIGATION");
     setAddEventInitialPlayerId(playerId);
     setIsAddEventOpen(true);
@@ -136,8 +140,13 @@ export function App() {
             currentDay={currentDay}
             onSetDay={setCurrentDay}
             onOpenAddEvent={() => {
+              setEditingEvent(undefined);
               setAddEventInitialType("CO");
               setAddEventInitialPlayerId(undefined);
+              setIsAddEventOpen(true);
+            }}
+            onEditEvent={(ev) => {
+              setEditingEvent(ev);
               setIsAddEventOpen(true);
             }}
             onRemoveEvent={removeEvent}
@@ -157,8 +166,13 @@ export function App() {
 
       <AddEventModal
         isOpen={isAddEventOpen}
-        onClose={() => setIsAddEventOpen(false)}
+        onClose={() => {
+          setIsAddEventOpen(false);
+          setEditingEvent(undefined);
+        }}
         onAddEvent={addEvent}
+        onUpdateEvent={updateEvent}
+        editingEvent={editingEvent}
         settings={settings}
         currentDay={currentDay}
         initialType={addEventInitialType}

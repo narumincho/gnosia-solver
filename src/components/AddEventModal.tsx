@@ -6,6 +6,8 @@ interface AddEventModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddEvent: (ev: Omit<GameEvent, "id">) => void;
+  onUpdateEvent?: (ev: GameEvent) => void;
+  editingEvent?: GameEvent;
   settings: GameSettings;
   currentDay: number;
   initialType?: EventType;
@@ -19,6 +21,8 @@ export function AddEventModal({
   isOpen,
   onClose,
   onAddEvent,
+  onUpdateEvent,
+  editingEvent,
   settings,
   currentDay,
   initialType = "DEFINITE_LIE",
@@ -29,8 +33,8 @@ export function AddEventModal({
 }: AddEventModalProps) {
   if (!isOpen) return null;
 
-  const [eventType, setEventType] = useState<EventType>(initialType);
-  const [day, setDay] = useState<number>(currentDay);
+  const [eventType, setEventType] = useState<EventType>(editingEvent ? editingEvent.type : initialType);
+  const [day, setDay] = useState<number>(editingEvent ? editingEvent.day : currentDay);
 
   // プレイヤー群のフィルタリング
   const alivePlayers = useMemo(() => {
@@ -40,6 +44,17 @@ export function AddEventModal({
   const frozenPlayers = useMemo(() => {
     return settings.players.filter((p) => playerStatuses[p.id] === "FROZEN");
   }, [settings.players, playerStatuses]);
+
+  // CO可能な乗員（未CO者、または編集中イベントでCOしている本人）
+  const coCandidates = useMemo(() => {
+    return alivePlayers.filter((p) => {
+      const alreadyClaimed = (claimedRoles[p.id]?.length ?? 0) > 0;
+      if (editingEvent && editingEvent.type === "CO" && editingEvent.playerId === p.id) {
+        return true;
+      }
+      return !alreadyClaimed;
+    });
+  }, [alivePlayers, claimedRoles, editingEvent]);
 
   // エンジニアCOしたプレイヤー（または自分=真エンジニアの場合の自分）
   const engineerCandidates = useMemo(() => {
@@ -70,9 +85,53 @@ export function AddEventModal({
 
   // 初期値の自動調整
   useEffect(() => {
+    if (editingEvent) {
+      setEventType(editingEvent.type);
+      setDay(editingEvent.day);
+      switch (editingEvent.type) {
+        case "CO":
+          setSelectedPlayer(editingEvent.playerId);
+          setClaimedRole(editingEvent.claimedRole);
+          break;
+        case "INVESTIGATION":
+          setSelectedPlayer(editingEvent.investigatorId);
+          setTargetPlayer(editingEvent.targetId);
+          setReportResult(editingEvent.result);
+          break;
+        case "DOCTOR_REPORT":
+          setSelectedPlayer(editingEvent.reporterId);
+          setTargetPlayer(editingEvent.targetId);
+          setReportResult(editingEvent.result);
+          break;
+        case "DEFINITE_LIE":
+          setSelectedPlayer(editingEvent.targetId);
+          setLieReason(editingEvent.reason || "");
+          break;
+        case "VOTE":
+          setSelectedPlayer(editingEvent.frozenPlayerId);
+          break;
+        case "ATTACK":
+          setSelectedPlayer(editingEvent.attackedPlayerId);
+          break;
+        case "NO_ATTACK":
+          setSelectedPlayer(editingEvent.guardedPlayerId || "");
+          setLieReason(editingEvent.note || "");
+          break;
+      }
+      return;
+    }
+
+    // 新規登録時の初期化
+    setDay(currentDay);
     if (initialType) setEventType(initialType);
 
-    if (initialType === "INVESTIGATION") {
+    if (initialType === "CO") {
+      const defaultCandidate =
+        initialPlayerId && coCandidates.some((p) => p.id === initialPlayerId)
+          ? initialPlayerId
+          : coCandidates[0]?.id || "";
+      setSelectedPlayer(defaultCandidate);
+    } else if (initialType === "INVESTIGATION") {
       const defaultInv =
         (initialPlayerId && engineerCandidates.some((p) => p.id === initialPlayerId))
           ? initialPlayerId
@@ -98,68 +157,78 @@ export function AddEventModal({
     } else {
       setSelectedPlayer(initialPlayerId || alivePlayers[0]?.id || settings.players[0]?.id || "");
     }
-  }, [initialType, initialPlayerId]);
+  }, [editingEvent, initialType, initialPlayerId]);
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
 
+    let eventData: Omit<GameEvent, "id">;
     switch (eventType) {
       case "CO":
-        onAddEvent({
+        eventData = {
           day,
           type: "CO",
           playerId: selectedPlayer,
           claimedRole,
-        });
+        };
         break;
       case "INVESTIGATION":
-        onAddEvent({
+        eventData = {
           day,
           type: "INVESTIGATION",
           investigatorId: selectedPlayer,
           targetId: targetPlayer,
           result: reportResult,
-        });
+        };
         break;
       case "DOCTOR_REPORT":
-        onAddEvent({
+        eventData = {
           day,
           type: "DOCTOR_REPORT",
           reporterId: selectedPlayer,
           targetId: targetPlayer,
           result: reportResult,
-        });
+        };
         break;
       case "DEFINITE_LIE":
-        onAddEvent({
+        eventData = {
           day,
           type: "DEFINITE_LIE",
           targetId: selectedPlayer,
           reason: lieReason,
-        });
+        };
         break;
       case "VOTE":
-        onAddEvent({
+        eventData = {
           day,
           type: "VOTE",
           frozenPlayerId: selectedPlayer,
-        });
+        };
         break;
       case "ATTACK":
-        onAddEvent({
+        eventData = {
           day,
           type: "ATTACK",
           attackedPlayerId: selectedPlayer,
-        });
+        };
         break;
       case "NO_ATTACK":
-        onAddEvent({
+        eventData = {
           day,
           type: "NO_ATTACK",
           guardedPlayerId: selectedPlayer ? selectedPlayer : undefined,
           note: lieReason,
-        });
+        };
         break;
+    }
+
+    if (editingEvent && onUpdateEvent) {
+      onUpdateEvent({
+        ...eventData,
+        id: editingEvent.id,
+      } as GameEvent);
+    } else {
+      onAddEvent(eventData);
     }
 
     onClose();
@@ -169,7 +238,9 @@ export function AddEventModal({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3 className="modal-title">イベントの記録</h3>
+          <h3 className="modal-title">
+            {editingEvent ? "イベントの編集" : "イベントの記録"}
+          </h3>
           <button className="modal-close-btn" onClick={onClose}>
             <X size={20} />
           </button>
@@ -200,7 +271,11 @@ export function AddEventModal({
                 onChange={(e) => {
                   const val = (e.target as HTMLSelectElement).value as EventType;
                   setEventType(val);
-                  if (val === "INVESTIGATION") {
+                  if (val === "CO") {
+                    if (!coCandidates.some((p) => p.id === selectedPlayer)) {
+                      setSelectedPlayer(coCandidates[0]?.id || "");
+                    }
+                  } else if (val === "INVESTIGATION") {
                     const inv = engineerCandidates[0]?.id || alivePlayers[0]?.id || "";
                     setSelectedPlayer(inv);
                     setTargetPlayer(alivePlayers.find((p) => p.id !== inv)?.id || "");
@@ -264,18 +339,27 @@ export function AddEventModal({
           {eventType === "CO" && (
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">名乗り出た人物</label>
+                <label className="form-label">名乗り出た人物 (未CO者のみ)</label>
                 <select
                   className="form-select"
                   value={selectedPlayer}
                   onChange={(e) => setSelectedPlayer((e.target as HTMLSelectElement).value)}
+                  disabled={coCandidates.length === 0}
                 >
-                  {alivePlayers.map((p) => (
+                  {coCandidates.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
                     </option>
                   ))}
+                  {coCandidates.length === 0 && (
+                    <option value="">(全員すでにCO済みです)</option>
+                  )}
                 </select>
+                {coCandidates.length === 0 && (
+                  <span style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginTop: "0.25rem", display: "block" }}>
+                    ※ 生存している全員がすでに役職CO済みです
+                  </span>
+                )}
               </div>
 
               <div className="form-group">
@@ -505,12 +589,13 @@ export function AddEventModal({
               type="submit"
               className="btn btn-primary"
               disabled={
+                (eventType === "CO" && coCandidates.length === 0) ||
                 (eventType === "DOCTOR_REPORT" && frozenPlayers.length === 0) ||
                 (eventType === "INVESTIGATION" && alivePlayers.length === 0) ||
                 ((eventType === "VOTE" || eventType === "ATTACK") && alivePlayers.length === 0)
               }
             >
-              イベントを記録する
+              {editingEvent ? "変更を保存する" : "イベントを記録する"}
             </button>
           </div>
         </form>

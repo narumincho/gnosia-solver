@@ -49,3 +49,45 @@ Deno.test("SessionData - エクスポート＆インポートによる整合性�
   assertEquals(result.hasContradiction, false);
   assertEquals(result.definiteRoles["player"], "ENGINEER");
 });
+
+Deno.test("Event Update - イベントの編集とソルバー再計算", () => {
+  const events: GameEvent[] = [
+    {
+      id: "ev-1",
+      day: 1,
+      type: "CO",
+      playerId: "sha_ming",
+      claimedRole: "ENGINEER",
+    },
+    {
+      id: "ev-2",
+      day: 1,
+      type: "INVESTIGATION",
+      investigatorId: "sha_ming",
+      targetId: "shigemichi",
+      result: "HUMAN",
+    },
+  ];
+
+  // 編集前
+  const solver1 = new GnosiaSolver(DEFAULT_SETTINGS, events);
+  const res1 = solver1.solve();
+  assertEquals(res1.hasContradiction, false);
+
+  // イベント編集 (沙明の調査結果を HUMAN -> GNOSIA に変更)
+  const updatedEvents = events.map((e) =>
+    e.id === "ev-2"
+      ? { ...e, result: "GNOSIA" as const }
+      : e
+  );
+
+  const solver2 = new GnosiaSolver(DEFAULT_SETTINGS, updatedEvents);
+  const res2 = solver2.solve();
+  assertEquals(res2.hasContradiction, false);
+
+  const targetEvent = updatedEvents[1];
+  if (targetEvent.type === "INVESTIGATION") {
+    assertEquals(targetEvent.result, "GNOSIA");
+  }
+});
+

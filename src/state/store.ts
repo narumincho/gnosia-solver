@@ -140,10 +140,18 @@ export function useGameStore() {
     setEvents((prev) => [...prev, newEvent]);
   };
 
+  // イベント更新 (編集)
+  const updateEvent = (updatedEvent: GameEvent) => {
+    setEvents((prev) =>
+      prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e))
+    );
+  };
+
   // イベント削除
   const removeEvent = (id: string) => {
     setEvents((prev) => prev.filter((e) => e.id !== id));
   };
+
 
   // セッション全体リセット
   const resetGame = () => {
@@ -230,6 +238,7 @@ export function useGameStore() {
     claimedRoles,
     definiteLies,
     addEvent,
+    updateEvent,
     removeEvent,
     resetGame,
     exportSession,

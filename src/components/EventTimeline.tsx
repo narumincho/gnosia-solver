@@ -1,4 +1,4 @@
-import { Plus, Trash2, Calendar, AlertOctagon } from "lucide-preact";
+import { Plus, Trash2, Calendar, AlertOctagon, Pencil } from "lucide-preact";
 import { GameEvent, GameSettings, ROLE_DEFINITIONS } from "../types.ts";
 
 interface EventTimelineProps {
@@ -7,6 +7,7 @@ interface EventTimelineProps {
   currentDay: number;
   onSetDay: (day: number) => void;
   onOpenAddEvent: () => void;
+  onEditEvent: (event: GameEvent) => void;
   onRemoveEvent: (id: string) => void;
   hasContradiction: boolean;
   contradictionReason?: string;
@@ -18,6 +19,7 @@ export function EventTimeline({
   currentDay,
   onSetDay,
   onOpenAddEvent,
+  onEditEvent,
   onRemoveEvent,
   hasContradiction,
   contradictionReason,
@@ -193,13 +195,22 @@ export function EventTimeline({
               <div key={ev.id} className={`event-card ${getEventClass(ev.type)}`}>
                 <div className="event-meta">
                   <span className="event-day">DAY {ev.day}</span>
-                  <button
-                    className="event-delete-btn"
-                    onClick={() => onRemoveEvent(ev.id)}
-                    title="イベントを削除"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                    <button
+                      className="event-edit-btn"
+                      onClick={() => onEditEvent(ev)}
+                      title="イベントを編集"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      className="event-delete-btn"
+                      onClick={() => onRemoveEvent(ev.id)}
+                      title="イベントを削除"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
                 <div className="event-body">{renderEventDescription(ev)}</div>
               </div>

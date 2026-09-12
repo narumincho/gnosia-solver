@@ -181,9 +181,9 @@ export interface DoctorReportEvent extends BaseGameEvent {
 
 export interface DefiniteLieEvent extends BaseGameEvent {
   type: "DEFINITE_LIE";
-  targetId: string; // 嘘をついたと確定した人
-  witnessId?: string; // 嘘に気づいた人 (省略可。指定した場合その人の視点でのみ反映も可能)
-  reason?: string; // 理由メモ (例: 「人間だと言えで沈黙」「直感発動」)
+  targetId: string; // 嘘をついた（とされる）人
+  witnessId: string; // 嘘に気づいた人 (自分 = "player", または夜の密告者)
+  reason?: string; // 理由メモ (後方互換用)
 }
 
 export interface VoteEvent extends BaseGameEvent {

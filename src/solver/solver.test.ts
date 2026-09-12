@@ -115,9 +115,9 @@ Deno.test("GnosiaSolver - 嘘看破イベントによる人間陣営除外", () 
     allowHiddenRoles: false,
   };
 
-  // SQ (p3) が嘘をついたことが確定した（敵対役職＝グノーシアのみの設定）
+  // SQ (p3) が嘘をついたことが確定した（自分が直感で看破、敵対役職＝グノーシアのみの設定）
   const events: GameEvent[] = [
-    { id: "1", day: 1, type: "DEFINITE_LIE", targetId: "p3", reason: "直感" },
+    { id: "1", day: 1, type: "DEFINITE_LIE", targetId: "p3", witnessId: "player" },
   ];
 
   const solver = new GnosiaSolver(settings, events);
@@ -178,5 +178,59 @@ Deno.test("GnosiaSolver - ドクター判定とバグ・AC主義者を含む15�
   assertEquals(result.definiteRoles["setsu"], "DOCTOR");
   assertEquals(result.definiteRoles["shigemichi"], "GNOSIA");
   assertEquals(result.gnosiaProbabilities["shigemichi"], 1.0);
+});
+
+Deno.test("GnosiaSolver - 他者による密告 (密告者が人間なら対象は敵、密告者が敵なら濡れ衣の可能性あり)", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "自分" },
+      { id: "p2", name: "セツ" },
+      { id: "p3", name: "SQ" },
+      { id: "p4", name: "ラキオ" },
+    ],
+    roles: {
+      gnosiaCount: 1,
+      hasEngineer: false,
+      hasDoctor: false,
+      hasGuardianAngel: false,
+      hasGuardDuty: false,
+      hasACFollower: false,
+      hasBug: false,
+    },
+    allowHiddenRoles: false,
+  };
+
+  // セツ (p2) が「SQ (p3) が嘘をついている」と夜に密告
+  const events: GameEvent[] = [
+    { id: "1", day: 1, type: "DEFINITE_LIE", witnessId: "p2", targetId: "p3" },
+  ];
+
+  const solver = new GnosiaSolver(settings, events);
+  const result = solver.solve();
+
+  assertEquals(result.hasContradiction, false);
+
+  // 4人のうちグノーシア1人。
+  // p2とp3が共に人間（CREW）の世界は除外される。
+  // 可能な世界:
+  // 1) p2がGNOSIA（p3はCREW、濡れ衣）
+  // 2) p3がGNOSIA（p2はCREW、正しい密告）
+  // 3) playerがGNOSIA -> 不可能（p2とp3が両方CREWになってしまう）
+  // 4) p4がGNOSIA -> 不可能（p2とp3が両方CREWになってしまう）
+  // したがって、グノーシアは p2 か p3 のどちらかしかあり得ない！
+  assertEquals(result.gnosiaProbabilities["player"], 0.0);
+  assertEquals(result.gnosiaProbabilities["p4"], 0.0);
+  assertEquals(result.gnosiaProbabilities["p2"], 0.5);
+  assertEquals(result.gnosiaProbabilities["p3"], 0.5);
+
+  // もし p2 が人間確定（襲撃されて消滅）したら、p3 はグノーシア確定になるはず
+  const eventsWithAttack: GameEvent[] = [
+    ...events,
+    { id: "2", day: 1, type: "ATTACK", attackedPlayerId: "p2" },
+  ];
+  const solver2 = new GnosiaSolver(settings, eventsWithAttack);
+  const result2 = solver2.solve();
+  assertEquals(result2.definiteRoles["p3"], "GNOSIA");
+  assertEquals(result2.gnosiaProbabilities["p3"], 1.0);
 });
 

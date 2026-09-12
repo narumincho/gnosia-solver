@@ -77,16 +77,32 @@ export function EventTimeline({
         );
       }
       case "DEFINITE_LIE": {
+        const isSelf = ev.witnessId === "player" || !ev.witnessId;
+        const witnessName = isSelf ? "自分" : getPlayerName(ev.witnessId);
         return (
           <span>
-            <strong style={{ color: "var(--color-gnosia)" }}>
-              {getPlayerName(ev.targetId)}
-            </strong>{" "}
-            が<strong>【嘘をついたことが確定】</strong>
-            {ev.reason && (
-              <span style={{ color: "var(--text-muted)", fontSize: "0.75rem", display: "block" }}>
-                ({ev.reason})
-              </span>
+            {isSelf ? (
+              <>
+                <strong>自分</strong> が{" "}
+                <strong style={{ color: "var(--color-gnosia)" }}>
+                  {getPlayerName(ev.targetId)}
+                </strong>{" "}
+                の嘘を看破{" "}
+                <span className="badge badge-enemy" style={{ fontSize: "0.7rem", padding: "1px 6px" }}>
+                  敵確定
+                </span>
+              </>
+            ) : (
+              <>
+                <strong>{witnessName}</strong> が{" "}
+                <strong style={{ color: "var(--color-gnosia)" }}>
+                  {getPlayerName(ev.targetId)}
+                </strong>{" "}
+                の嘘を密告{" "}
+                <span className="badge" style={{ fontSize: "0.7rem", padding: "1px 6px", background: "rgba(244, 63, 94, 0.2)", color: "#fb7185" }}>
+                  密告
+                </span>
+              </>
             )}
           </span>
         );

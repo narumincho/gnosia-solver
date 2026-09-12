@@ -1,6 +1,22 @@
-import { useState, useEffect, useMemo } from "preact/hooks";
-import { X, AlertTriangle, ShieldCheck, UserCheck, Search, Activity, Skull } from "lucide-preact";
-import { EventType, GameEvent, NewGameEvent, GameSettings, PlayerStatus, ReportJudgement, Role } from "../types.ts";
+import { useEffect, useMemo, useState } from "preact/hooks";
+import {
+  Activity,
+  AlertTriangle,
+  Search,
+  ShieldCheck,
+  Skull,
+  UserCheck,
+  X,
+} from "lucide-preact";
+import {
+  EventType,
+  GameEvent,
+  GameSettings,
+  NewGameEvent,
+  PlayerStatus,
+  ReportJudgement,
+  Role,
+} from "../types.ts";
 
 interface AddEventModalProps {
   isOpen: boolean;
@@ -32,11 +48,15 @@ export function AddEventModal({
 }: AddEventModalProps) {
   if (!isOpen) return null;
 
-  const [eventType, setEventType] = useState<EventType>(editingEvent ? editingEvent.type : initialType);
+  const [eventType, setEventType] = useState<EventType>(
+    editingEvent ? editingEvent.type : initialType,
+  );
 
   // プレイヤー群のフィルタリング
   const alivePlayers = useMemo(() => {
-    return settings.players.filter((p) => (playerStatuses[p.id] || "ALIVE") === "ALIVE");
+    return settings.players.filter((p) =>
+      (playerStatuses[p.id] || "ALIVE") === "ALIVE"
+    );
   }, [settings.players, playerStatuses]);
 
   const frozenPlayers = useMemo(() => {
@@ -47,7 +67,10 @@ export function AddEventModal({
   const coCandidates = useMemo(() => {
     return alivePlayers.filter((p) => {
       const alreadyClaimed = (claimedRoles[p.id]?.length ?? 0) > 0;
-      if (editingEvent && editingEvent.type === "CO" && editingEvent.playerId === p.id) {
+      if (
+        editingEvent && editingEvent.type === "CO" &&
+        editingEvent.playerId === p.id
+      ) {
         return true;
       }
       return !alreadyClaimed;
@@ -77,9 +100,14 @@ export function AddEventModal({
   // フォーム用入力ステート
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
   const [targetPlayer, setTargetPlayer] = useState<string>("");
-  const [claimedRole, setClaimedRole] = useState<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">("ENGINEER");
+  const [claimedRole, setClaimedRole] = useState<
+    "ENGINEER" | "DOCTOR" | "GUARD_DUTY"
+  >("ENGINEER");
   const [reportResult, setReportResult] = useState<ReportJudgement>("HUMAN");
-  const [lieReason, setLieReason] = useState<string>("直感スキル発動 / 人間だと言え");
+  const [witnessPlayer, setWitnessPlayer] = useState<string>("player");
+  const [noAttackNote, setNoAttackNote] = useState<string>(
+    "夜間の犠牲者なし (天使護衛成功 または バグ襲撃)",
+  );
 
   // 初期値の自動調整
   useEffect(() => {
@@ -102,7 +130,7 @@ export function AddEventModal({
           break;
         case "DEFINITE_LIE":
           setSelectedPlayer(editingEvent.targetId);
-          setLieReason(editingEvent.reason || "");
+          setWitnessPlayer(editingEvent.witnessId || "player");
           break;
         case "VOTE":
           setSelectedPlayer(editingEvent.frozenPlayerId);
@@ -112,7 +140,7 @@ export function AddEventModal({
           break;
         case "NO_ATTACK":
           setSelectedPlayer(editingEvent.guardedPlayerId || "");
-          setLieReason(editingEvent.note || "");
+          setNoAttackNote(editingEvent.note || "");
           break;
       }
       return;
@@ -121,37 +149,51 @@ export function AddEventModal({
     // 新規登録時の初期化
     if (initialType) setEventType(initialType);
 
-    if (initialType === "CO") {
-      const defaultCandidate =
-        initialPlayerId && coCandidates.some((p) => p.id === initialPlayerId)
-          ? initialPlayerId
-          : coCandidates[0]?.id || "";
+    if (initialType === "DEFINITE_LIE") {
+      setWitnessPlayer("player");
+      const defaultLiar = initialPlayerId && initialPlayerId !== "player"
+        ? initialPlayerId
+        : settings.players.find((p) => p.id !== "player")?.id ||
+          settings.players[0]?.id || "";
+      setSelectedPlayer(defaultLiar);
+    } else if (initialType === "CO") {
+      const defaultCandidate = initialPlayerId && coCandidates.some((p) =>
+          p.id === initialPlayerId
+        )
+        ? initialPlayerId
+        : coCandidates[0]?.id || "";
       setSelectedPlayer(defaultCandidate);
     } else if (initialType === "INVESTIGATION") {
-      const defaultInv =
-        (initialPlayerId && engineerCandidates.some((p) => p.id === initialPlayerId))
-          ? initialPlayerId
-          : engineerCandidates[0]?.id || alivePlayers[0]?.id || "";
+      const defaultInv = (initialPlayerId && engineerCandidates.some((p) =>
+          p.id === initialPlayerId
+        ))
+        ? initialPlayerId
+        : engineerCandidates[0]?.id || alivePlayers[0]?.id || "";
       setSelectedPlayer(defaultInv);
 
       // 対象は調査者以外の生存者
-      const defaultTarget =
-        alivePlayers.find((p) => p.id !== defaultInv)?.id || settings.players[0]?.id || "";
+      const defaultTarget = alivePlayers.find((p) => p.id !== defaultInv)?.id ||
+        settings.players[0]?.id || "";
       setTargetPlayer(defaultTarget);
     } else if (initialType === "DOCTOR_REPORT") {
-      const defaultDoc =
-        (initialPlayerId && doctorCandidates.some((p) => p.id === initialPlayerId))
-          ? initialPlayerId
-          : doctorCandidates[0]?.id || alivePlayers[0]?.id || "";
+      const defaultDoc = (initialPlayerId && doctorCandidates.some((p) =>
+          p.id === initialPlayerId
+        ))
+        ? initialPlayerId
+        : doctorCandidates[0]?.id || alivePlayers[0]?.id || "";
       setSelectedPlayer(defaultDoc);
       setTargetPlayer(frozenPlayers[0]?.id || settings.players[0]?.id || "");
     } else if (initialType === "VOTE" || initialType === "ATTACK") {
-      setSelectedPlayer(initialPlayerId || alivePlayers[0]?.id || settings.players[0]?.id || "");
+      setSelectedPlayer(
+        initialPlayerId || alivePlayers[0]?.id || settings.players[0]?.id || "",
+      );
     } else if (initialType === "NO_ATTACK") {
       setSelectedPlayer("");
-      setLieReason("夜間の犠牲者なし (天使護衛成功 または バグ襲撃)");
+      setNoAttackNote("夜間の犠牲者なし (天使護衛成功 または バグ襲撃)");
     } else {
-      setSelectedPlayer(initialPlayerId || alivePlayers[0]?.id || settings.players[0]?.id || "");
+      setSelectedPlayer(
+        initialPlayerId || alivePlayers[0]?.id || settings.players[0]?.id || "",
+      );
     }
   }, [editingEvent, initialType, initialPlayerId]);
 
@@ -187,7 +229,7 @@ export function AddEventModal({
         eventData = {
           type: "DEFINITE_LIE",
           targetId: selectedPlayer,
-          reason: lieReason,
+          witnessId: witnessPlayer,
         };
         break;
       case "VOTE":
@@ -206,7 +248,7 @@ export function AddEventModal({
         eventData = {
           type: "NO_ATTACK",
           guardedPlayerId: selectedPlayer ? selectedPlayer : undefined,
-          note: lieReason,
+          note: noAttackNote,
         };
         break;
       default:
@@ -247,65 +289,129 @@ export function AddEventModal({
               onChange={(e) => {
                 const val = (e.target as HTMLSelectElement).value as EventType;
                 setEventType(val);
-                if (val === "CO") {
+                if (val === "DEFINITE_LIE") {
+                  setWitnessPlayer("player");
+                  if (!selectedPlayer || selectedPlayer === "player") {
+                    const defaultTarget =
+                      settings.players.find((p) => p.id !== "player")?.id ||
+                      settings.players[0]?.id || "";
+                    setSelectedPlayer(defaultTarget);
+                  }
+                } else if (val === "CO") {
                   if (!coCandidates.some((p) => p.id === selectedPlayer)) {
                     setSelectedPlayer(coCandidates[0]?.id || "");
                   }
                 } else if (val === "INVESTIGATION") {
-                  const inv = engineerCandidates[0]?.id || alivePlayers[0]?.id || "";
+                  const inv = engineerCandidates[0]?.id ||
+                    alivePlayers[0]?.id || "";
                   setSelectedPlayer(inv);
-                  setTargetPlayer(alivePlayers.find((p) => p.id !== inv)?.id || "");
+                  setTargetPlayer(
+                    alivePlayers.find((p) => p.id !== inv)?.id || "",
+                  );
                 } else if (val === "DOCTOR_REPORT") {
-                  setSelectedPlayer(doctorCandidates[0]?.id || alivePlayers[0]?.id || "");
+                  setSelectedPlayer(
+                    doctorCandidates[0]?.id || alivePlayers[0]?.id || "",
+                  );
                   setTargetPlayer(frozenPlayers[0]?.id || "");
                 } else if (val === "NO_ATTACK") {
                   setSelectedPlayer("");
-                  setLieReason("夜間の犠牲者なし (天使護衛成功 または バグ襲撃)");
+                  setNoAttackNote(
+                    "夜間の犠牲者なし (天使護衛成功 または バグ襲撃)",
+                  );
                 } else if (val === "VOTE" || val === "ATTACK") {
                   setSelectedPlayer(alivePlayers[0]?.id || "");
                 }
               }}
             >
-              <option value="DEFINITE_LIE">【重要】嘘をついていることが確定</option>
+              <option value="DEFINITE_LIE">嘘に気づいた</option>
               <option value="CO">役職名乗り出 (CO)</option>
               <option value="INVESTIGATION">エンジニア調査報告</option>
               <option value="DOCTOR_REPORT">ドクター医療報告</option>
               <option value="VOTE">コールドスリープ (投票)</option>
               <option value="ATTACK">夜間に消滅 (襲撃死)</option>
-              <option value="NO_ATTACK">夜間の襲撃なし (犠牲者ゼロ / 護衛・バグ)</option>
+              <option value="NO_ATTACK">
+                夜間の襲撃なし (犠牲者ゼロ / 護衛・バグ)
+              </option>
             </select>
           </div>
 
           {/* 嘘をついていることが確定 */}
           {eventType === "DEFINITE_LIE" && (
-            <div style={{ background: "rgba(244, 63, 94, 0.08)", padding: "1rem", borderRadius: "8px", border: "1px solid rgba(244, 63, 94, 0.3)", marginBottom: "1rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#fb7185", marginBottom: "0.75rem", fontSize: "0.85rem", fontWeight: "bold" }}>
+            <div
+              style={{
+                background: "rgba(244, 63, 94, 0.08)",
+                padding: "1rem",
+                borderRadius: "8px",
+                border: "1px solid rgba(244, 63, 94, 0.3)",
+                marginBottom: "1rem",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  color: "#fb7185",
+                  marginBottom: "0.75rem",
+                  fontSize: "0.85rem",
+                  fontWeight: "bold",
+                }}
+              >
                 <AlertTriangle size={16} />
-                <span>嘘つき確定の人物は【グノーシア / AC主義者 / バグ】のいずれかになります（人間陣営から除外）</span>
+                <span>
+                  {witnessPlayer === "player"
+                    ? "【自分が看破】対象は確実に【グノーシア / AC主義者 / バグ】です (人間陣営から除外)"
+                    : "【他者の密告】密告者が人間なら対象は敵確定。密告者が敵なら濡れ衣の可能性あり (両者人間は除外)"}
+                </span>
               </div>
+
               <div className="form-group">
-                <label className="form-label">嘘をついた人物</label>
+                <label className="form-label">
+                  嘘に気づいた / 密告した人物
+                </label>
                 <select
                   className="form-select"
-                  value={selectedPlayer}
-                  onChange={(e) => setSelectedPlayer((e.target as HTMLSelectElement).value)}
+                  value={witnessPlayer}
+                  onChange={(e) => {
+                    const newWitness = (e.target as HTMLSelectElement).value;
+                    setWitnessPlayer(newWitness);
+                    if (selectedPlayer === newWitness) {
+                      const other = settings.players.find((p) =>
+                        p.id !== newWitness
+                      );
+                      if (other) setSelectedPlayer(other.id);
+                    }
+                  }}
                 >
                   {settings.players.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} {playerStatuses[p.id] === "FROZEN" ? "(冷凍済)" : playerStatuses[p.id] === "ATTACKED" ? "(消滅済)" : ""}
+                      {p.name}{" "}
+                      {p.id === "player" ? "(直感で看破)" : "(夜の自室で密告)"}
                     </option>
                   ))}
                 </select>
               </div>
+
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">看破の理由・メモ</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={lieReason}
-                  onInput={(e) => setLieReason((e.target as HTMLInputElement).value)}
-                  placeholder="例: 直感スキルで看破 / 人間だと言えで沈黙 / 留守番騙り発覚"
-                />
+                <label className="form-label">嘘をついた人物</label>
+                <select
+                  className="form-select"
+                  value={selectedPlayer}
+                  onChange={(e) =>
+                    setSelectedPlayer((e.target as HTMLSelectElement).value)}
+                >
+                  {settings.players
+                    .filter((p) => p.id !== witnessPlayer)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} {playerStatuses[p.id] === "FROZEN"
+                          ? "(冷凍済)"
+                          : playerStatuses[p.id] === "ATTACKED"
+                          ? "(消滅済)"
+                          : ""}
+                      </option>
+                    ))}
+                </select>
               </div>
             </div>
           )}
@@ -314,11 +420,14 @@ export function AddEventModal({
           {eventType === "CO" && (
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">名乗り出た人物 (未CO者のみ)</label>
+                <label className="form-label">
+                  名乗り出た人物 (未CO者のみ)
+                </label>
                 <select
                   className="form-select"
                   value={selectedPlayer}
-                  onChange={(e) => setSelectedPlayer((e.target as HTMLSelectElement).value)}
+                  onChange={(e) =>
+                    setSelectedPlayer((e.target as HTMLSelectElement).value)}
                   disabled={coCandidates.length === 0}
                 >
                   {coCandidates.map((p) => (
@@ -331,7 +440,14 @@ export function AddEventModal({
                   )}
                 </select>
                 {coCandidates.length === 0 && (
-                  <span style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginTop: "0.25rem", display: "block" }}>
+                  <span
+                    style={{
+                      color: "var(--text-muted)",
+                      fontSize: "0.75rem",
+                      marginTop: "0.25rem",
+                      display: "block",
+                    }}
+                  >
                     ※ 生存している全員がすでに役職CO済みです
                   </span>
                 )}
@@ -342,7 +458,10 @@ export function AddEventModal({
                 <select
                   className="form-select"
                   value={claimedRole}
-                  onChange={(e) => setClaimedRole((e.target as HTMLSelectElement).value as any)}
+                  onChange={(e) =>
+                    setClaimedRole(
+                      (e.target as HTMLSelectElement).value as any,
+                    )}
                 >
                   <option value="ENGINEER">エンジニア</option>
                   <option value="DOCTOR">ドクター</option>
@@ -357,7 +476,9 @@ export function AddEventModal({
             <div>
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">調査したエンジニア (CO者のみ)</label>
+                  <label className="form-label">
+                    調査したエンジニア (CO者のみ)
+                  </label>
                   <select
                     className="form-select"
                     value={selectedPlayer}
@@ -365,24 +486,30 @@ export function AddEventModal({
                       const newInv = (e.target as HTMLSelectElement).value;
                       setSelectedPlayer(newInv);
                       if (targetPlayer === newInv) {
-                        setTargetPlayer(alivePlayers.find((p) => p.id !== newInv)?.id || "");
+                        setTargetPlayer(
+                          alivePlayers.find((p) => p.id !== newInv)?.id || "",
+                        );
                       }
                     }}
                   >
-                    {engineerCandidates.length > 0 ? (
-                      engineerCandidates.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} {p.id === "player" && myRole === "ENGINEER" ? "(真エンジニア)" : "(CO者)"}
-                        </option>
-                      ))
-                    ) : (
-                      // フォールバック
-                      alivePlayers.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} (※未CO)
-                        </option>
-                      ))
-                    )}
+                    {engineerCandidates.length > 0
+                      ? (
+                        engineerCandidates.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} {p.id === "player" && myRole === "ENGINEER"
+                              ? "(真エンジニア)"
+                              : "(CO者)"}
+                          </option>
+                        ))
+                      )
+                      : (
+                        // フォールバック
+                        alivePlayers.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} (※未CO)
+                          </option>
+                        ))
+                      )}
                   </select>
                 </div>
 
@@ -391,7 +518,8 @@ export function AddEventModal({
                   <select
                     className="form-select"
                     value={targetPlayer}
-                    onChange={(e) => setTargetPlayer((e.target as HTMLSelectElement).value)}
+                    onChange={(e) =>
+                      setTargetPlayer((e.target as HTMLSelectElement).value)}
                   >
                     {alivePlayers
                       .filter((p) => p.id !== selectedPlayer)
@@ -409,7 +537,10 @@ export function AddEventModal({
                 <select
                   className="form-select"
                   value={reportResult}
-                  onChange={(e) => setReportResult((e.target as HTMLSelectElement).value as ReportJudgement)}
+                  onChange={(e) =>
+                    setReportResult(
+                      (e.target as HTMLSelectElement).value as ReportJudgement,
+                    )}
                 >
                   <option value="HUMAN">人間 (白)</option>
                   <option value="GNOSIA">グノーシア (黒)</option>
@@ -423,47 +554,63 @@ export function AddEventModal({
             <div>
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">報告したドクター (CO者のみ)</label>
+                  <label className="form-label">
+                    報告したドクター (CO者のみ)
+                  </label>
                   <select
                     className="form-select"
                     value={selectedPlayer}
-                    onChange={(e) => setSelectedPlayer((e.target as HTMLSelectElement).value)}
+                    onChange={(e) =>
+                      setSelectedPlayer((e.target as HTMLSelectElement).value)}
                   >
-                    {doctorCandidates.length > 0 ? (
-                      doctorCandidates.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} {p.id === "player" && myRole === "DOCTOR" ? "(真ドクター)" : "(CO者)"}
-                        </option>
-                      ))
-                    ) : (
-                      alivePlayers.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} (※未CO)
-                        </option>
-                      ))
-                    )}
+                    {doctorCandidates.length > 0
+                      ? (
+                        doctorCandidates.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} {p.id === "player" && myRole === "DOCTOR"
+                              ? "(真ドクター)"
+                              : "(CO者)"}
+                          </option>
+                        ))
+                      )
+                      : (
+                        alivePlayers.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} (※未CO)
+                          </option>
+                        ))
+                      )}
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">診察した冷凍対象 (冷凍された乗員のみ)</label>
-                  {frozenPlayers.length > 0 ? (
-                    <select
-                      className="form-select"
-                      value={targetPlayer}
-                      onChange={(e) => setTargetPlayer((e.target as HTMLSelectElement).value)}
-                    >
-                      {frozenPlayers.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} (コールドスリープ済)
+                  <label className="form-label">
+                    診察した冷凍対象 (冷凍された乗員のみ)
+                  </label>
+                  {frozenPlayers.length > 0
+                    ? (
+                      <select
+                        className="form-select"
+                        value={targetPlayer}
+                        onChange={(e) =>
+                          setTargetPlayer(
+                            (e.target as HTMLSelectElement).value,
+                          )}
+                      >
+                        {frozenPlayers.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} (コールドスリープ済)
+                          </option>
+                        ))}
+                      </select>
+                    )
+                    : (
+                      <select className="form-select" disabled>
+                        <option value="">
+                          (コールドスリープされた乗員がいません)
                         </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <select className="form-select" disabled>
-                      <option value="">(コールドスリープされた乗員がいません)</option>
-                    </select>
-                  )}
+                      </select>
+                    )}
                 </div>
               </div>
 
@@ -472,7 +619,10 @@ export function AddEventModal({
                 <select
                   className="form-select"
                   value={reportResult}
-                  onChange={(e) => setReportResult((e.target as HTMLSelectElement).value as ReportJudgement)}
+                  onChange={(e) =>
+                    setReportResult(
+                      (e.target as HTMLSelectElement).value as ReportJudgement,
+                    )}
                 >
                   <option value="HUMAN">人間 (白)</option>
                   <option value="GNOSIA">グノーシア (黒)</option>
@@ -484,11 +634,14 @@ export function AddEventModal({
           {/* コールドスリープ (VOTE) */}
           {eventType === "VOTE" && (
             <div className="form-group">
-              <label className="form-label">コールドスリープされた人物 (生存者のみ)</label>
+              <label className="form-label">
+                コールドスリープされた人物 (生存者のみ)
+              </label>
               <select
                 className="form-select"
                 value={selectedPlayer}
-                onChange={(e) => setSelectedPlayer((e.target as HTMLSelectElement).value)}
+                onChange={(e) =>
+                  setSelectedPlayer((e.target as HTMLSelectElement).value)}
               >
                 {alivePlayers.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -502,11 +655,14 @@ export function AddEventModal({
           {/* 消滅 (ATTACK) */}
           {eventType === "ATTACK" && (
             <div className="form-group">
-              <label className="form-label">夜間に消滅した人物 (生存者のみ / 非グノーシア確定)</label>
+              <label className="form-label">
+                夜間に消滅した人物 (生存者のみ / 非グノーシア確定)
+              </label>
               <select
                 className="form-select"
                 value={selectedPlayer}
-                onChange={(e) => setSelectedPlayer((e.target as HTMLSelectElement).value)}
+                onChange={(e) =>
+                  setSelectedPlayer((e.target as HTMLSelectElement).value)}
               >
                 {alivePlayers.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -519,20 +675,44 @@ export function AddEventModal({
 
           {/* 襲撃なし (NO_ATTACK) */}
           {eventType === "NO_ATTACK" && (
-            <div style={{ background: "rgba(168, 85, 247, 0.08)", padding: "1rem", borderRadius: "8px", border: "1px solid rgba(168, 85, 247, 0.3)", marginBottom: "1rem" }}>
-              <div style={{ color: "#c084fc", fontSize: "0.85rem", fontWeight: "bold", marginBottom: "0.75rem" }}>
+            <div
+              style={{
+                background: "rgba(168, 85, 247, 0.08)",
+                padding: "1rem",
+                borderRadius: "8px",
+                border: "1px solid rgba(168, 85, 247, 0.3)",
+                marginBottom: "1rem",
+              }}
+            >
+              <div
+                style={{
+                  color: "#c084fc",
+                  fontSize: "0.85rem",
+                  fontWeight: "bold",
+                  marginBottom: "0.75rem",
+                }}
+              >
                 夜間に誰も消滅しませんでした (犠牲者ゼロ)
               </div>
-              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.75rem" }}>
+              <p
+                style={{
+                  fontSize: "0.75rem",
+                  color: "var(--text-muted)",
+                  marginBottom: "0.75rem",
+                }}
+              >
                 守護天使が護衛に成功したか、またはグノーシアがバグを襲撃した可能性があります。
               </p>
 
               <div className="form-group">
-                <label className="form-label">護衛対象の人物 (守護天使視点などで分かっている場合、任意)</label>
+                <label className="form-label">
+                  護衛対象の人物 (守護天使視点などで分かっている場合、任意)
+                </label>
                 <select
                   className="form-select"
                   value={selectedPlayer}
-                  onChange={(e) => setSelectedPlayer((e.target as HTMLSelectElement).value)}
+                  onChange={(e) =>
+                    setSelectedPlayer((e.target as HTMLSelectElement).value)}
                 >
                   <option value="">(不明・指定なし: 単に犠牲者なし)</option>
                   {alivePlayers.map((p) => (
@@ -548,27 +728,34 @@ export function AddEventModal({
                 <input
                   type="text"
                   className="form-input"
-                  value={lieReason}
-                  onInput={(e) => setLieReason((e.target as HTMLInputElement).value)}
+                  value={noAttackNote}
+                  onInput={(e) =>
+                    setNoAttackNote((e.target as HTMLInputElement).value)}
                   placeholder="例: 天使護衛成功？ / バグ襲撃？"
                 />
               </div>
             </div>
           )}
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "0.75rem",
+              marginTop: "1.5rem",
+            }}
+          >
             <button type="button" className="btn" onClick={onClose}>
               キャンセル
             </button>
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={
-                (eventType === "CO" && coCandidates.length === 0) ||
+              disabled={(eventType === "CO" && coCandidates.length === 0) ||
                 (eventType === "DOCTOR_REPORT" && frozenPlayers.length === 0) ||
                 (eventType === "INVESTIGATION" && alivePlayers.length === 0) ||
-                ((eventType === "VOTE" || eventType === "ATTACK") && alivePlayers.length === 0)
-              }
+                ((eventType === "VOTE" || eventType === "ATTACK") &&
+                  alivePlayers.length === 0)}
             >
               {editingEvent ? "変更を保存する" : "イベントを記録する"}
             </button>

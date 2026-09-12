@@ -278,7 +278,10 @@ export class GnosiaSolver {
           guardedTargetPlayers.add(ev.guardedPlayerId);
         }
       } else if (ev.type === "DEFINITE_LIE") {
-        definiteLiars.add(ev.targetId);
+        const witnessId = ev.witnessId || "player";
+        if (witnessId === "player") {
+          definiteLiars.add(ev.targetId);
+        }
       }
     }
 
@@ -459,6 +462,7 @@ export class GnosiaSolver {
         involvedPlayerIds.add(ev.targetId);
       } else if (ev.type === "DEFINITE_LIE") {
         involvedPlayerIds.add(ev.targetId);
+        involvedPlayerIds.add(ev.witnessId || "player");
       } else if (ev.type === "ATTACK") {
         involvedPlayerIds.add(ev.attackedPlayerId);
       } else if (ev.type === "NO_ATTACK") {
@@ -563,9 +567,19 @@ export class GnosiaSolver {
             if (ev.result === "HUMAN" && isTargetGnosia) return false;
           }
         } else if (ev.type === "DEFINITE_LIE") {
+          const witnessId = ev.witnessId || "player";
           const liarRole = assignment[ev.targetId];
-          if (liarRole !== undefined && isHumanSide(liarRole)) {
-            return false;
+          if (witnessId === "player") {
+            if (liarRole !== undefined && isHumanSide(liarRole)) {
+              return false;
+            }
+          } else {
+            const witnessRole = assignment[witnessId];
+            if (witnessRole !== undefined && liarRole !== undefined) {
+              if (isHumanSide(witnessRole) && isHumanSide(liarRole)) {
+                return false;
+              }
+            }
           }
         } else if (ev.type === "NO_ATTACK") {
           if (ev.guardedPlayerId) {

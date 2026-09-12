@@ -95,9 +95,13 @@ export function PlayerCard({
         )}
 
         {definiteLieReasons && definiteLieReasons.length > 0 && (
-          <span className="badge" style={{ background: "rgba(244, 63, 94, 0.3)", color: "#fb7185", border: "1px solid #f43f5e" }}>
+          <span
+            className="badge"
+            style={{ background: "rgba(244, 63, 94, 0.3)", color: "#fb7185", border: "1px solid #f43f5e" }}
+            title={definiteLieReasons.join("\n")}
+          >
             <AlertTriangle size={12} />
-            嘘つき確定
+            {definiteLieReasons.some((r) => r.includes("自分")) ? "嘘つき確定" : "密告あり"}
           </span>
         )}
       </div>

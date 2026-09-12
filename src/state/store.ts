@@ -161,17 +161,22 @@ export function useGameStore() {
     return map;
   }, [events]);
 
-  // 各プレイヤーが嘘をついたと確定しているか (targetId -> reasons[])
+  // 各プレイヤーが嘘をついたと確定または密告されているか (targetId -> labels[])
   const definiteLies = useMemo(() => {
     const map: Record<string, string[]> = {};
     for (const ev of events) {
       if (ev.type === "DEFINITE_LIE") {
         if (!map[ev.targetId]) map[ev.targetId] = [];
-        map[ev.targetId].push(ev.reason || "嘘が看破された");
+        const isSelf = ev.witnessId === "player" || !ev.witnessId;
+        const witnessName = isSelf
+          ? "自分"
+          : settings.players.find((p) => p.id === ev.witnessId)?.name || ev.witnessId;
+        const label = isSelf ? "嘘看破 (自分)" : `密告 (${witnessName})`;
+        map[ev.targetId].push(label);
       }
     }
     return map;
-  }, [events]);
+  }, [events, settings.players]);
 
   // イベント追加 (並び順に応じてDayを自動設定)
   const addEvent = (event: NewGameEvent) => {

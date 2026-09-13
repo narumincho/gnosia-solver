@@ -5,11 +5,13 @@ import {
   Copy,
   Download,
   FileText,
+  Sparkles,
   Upload,
   X,
 } from "lucide-preact";
 import { SessionData } from "../types.ts";
 import { handleDialogBackdropClick } from "../utils/dialog.ts";
+import { SAMPLE_SESSIONS } from "../data/sampleSessions.ts";
 
 type ExportImportModalProps = {
   isOpen: boolean;
@@ -28,6 +30,9 @@ export function ExportImportModal({
   const [activeTab, setActiveTab] = useState<"export" | "import">("export");
   const [copied, setCopied] = useState(false);
   const [importText, setImportText] = useState("");
+  const [selectedSampleId, setSelectedSampleId] = useState<string>(
+    SAMPLE_SESSIONS[0]?.id || "",
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -144,6 +149,37 @@ export function ExportImportModal({
       setSuccessMessage(null);
     }
   };
+
+  // サンプル読み込み
+  const handleLoadSample = (sampleId: string) => {
+    const sample = SAMPLE_SESSIONS.find((s) => s.id === sampleId);
+    if (!sample) return;
+
+    try {
+      const res = onImport(sample.data);
+      if (res.success) {
+        setSuccessMessage(`サンプル「${sample.title}」を読み込みました！`);
+        setErrorMessage(null);
+        setTimeout(() => {
+          dialogRef.current?.close();
+          onClose();
+        }, 800);
+      } else {
+        setErrorMessage(res.error || "データの形式が不正です。");
+        setSuccessMessage(null);
+      }
+    } catch (err: unknown) {
+      setErrorMessage(
+        "サンプルの読み込みに失敗しました: " +
+          (err instanceof Error ? err.message : String(err)),
+      );
+      setSuccessMessage(null);
+    }
+  };
+
+  const currentSelectedSample = SAMPLE_SESSIONS.find(
+    (s) => s.id === selectedSampleId,
+  );
 
   return (
     <dialog
@@ -296,15 +332,140 @@ export function ExportImportModal({
       {/* インポートタブ */}
       {activeTab === "import" && (
         <div>
-          <p
+          {/* テストケースのサンプルから読み込む */}
+          <div
             style={{
-              fontSize: "0.85rem",
-              color: "var(--text-muted)",
-              marginBottom: "1rem",
+              background: "rgba(56, 189, 248, 0.06)",
+              border: "1px solid rgba(56, 189, 248, 0.25)",
+              borderRadius: "8px",
+              padding: "1rem",
+              marginBottom: "1.2rem",
             }}
           >
-            保存したJSONファイル、またはコピーしたJSONテキストからゲーム状況を完全に復元します。
-          </p>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                marginBottom: "0.4rem",
+              }}
+            >
+              <Sparkles size={16} color="var(--accent-primary, #38bdf8)" />
+              <strong
+                style={{
+                  fontSize: "0.9rem",
+                  color: "var(--accent-primary, #38bdf8)",
+                }}
+              >
+                テストケースのサンプルから読み込む
+              </strong>
+            </div>
+
+            <p
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--text-muted)",
+                marginBottom: "0.75rem",
+              }}
+            >
+              単体テストで検証済みの実戦完走データや各種推理パズルをワンクリックで読み込んで試せます。
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.6rem",
+              }}
+            >
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                <select
+                  className="form-input"
+                  style={{ flex: 1, minWidth: "220px", fontSize: "0.85rem" }}
+                  value={selectedSampleId}
+                  onChange={(e) => {
+                    const id = (e.target as HTMLSelectElement).value;
+                    setSelectedSampleId(id);
+                    const sample = SAMPLE_SESSIONS.find((s) => s.id === id);
+                    if (sample) {
+                      setImportText(JSON.stringify(sample.data, null, 2));
+                    }
+                  }}
+                >
+                  {SAMPLE_SESSIONS.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      [{s.badge}] {s.title}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => handleLoadSample(selectedSampleId)}
+                >
+                  <Upload size={14} />
+                  <span>このサンプルを読み込む</span>
+                </button>
+              </div>
+
+              {currentSelectedSample && (
+                <div
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "var(--text-muted)",
+                    background: "rgba(15, 23, 42, 0.6)",
+                    padding: "0.6rem 0.8rem",
+                    borderRadius: "6px",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    lineHeight: "1.4",
+                  }}
+                >
+                  <div
+                    style={{
+                      marginBottom: "0.3rem",
+                      color: "var(--text-main)",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {currentSelectedSample.title}（イベント数:{" "}
+                    {currentSelectedSample.data.events.length}件 / Day{" "}
+                    {currentSelectedSample.data.currentDay}時点）
+                  </div>
+                  <div>{currentSelectedSample.description}</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div
+            style={{
+              position: "relative",
+              textAlign: "center",
+              margin: "1.2rem 0",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: 0,
+                right: 0,
+                borderTop: "1px solid var(--border-color)",
+              }}
+            />
+            <span
+              style={{
+                position: "relative",
+                background: "#0f172a",
+                padding: "0 0.8rem",
+                fontSize: "0.75rem",
+                color: "var(--text-muted)",
+              }}
+            >
+              または独自データを読み込む
+            </span>
+          </div>
 
           <div style={{ marginBottom: "1.2rem" }}>
             <label className="form-label">方法1: ファイルから読み込む</label>
@@ -331,7 +492,7 @@ export function ExportImportModal({
             <textarea
               className="form-input"
               style={{
-                height: "160px",
+                height: "140px",
                 fontFamily: "monospace",
                 fontSize: "0.75rem",
                 resize: "vertical",

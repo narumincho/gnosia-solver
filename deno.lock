@@ -3,6 +3,7 @@
   "specifiers": {
     "jsr:@narumincho/type-lint@*": "1.1.0",
     "jsr:@narumincho/type-lint@^1.1.0": "1.1.0",
+    "jsr:@std/assert@*": "1.0.19",
     "jsr:@std/assert@^1.0.19": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.14",
     "npm:@preact/preset-vite@^2.10.6": "2.10.6_@babel+core@7.29.7_vite@8.3.0_preact@10.29.8",

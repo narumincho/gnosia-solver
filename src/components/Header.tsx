@@ -16,13 +16,10 @@ export function Header({
   onOpenExportImport,
   possibleWorldsCount,
 }: HeaderProps) {
-  const commitHash = import.meta.env.VITE_COMMIT_HASH;
+  const commitHash: string | undefined = import.meta.env.VITE_COMMIT_HASH;
   const commitUrl = commitHash
     ? `https://github.com/narumincho/gnosia-solver/tree/${commitHash}`
     : "https://github.com/narumincho/gnosia-solver";
-  const shortHash = commitHash && commitHash.length > 7
-    ? commitHash.slice(0, 7)
-    : commitHash;
 
   return (
     <header className="header">
@@ -91,10 +88,8 @@ export function Header({
           target="_blank"
           rel="noopener noreferrer"
           className="btn btn-icon"
-          title={shortHash ? `GitHub: ${shortHash}` : "GitHub"}
-          aria-label={shortHash
-            ? `GitHub コミット ${shortHash} を開く`
-            : "GitHub リポジトリを開く"}
+          title="GitHub"
+          aria-label="GitHub リポジトリを開く"
         >
           <GitHubIcon size={16} />
         </a>

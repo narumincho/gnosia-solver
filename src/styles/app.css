@@ -427,39 +427,20 @@ body {
   cursor: pointer;
 }
 
-.role-pie-slice:hover {
-  filter: brightness(1.25);
-  opacity: 0.95;
-}
-
-/* Player Card Badges & Meta */
-.player-badges-row {
+.player-header-badges {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem;
-  justify-content: center;
   align-items: center;
-  width: 100%;
+  gap: 0.25rem;
+  flex-shrink: 0;
 }
 
-.badge-compact {
-  font-size: 0.65rem;
-  padding: 0.1rem 0.35rem;
-  line-height: 1.2;
-  border-radius: 4px;
+.badge-co {
+  font-size: 0.6rem;
   font-weight: 700;
-}
-
-.badge-fake {
-  background: rgb(244 63 94 / 20%);
-  color: #fb7185;
-  border: 1px solid rgb(244 63 94 / 50%);
-}
-
-.badge-lie {
-  background: rgb(244 63 94 / 30%);
-  color: #fb7185;
-  border: 1px solid #f43f5e;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .player-status-badge {

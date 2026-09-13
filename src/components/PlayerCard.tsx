@@ -36,78 +36,6 @@ type DonutSlice = {
   readonly name: string;
 };
 
-type RoleChip = {
-  readonly id: string;
-  readonly text: string;
-  readonly badgeClass: string;
-  readonly title: string;
-};
-
-function getRoleChips(
-  claimedRoles: ReadonlyArray<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">,
-  definiteRole: Role | undefined,
-  roleProbs: Partial<Record<Role, number>>,
-  definiteLieReasons?: ReadonlyArray<string> | undefined,
-): ReadonlyArray<RoleChip> {
-  const chips: Array<RoleChip> = [];
-
-  // 1. CO役職の真偽判定
-  for (const claimed of claimedRoles) {
-    const roleDef = ROLE_DEFINITIONS[claimed];
-    if (definiteRole === claimed) {
-      chips.push({
-        id: `claimed-${claimed}`,
-        text: claimed === "GUARD_DUTY" ? "留守番" : `真${roleDef.name}`,
-        badgeClass: roleDef.badgeClass,
-        title: `${roleDef.name}確定 (真)`,
-      });
-    } else if ((roleProbs[claimed] ?? 0) === 0) {
-      chips.push({
-        id: `claimed-${claimed}`,
-        text: claimed === "GUARD_DUTY" ? "偽留守番" : `偽${roleDef.name}`,
-        badgeClass: "badge-fake",
-        title: `${roleDef.name}ではないことが確定 (偽)`,
-      });
-    } else {
-      chips.push({
-        id: `claimed-${claimed}`,
-        text: `${roleDef.name}CO`,
-        badgeClass: roleDef.badgeClass,
-        title: `${roleDef.name}名乗り (真偽未確定)`,
-      });
-    }
-  }
-
-  // 2. 確定役職の表示（真COとして既に表示されている場合を除く）
-  if (definiteRole) {
-    const isAlreadyShownAsTrueCO = claimedRoles.includes(
-      definiteRole as "ENGINEER" | "DOCTOR" | "GUARD_DUTY",
-    );
-    if (!isAlreadyShownAsTrueCO) {
-      const def = ROLE_DEFINITIONS[definiteRole];
-      chips.push({
-        id: `definite-${definiteRole}`,
-        text: def.name,
-        badgeClass: def.badgeClass,
-        title: `役職確定: ${def.name}`,
-      });
-    }
-  }
-
-  // 3. 嘘確定 / 密告
-  if (definiteLieReasons && definiteLieReasons.length > 0) {
-    const isSelf = definiteLieReasons.some((r) => r.includes("自分"));
-    chips.push({
-      id: "lie",
-      text: isSelf ? "嘘確定" : "密告",
-      badgeClass: "badge-lie",
-      title: definiteLieReasons.join("\n"),
-    });
-  }
-
-  return chips;
-}
-
 function RolePieChart({
   roleProbs,
   definiteRole,
@@ -344,22 +272,21 @@ export function PlayerCard({
       name: ROLE_DEFINITIONS[role].name,
     }));
 
-  const tooltipText = sortedRoles.length > 0
+  const probSummary = sortedRoles.length > 0
     ? sortedRoles
       .map((s) => `${s.name}: ${Math.round(s.prob * 100)}%`)
       .join("\n")
     : "確率データなし";
 
-  const chips = getRoleChips(
-    claimedRoles,
-    definiteRole,
-    roleProbs,
-    definiteLieReasons,
-  );
+  const lieSummary = definiteLieReasons && definiteLieReasons.length > 0
+    ? `\n【嘘・密告情報】\n${definiteLieReasons.join("\n")}`
+    : "";
+
+  const tooltipText = `${probSummary}${lieSummary}`;
 
   return (
     <div className={cardClass}>
-      {/* 上部: 名前 + 視点切り替え目のアイコン + ステータス */}
+      {/* 上部: 名前 + 視点切り替え目のアイコン + 右上: COバッジ・ステータス */}
       <div className="player-card-header">
         <div className="player-name-row">
           <button
@@ -390,7 +317,20 @@ export function PlayerCard({
             <span className="perspective-badge">(視点)</span>
           )}
         </div>
-        {getStatusBadge()}
+        <div className="player-header-badges">
+          {claimedRoles.map((role) => (
+            <span
+              key={role}
+              className={`badge badge-co ${ROLE_DEFINITIONS[role].badgeClass}`}
+              title={`${ROLE_DEFINITIONS[role].name}名乗り (CO)`}
+            >
+              {role === "GUARD_DUTY"
+                ? "留守番CO"
+                : `${ROLE_DEFINITIONS[role].name}CO`}
+            </span>
+          ))}
+          {getStatusBadge()}
+        </div>
       </div>
 
       {/* 中央: 拡大円グラフ (各スライスホバーで役職名と%を表示) */}
@@ -399,21 +339,6 @@ export function PlayerCard({
         definiteRole={definiteRole}
         tooltip={tooltipText}
       />
-
-      {/* 下部: チップ一覧 */}
-      {chips.length > 0 && (
-        <div className="player-badges-row">
-          {chips.map((chip) => (
-            <span
-              key={chip.id}
-              className={`badge badge-compact ${chip.badgeClass}`}
-              title={chip.title}
-            >
-              {chip.text}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

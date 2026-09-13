@@ -5,7 +5,9 @@ export default defineConfig(() => {
   return {
     plugins: [preact()],
     define: {
-      "import.meta.env.VITE_COMMIT_HASH": Deno.env.get("GITHUB_SHA"),
+      "import.meta.env.VITE_COMMIT_HASH": JSON.stringify(
+        Deno.env.get("GITHUB_SHA"),
+      ),
     },
     server: {
       port: 5173,

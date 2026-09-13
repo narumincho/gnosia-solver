@@ -1039,3 +1039,107 @@ Deno.test("GnosiaSolver - 仲間グノーシアが人間確定（エンジニア
   assertEquals(result.hasContradiction, true);
   assertEquals(result.totalPossibleWorlds, 0);
 });
+
+Deno.test("GnosiaSolver - 仲間グノーシア視点でも自分(player)がグノーシア100%になること", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "自分 (Player)" },
+      { id: "setsu", name: "セツ" },
+      { id: "gina", name: "ジナ" },
+      { id: "sq", name: "SQ" },
+      { id: "raqio", name: "ラキオ" },
+      { id: "stella", name: "ステラ" },
+      { id: "shigemichi", name: "しげみち" },
+      { id: "chipie", name: "シピ" },
+      { id: "comet", name: "コメット" },
+      { id: "jonas", name: "ジョナス" },
+      { id: "kukrushka", name: "ククルシカ" },
+      { id: "otome", name: "オトメ" },
+      { id: "remnan", name: "レムナン" },
+      { id: "sha_ming", name: "沙明" },
+      { id: "yuriko", name: "夕里子" },
+    ],
+    roles: {
+      gnosiaCount: 3,
+      hasEngineer: true,
+      hasDoctor: true,
+      hasGuardianAngel: true,
+      hasGuardDuty: true,
+      hasACFollower: true,
+      hasBug: true,
+    },
+    allowHiddenRoles: false,
+  };
+
+  const events: ReadonlyArray<GameEvent> = [
+    {
+      type: "CO",
+      playerId: "gina",
+      claimedRole: "ENGINEER",
+      id: "9f4ce97b-4c06-49b6-a696-79a135739d9d",
+      day: 1,
+    },
+    {
+      type: "CO",
+      playerId: "stella",
+      claimedRole: "ENGINEER",
+      id: "1296428b-5fbc-4c20-8d08-7ca8b3852437",
+      day: 1,
+    },
+    {
+      type: "CO",
+      playerId: "shigemichi",
+      partnerPlayerId: "chipie",
+      claimedRole: "GUARD_DUTY",
+      id: "5638fb78-a00d-4156-bdb9-4e8e874453d9",
+      day: 1,
+    },
+    {
+      type: "CO",
+      playerId: "player",
+      claimedRole: "DOCTOR",
+      id: "efffae34-fec8-4903-bd65-fa70277645a3",
+      day: 1,
+    },
+    {
+      type: "CO",
+      playerId: "kukrushka",
+      claimedRole: "DOCTOR",
+      id: "b8638ebe-9d82-4720-bd8d-e44273745ec5",
+      day: 1,
+    },
+    {
+      type: "VOTE",
+      frozenPlayerId: "raqio",
+      id: "a6ce6379-5a23-402d-b5c2-13a99ee3c25a",
+      day: 1,
+    },
+  ];
+
+  // グノーシアチーム: player, remnan, jonas
+  // レムナン視点 (perspectivePlayerId: "remnan") から見た仲間: player, jonas
+  const solver = new GnosiaSolver(settings, events);
+  const result = solver.solve({
+    perspectivePlayerId: "remnan",
+    perspectiveRole: "GNOSIA",
+    gnosiaComrades: ["player", "jonas"],
+  });
+
+  assertEquals(result.hasContradiction, false);
+  assertEquals(result.totalPossibleWorlds > 0, true);
+
+  // player, remnan, jonas はグノーシア100%
+  assertEquals(result.definiteRoles["player"], "GNOSIA");
+  assertEquals(result.gnosiaProbabilities["player"], 1.0);
+  assertEquals(result.definiteRoles["remnan"], "GNOSIA");
+  assertEquals(result.gnosiaProbabilities["remnan"], 1.0);
+  assertEquals(result.definiteRoles["jonas"], "GNOSIA");
+  assertEquals(result.gnosiaProbabilities["jonas"], 1.0);
+
+  // 他全員はGNOSIA確率0%
+  for (const p of settings.players) {
+    if (p.id !== "player" && p.id !== "remnan" && p.id !== "jonas") {
+      assertEquals(result.gnosiaProbabilities[p.id], 0);
+    }
+  }
+});

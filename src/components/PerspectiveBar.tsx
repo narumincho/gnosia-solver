@@ -40,6 +40,11 @@ export function PerspectiveBar({
     ...(settings.roles.hasBug ? ["BUG" as Role] : []),
   ];
 
+  const isCurrentComrade = myRole === "GNOSIA" &&
+    gnosiaComrades.includes(perspective.id);
+  const effectivePerspectiveRole = perspective.role ||
+    (isCurrentComrade ? ("GNOSIA" as Role) : undefined);
+
   return (
     <div className="perspective-panel">
       <div className="perspective-header">
@@ -106,7 +111,7 @@ export function PerspectiveBar({
               </span>
               <select
                 className="role-lock-select"
-                value={perspective.role || ""}
+                value={effectivePerspectiveRole || ""}
                 onChange={(e) => {
                   const val = (e.target as HTMLSelectElement).value;
                   onSelectRole(val ? (val as Role) : undefined);
@@ -136,6 +141,8 @@ export function PerspectiveBar({
 
         {settings.players.map((p) => {
           const isMe = p.id === "player";
+          const isComrade = myRole === "GNOSIA" &&
+            gnosiaComrades.includes(p.id);
           return (
             <button
               key={p.id}
@@ -147,6 +154,7 @@ export function PerspectiveBar({
             >
               {p.name} 視点
               {isMe && myRole ? ` (${ROLE_DEFINITIONS[myRole].name})` : ""}
+              {!isMe && isComrade ? " (仲間G)" : ""}
             </button>
           );
         })}
@@ -193,8 +201,8 @@ export function PerspectiveBar({
           現在視点:{" "}
           <strong style={{ color: "var(--text-accent)" }}>
             {perspective.name}
-            {perspective.role
-              ? ` [${ROLE_DEFINITIONS[perspective.role].name}固定]`
+            {effectivePerspectiveRole
+              ? ` [${ROLE_DEFINITIONS[effectivePerspectiveRole].name}固定]`
               : ""}
           </strong>
         </div>

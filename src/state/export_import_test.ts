@@ -166,3 +166,125 @@ Deno.test("Event Order & recalculateDays - 並び順からのDay自動計算と�
   assertEquals(disCalculated[2]?.day, 1);
   assertEquals(disCalculated[3]?.day, 2);
 });
+
+Deno.test("SessionData - 仲間グノーシア視点でインポートされた場合でも自分がグノーシア100%になること", () => {
+  const session: SessionData = {
+    version: 1,
+    exportedAt: "2026-09-13T02:14:54.189Z",
+    settings: {
+      players: [
+        { id: "player", name: "自分 (Player)" },
+        { id: "setsu", name: "セツ" },
+        { id: "gina", name: "ジナ" },
+        { id: "sq", name: "SQ" },
+        { id: "raqio", name: "ラキオ" },
+        { id: "stella", name: "ステラ" },
+        { id: "shigemichi", name: "しげみち" },
+        { id: "chipie", name: "シピ" },
+        { id: "comet", name: "コメット" },
+        { id: "jonas", name: "ジョナス" },
+        { id: "kukrushka", name: "ククルシカ" },
+        { id: "otome", name: "オトメ" },
+        { id: "remnan", name: "レムナン" },
+        { id: "sha_ming", name: "沙明" },
+        { id: "yuriko", name: "夕里子" },
+      ],
+      roles: {
+        gnosiaCount: 3,
+        hasEngineer: true,
+        hasDoctor: true,
+        hasGuardianAngel: true,
+        hasGuardDuty: true,
+        hasACFollower: true,
+        hasBug: true,
+      },
+      allowHiddenRoles: false,
+    },
+    events: [
+      {
+        type: "CO",
+        playerId: "gina",
+        claimedRole: "ENGINEER",
+        id: "9f4ce97b-4c06-49b6-a696-79a135739d9d",
+        day: 1,
+      },
+      {
+        type: "CO",
+        playerId: "stella",
+        claimedRole: "ENGINEER",
+        id: "1296428b-5fbc-4c20-8d08-7ca8b3852437",
+        day: 1,
+      },
+      {
+        type: "CO",
+        playerId: "shigemichi",
+        partnerPlayerId: "chipie",
+        claimedRole: "GUARD_DUTY",
+        id: "5638fb78-a00d-4156-bdb9-4e8e874453d9",
+        day: 1,
+      },
+      {
+        type: "CO",
+        playerId: "player",
+        claimedRole: "DOCTOR",
+        id: "efffae34-fec8-4903-bd65-fa70277645a3",
+        day: 1,
+      },
+      {
+        type: "CO",
+        playerId: "kukrushka",
+        claimedRole: "DOCTOR",
+        id: "b8638ebe-9d82-4720-bd8d-e44273745ec5",
+        day: 1,
+      },
+      {
+        type: "VOTE",
+        frozenPlayerId: "raqio",
+        id: "a6ce6379-5a23-402d-b5c2-13a99ee3c25a",
+        day: 1,
+      },
+    ],
+    currentDay: 1,
+    perspective: {
+      id: "remnan",
+      name: "レムナン",
+    },
+    myRole: "GNOSIA",
+    perspectiveRoles: {
+      player: "GNOSIA",
+    },
+    gnosiaComrades: ["remnan", "jonas"],
+  };
+
+  // store内のsolverResultと同じ推論ロジックの検証
+  const isPlayerGnosia = session.myRole === "GNOSIA" ||
+    session.perspectiveRoles?.["player"] === "GNOSIA";
+  const gnosiaTeam: ReadonlyArray<string> = isPlayerGnosia
+    ? ["player", ...(session.gnosiaComrades || [])]
+    : [];
+
+  const isPerspectiveInGnosiaTeam = session.perspective.id !== "objective" &&
+    gnosiaTeam.includes(session.perspective.id);
+
+  const effectivePerspectiveRole = session.perspective.role ||
+    (isPerspectiveInGnosiaTeam ? "GNOSIA" : undefined);
+
+  const effectiveComrades = isPerspectiveInGnosiaTeam
+    ? gnosiaTeam.filter((id) => id !== session.perspective.id)
+    : undefined;
+
+  const solver = new GnosiaSolver(session.settings, session.events);
+  const result = solver.solve({
+    perspectivePlayerId: session.perspective.id,
+    perspectiveRole: effectivePerspectiveRole,
+    gnosiaComrades: effectiveComrades,
+  });
+
+  assertEquals(result.hasContradiction, false);
+  assertEquals(result.definiteRoles["player"], "GNOSIA");
+  assertEquals(result.gnosiaProbabilities["player"], 1.0);
+  assertEquals(result.definiteRoles["remnan"], "GNOSIA");
+  assertEquals(result.gnosiaProbabilities["remnan"], 1.0);
+  assertEquals(result.definiteRoles["jonas"], "GNOSIA");
+  assertEquals(result.gnosiaProbabilities["jonas"], 1.0);
+});

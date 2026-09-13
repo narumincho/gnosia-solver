@@ -110,8 +110,11 @@ export function useGameStore() {
     if (id === "objective") {
       setPerspective({ id: "objective", name: "全体 (客観神視点)" });
     } else {
+      const isPlayerGnosia = myRole === "GNOSIA" ||
+        perspectiveRoles["player"] === "GNOSIA";
+      const isComrade = isPlayerGnosia && gnosiaComrades.includes(id);
       const savedRole = perspectiveRoles[id] ||
-        (id === "player" ? myRole : undefined);
+        (id === "player" ? myRole : isComrade ? "GNOSIA" : undefined);
       setPerspective({ id, name, role: savedRole });
     }
   };
@@ -170,17 +173,32 @@ export function useGameStore() {
   // ソルバー実行結果のメモ化
   const solverResult = useMemo(() => {
     const solver = new GnosiaSolver(settings, events);
-    const isSelfGnosia = perspective.id === "player" &&
-      (perspective.role === "GNOSIA" ||
-        (!perspective.role && myRole === "GNOSIA"));
+    const isPlayerGnosia = myRole === "GNOSIA" ||
+      perspectiveRoles["player"] === "GNOSIA";
+    const gnosiaTeam: ReadonlyArray<string> = isPlayerGnosia
+      ? ["player", ...gnosiaComrades]
+      : [];
+
+    const isPerspectiveInGnosiaTeam = perspective.id !== "objective" &&
+      gnosiaTeam.includes(perspective.id);
+
+    // 視点人物がグノーシアチームの場合、明示ロールが未指定でもGNOSIA扱いとする
+    const effectivePerspectiveRole = perspective.role ||
+      (isPerspectiveInGnosiaTeam ? "GNOSIA" : undefined);
+
+    // 仲間グノーシアは、その視点人物から見た自分以外のグノーシアチーム全員
+    const effectiveComrades = isPerspectiveInGnosiaTeam
+      ? gnosiaTeam.filter((id) => id !== perspective.id)
+      : undefined;
+
     return solver.solve({
       perspectivePlayerId: perspective.id === "objective"
         ? undefined
         : perspective.id,
-      perspectiveRole: perspective.role,
-      gnosiaComrades: isSelfGnosia ? gnosiaComrades : undefined,
+      perspectiveRole: effectivePerspectiveRole,
+      gnosiaComrades: effectiveComrades,
     });
-  }, [settings, events, perspective, myRole, gnosiaComrades]);
+  }, [settings, events, perspective, myRole, perspectiveRoles, gnosiaComrades]);
 
   // COしている役職のマップ (playerId -> Role[])
   const claimedRoles = useMemo(() => {

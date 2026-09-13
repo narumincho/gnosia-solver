@@ -388,42 +388,32 @@ body {
   flex-shrink: 0;
 }
 
-/* Pie Chart (円グラフ - conic-gradient) */
+/* Pie Chart (円グラフ - SVG) */
 .role-pie-wrapper {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
+  width: 74px;
+  height: 74px;
   margin: 0.15rem auto;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid rgb(255 255 255 / 20%);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 50%);
   flex-shrink: 0;
-  cursor: default;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
 }
 
-.role-pie-wrapper:hover {
-  transform: scale(1.06);
-  box-shadow: 0 4px 12px rgb(0 0 0 / 60%), 0 0 10px rgb(56 189 248 / 35%);
+.role-pie-svg {
+  overflow: visible;
+  filter: drop-shadow(0 2px 8px rgb(0 0 0 / 50%));
 }
 
-.role-pie-center-badge {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--bg-card);
-  border: 1.5px solid rgb(255 255 255 / 25%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 0.72rem;
-  font-family: var(--font-display);
-  box-shadow: 0 2px 6px rgb(0 0 0 / 60%);
-  user-select: none;
+.role-pie-slice {
+  transition: opacity 0.15s ease, filter 0.15s ease;
+  cursor: pointer;
+}
+
+.role-pie-slice:hover {
+  filter: brightness(1.25);
+  opacity: 0.95;
 }
 
 /* Player Card Badges & Meta */
@@ -454,47 +444,6 @@ body {
   background: rgb(244 63 94 / 30%);
   color: #fb7185;
   border: 1px solid #f43f5e;
-}
-
-.role-mini-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-
-.role-mini-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  font-size: 0.65rem;
-  color: var(--text-main);
-  background: rgb(255 255 255 / 5%);
-  border: 1px solid rgb(255 255 255 / 10%);
-  border-radius: 3px;
-  padding: 0.05rem 0.25rem;
-  white-space: nowrap;
-  line-height: 1.2;
-}
-
-.role-mini-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.role-mini-name {
-  font-size: 0.65rem;
-  color: var(--text-muted);
-}
-
-.role-mini-pct {
-  font-weight: 700;
-  font-family: var(--font-display);
-  color: var(--text-accent);
 }
 
 .player-status-badge {

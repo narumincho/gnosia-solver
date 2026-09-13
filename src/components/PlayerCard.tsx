@@ -1,3 +1,4 @@
+import { useState } from "preact/hooks";
 import { User } from "lucide-preact";
 import {
   PlayerStatus,
@@ -112,6 +113,8 @@ function RolePieChart({
   readonly definiteRole?: Role | undefined;
   readonly tooltip: string;
 }) {
+  const [hovered, setHovered] = useState<DonutSlice | undefined>(undefined);
+
   const activeSlices: ReadonlyArray<DonutSlice> = (
     Object.entries(roleProbs) as ReadonlyArray<[Role, number]>
   )
@@ -124,25 +127,11 @@ function RolePieChart({
       name: ROLE_DEFINITIONS[role].name,
     }));
 
-  let backgroundStyle = "rgba(255, 255, 255, 0.08)";
-  if (definiteRole) {
-    backgroundStyle = ROLE_DEFINITIONS[definiteRole].color;
-  } else if (activeSlices.length === 1) {
-    backgroundStyle = activeSlices[0].color;
-  } else if (activeSlices.length > 1) {
-    let currentPct = 0;
-    const parts: Array<string> = [];
-    for (let i = 0; i < activeSlices.length; i++) {
-      const slice = activeSlices[i];
-      const start = currentPct;
-      const end = i === activeSlices.length - 1
-        ? 100
-        : currentPct + slice.prob * 100;
-      currentPct = end;
-      parts.push(`${slice.color} ${start.toFixed(1)}% ${end.toFixed(1)}%`);
-    }
-    backgroundStyle = `conic-gradient(${parts.join(", ")})`;
-  }
+  const size = 74;
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = 34;
+  const innerR = 19;
 
   const getCenterLabel = () => {
     if (definiteRole) {
@@ -172,24 +161,147 @@ function RolePieChart({
 
   const centerLabel = getCenterLabel();
 
+  // 扇形スライスの計算
+  let currentAngle = -Math.PI / 2; // 12 o'clock
+
   return (
     <div
       className="role-pie-wrapper"
       title={tooltip}
-      style={{ background: backgroundStyle }}
+      onMouseLeave={() => setHovered(undefined)}
     >
-      {centerLabel && (
-        <div
-          className="role-pie-center-badge"
-          style={{
-            color: definiteRole
-              ? ROLE_DEFINITIONS[definiteRole].color
-              : "var(--text-main)",
-          }}
-        >
-          {centerLabel}
-        </div>
-      )}
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="role-pie-svg"
+      >
+        {/* 背景ベース */}
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="rgba(255, 255, 255, 0.08)"
+        />
+
+        {/* 単一ロール (100%) の場合 */}
+        {activeSlices.length === 1 && (
+          <circle
+            cx={cx}
+            cy={cy}
+            r={r}
+            fill={activeSlices[0].color}
+            className="role-pie-slice"
+            onMouseEnter={() => setHovered(activeSlices[0])}
+          >
+            <title>{`${activeSlices[0].name}: 100%`}</title>
+          </circle>
+        )}
+
+        {/* 複数ロールの場合: SVG扇形パス */}
+        {activeSlices.length > 1 &&
+          activeSlices.map((slice) => {
+            const angle = slice.prob * 2 * Math.PI;
+            const startAngle = currentAngle;
+            const endAngle = currentAngle + angle;
+            currentAngle = endAngle;
+
+            const x1 = cx + r * Math.cos(startAngle);
+            const y1 = cy + r * Math.sin(startAngle);
+            const x2 = cx + r * Math.cos(endAngle);
+            const y2 = cy + r * Math.sin(endAngle);
+            const largeArc = angle > Math.PI ? 1 : 0;
+
+            const d = `M ${cx} ${cy} L ${x1.toFixed(2)} ${
+              y1.toFixed(2)
+            } A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+            const pct = Math.round(slice.prob * 100);
+
+            return (
+              <path
+                key={slice.role}
+                d={d}
+                fill={slice.color}
+                className="role-pie-slice"
+                onMouseEnter={() => setHovered(slice)}
+              >
+                <title>{`${slice.name}: ${pct}%`}</title>
+              </path>
+            );
+          })}
+
+        {/* 中央の穴 (ドーナツホール) */}
+        <circle
+          cx={cx}
+          cy={cy}
+          r={innerR}
+          fill="var(--bg-card)"
+          stroke="rgba(255, 255, 255, 0.15)"
+          strokeWidth="1"
+          style={{ pointerEvents: "none" }}
+        />
+
+        {/* 外枠境界線 (クリーンな円周) */}
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="none"
+          stroke="rgba(255, 255, 255, 0.2)"
+          strokeWidth="1"
+          style={{ pointerEvents: "none" }}
+        />
+
+        {/* 中央テキスト: ホバー時は役職名と%、非ホバー時は確定役職略称 */}
+        {hovered
+          ? (
+            <g style={{ pointerEvents: "none" }}>
+              <text
+                x={cx}
+                y={cy - 4}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill={hovered.color}
+                fontSize="8.5"
+                fontWeight="700"
+                fontFamily="var(--font-body)"
+              >
+                {hovered.name}
+              </text>
+              <text
+                x={cx}
+                y={cy + 6}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill="var(--text-main)"
+                fontSize="10"
+                fontWeight="800"
+                fontFamily="var(--font-display)"
+              >
+                {`${Math.round(hovered.prob * 100)}%`}
+              </text>
+            </g>
+          )
+          : centerLabel
+          ? (
+            <text
+              x={cx}
+              y={cy}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill={definiteRole
+                ? ROLE_DEFINITIONS[definiteRole].color
+                : "var(--text-main)"}
+              fontSize={centerLabel.length >= 3 ? "10" : "12"}
+              fontWeight="800"
+              fontFamily="var(--font-display)"
+              style={{ pointerEvents: "none" }}
+            >
+              {centerLabel}
+            </text>
+          )
+          : null}
+      </svg>
     </div>
   );
 }
@@ -274,7 +386,7 @@ export function PlayerCard({
         {getStatusBadge()}
       </div>
 
-      {/* 中央: 円グラフ */}
+      {/* 中央: 拡大円グラフ (各スライスホバーで役職名と%を表示) */}
       <RolePieChart
         roleProbs={roleProbs}
         definiteRole={definiteRole}
@@ -293,30 +405,6 @@ export function PlayerCard({
               {chip.text}
             </span>
           ))}
-        </div>
-      )}
-
-      {/* 円グラフの主要項目一覧 (未確定時の上位2役職のみ簡潔に表示) */}
-      {!definiteRole && sortedRoles.length > 0 && (
-        <div className="role-mini-list">
-          {sortedRoles.slice(0, 2).map((slice) => {
-            const pct = Math.round(slice.prob * 100);
-            if (pct === 0) return null;
-            return (
-              <span
-                key={slice.role}
-                className="role-mini-pill"
-                title={`${slice.name}: ${pct}%`}
-              >
-                <span
-                  className="role-mini-dot"
-                  style={{ backgroundColor: slice.color }}
-                />
-                <span className="role-mini-name">{slice.name}</span>
-                <span className="role-mini-pct">{pct}%</span>
-              </span>
-            );
-          })}
         </div>
       )}
     </div>

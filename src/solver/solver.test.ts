@@ -1305,3 +1305,182 @@ Deno.test("GnosiaSolver - 複数日にわたる襲撃と2人消滅（バグ蒸�
   assertEquals(result.definiteRoles["remnan"], "GNOSIA");
   assertEquals(result.definiteRoles["jonas"], "GNOSIA");
 });
+
+Deno.test("GnosiaSolver - 翌朝にバグ消滅者（セツ）への調査報告が追加された場合も正常に計算できること", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "自分 (Player)" },
+      { id: "setsu", name: "セツ" },
+      { id: "gina", name: "ジナ" },
+      { id: "sq", name: "SQ" },
+      { id: "raqio", name: "ラキオ" },
+      { id: "stella", name: "ステラ" },
+      { id: "shigemichi", name: "しげみち" },
+      { id: "chipie", name: "シピ" },
+      { id: "comet", name: "コメット" },
+      { id: "jonas", name: "ジョナス" },
+      { id: "kukrushka", name: "ククルシカ" },
+      { id: "otome", name: "オトメ" },
+      { id: "remnan", name: "レムナン" },
+      { id: "sha_ming", name: "沙明" },
+      { id: "yuriko", name: "夕里子" },
+    ],
+    roles: {
+      gnosiaCount: 3,
+      hasEngineer: true,
+      hasDoctor: true,
+      hasGuardianAngel: true,
+      hasGuardDuty: true,
+      hasACFollower: true,
+      hasBug: true,
+    },
+    allowHiddenRoles: false,
+  };
+
+  // Day 3 夜に [setsu, sha_ming] 消滅
+  // Day 4 昼に stella が setsu を調査して HUMAN（バグはエンジニア判定で人間と出る）と報告
+  const events: ReadonlyArray<GameEvent> = [
+    { type: "CO", playerId: "gina", claimedRole: "ENGINEER", id: "1", day: 1 },
+    {
+      type: "CO",
+      playerId: "stella",
+      claimedRole: "ENGINEER",
+      id: "2",
+      day: 1,
+    },
+    {
+      type: "CO",
+      playerId: "shigemichi",
+      partnerPlayerId: "chipie",
+      claimedRole: "GUARD_DUTY",
+      id: "3",
+      day: 1,
+    },
+    { type: "CO", playerId: "player", claimedRole: "DOCTOR", id: "4", day: 1 },
+    {
+      type: "CO",
+      playerId: "kukrushka",
+      claimedRole: "DOCTOR",
+      id: "5",
+      day: 1,
+    },
+    { type: "VOTE", frozenPlayerId: "raqio", id: "6", day: 1 },
+    { type: "GNOSIA_ATTACK", targetId: "chipie", id: "7", day: 1 },
+    {
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: ["chipie"],
+      id: "8",
+      day: 1,
+    },
+    {
+      type: "DOCTOR_REPORT",
+      reporterId: "player",
+      targetId: "raqio",
+      result: "HUMAN",
+      id: "9",
+      day: 2,
+    },
+    {
+      type: "DOCTOR_REPORT",
+      reporterId: "kukrushka",
+      targetId: "raqio",
+      result: "HUMAN",
+      id: "10",
+      day: 2,
+    },
+    {
+      type: "INVESTIGATION",
+      investigatorId: "gina",
+      targetId: "comet",
+      result: "GNOSIA",
+      id: "11",
+      day: 2,
+    },
+    {
+      type: "INVESTIGATION",
+      investigatorId: "stella",
+      targetId: "sha_ming",
+      result: "HUMAN",
+      id: "12",
+      day: 2,
+    },
+    { type: "VOTE", frozenPlayerId: "comet", id: "13", day: 2 },
+    { type: "GNOSIA_ATTACK", targetId: "gina", id: "14", day: 2 },
+    { type: "DISAPPEARANCE", disappearedPlayerIds: [], id: "15", day: 2 },
+    {
+      type: "DOCTOR_REPORT",
+      reporterId: "player",
+      targetId: "comet",
+      result: "HUMAN",
+      id: "16",
+      day: 3,
+    },
+    {
+      type: "DOCTOR_REPORT",
+      reporterId: "kukrushka",
+      targetId: "comet",
+      result: "HUMAN",
+      id: "17",
+      day: 3,
+    },
+    {
+      type: "INVESTIGATION",
+      investigatorId: "stella",
+      targetId: "sq",
+      result: "HUMAN",
+      id: "18",
+      day: 3,
+    },
+    {
+      type: "INVESTIGATION",
+      investigatorId: "gina",
+      targetId: "yuriko",
+      result: "GNOSIA",
+      id: "19",
+      day: 3,
+    },
+    { type: "VOTE", frozenPlayerId: "gina", id: "20", day: 3 },
+    { type: "GNOSIA_ATTACK", targetId: "sha_ming", id: "21", day: 3 },
+    {
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: ["setsu", "sha_ming"],
+      id: "22",
+      day: 3,
+    },
+    {
+      type: "DOCTOR_REPORT",
+      reporterId: "player",
+      targetId: "gina",
+      result: "HUMAN",
+      id: "23",
+      day: 4,
+    },
+    {
+      type: "DOCTOR_REPORT",
+      reporterId: "kukrushka",
+      targetId: "gina",
+      result: "HUMAN",
+      id: "24",
+      day: 4,
+    },
+    {
+      type: "INVESTIGATION",
+      investigatorId: "stella",
+      targetId: "setsu",
+      result: "HUMAN",
+      id: "25",
+      day: 4,
+    },
+  ];
+
+  const solver = new GnosiaSolver(settings, events);
+  const result = solver.solve({
+    perspectivePlayerId: "player",
+    perspectiveRole: "GNOSIA",
+    gnosiaComrades: ["remnan", "jonas"],
+  });
+
+  assertEquals(result.hasContradiction, false);
+  assertEquals(result.totalPossibleWorlds > 0, true);
+  assertEquals(result.definiteRoles["setsu"], "BUG");
+});

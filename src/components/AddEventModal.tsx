@@ -104,6 +104,11 @@ export function AddEventModal({
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
   const [selectedGuardDuty, setSelectedGuardDuty] = useState<Array<string>>([]);
   const [targetPlayer, setTargetPlayer] = useState<string>("");
+
+  // 調査対象候補（調査者本人以外の全プレイヤー。生存者を優先し、今朝消滅した乗員や過去の消滅・冷凍者も選択可能）
+  const investigationTargetCandidates = useMemo(() => {
+    return settings.players.filter((p) => p.id !== selectedPlayer);
+  }, [settings.players, selectedPlayer]);
   const [claimedRole, setClaimedRole] = useState<
     "ENGINEER" | "DOCTOR" | "GUARD_DUTY"
   >(
@@ -674,20 +679,48 @@ export function AddEventModal({
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">調査対象 (生存者)</label>
+                  <label className="form-label">
+                    調査対象 (生存者 / 今朝消滅した乗員)
+                  </label>
                   <select
                     className="form-select"
                     value={targetPlayer}
                     onChange={(e) =>
                       setTargetPlayer((e.target as HTMLSelectElement).value)}
                   >
-                    {alivePlayers
-                      .filter((p) => p.id !== selectedPlayer)
-                      .map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
+                    <option value="">-- 調査対象を選択 --</option>
+                    <optgroup label="生存している乗員">
+                      {investigationTargetCandidates
+                        .filter((p) =>
+                          (playerStatuses[p.id] || "ALIVE") === "ALIVE"
+                        )
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                    {investigationTargetCandidates.some(
+                      (p) => (playerStatuses[p.id] || "ALIVE") !== "ALIVE",
+                    ) && (
+                      <optgroup label="消滅・冷凍された乗員 (バグ蒸発・昨夜襲撃など)">
+                        {investigationTargetCandidates
+                          .filter((p) =>
+                            (playerStatuses[p.id] || "ALIVE") !== "ALIVE"
+                          )
+                          .map((p) => {
+                            const status = playerStatuses[p.id];
+                            const statusLabel = status === "FROZEN"
+                              ? "冷凍"
+                              : "消滅";
+                            return (
+                              <option key={p.id} value={p.id}>
+                                {p.name} ({statusLabel})
+                              </option>
+                            );
+                          })}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
               </div>
@@ -1025,7 +1058,8 @@ export function AddEventModal({
                   ? selectedGuardDuty.length !== 2
                   : (!selectedPlayer || coCandidates.length === 0))) ||
                 (eventType === "DOCTOR_REPORT" && frozenPlayers.length === 0) ||
-                (eventType === "INVESTIGATION" && alivePlayers.length === 0) ||
+                (eventType === "INVESTIGATION" &&
+                  (!selectedPlayer || !targetPlayer)) ||
                 (eventType === "VOTE" && alivePlayers.length === 0) ||
                 (eventType === "GNOSIA_ATTACK" &&
                   alivePlayers.filter((p) => p.id !== "player").length === 0)}

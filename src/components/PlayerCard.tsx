@@ -1,4 +1,4 @@
-import { AlertTriangle, User } from "lucide-preact";
+import { User } from "lucide-preact";
 import {
   PlayerStatus,
   Role,
@@ -31,20 +31,94 @@ interface DonutSlice {
   readonly name: string;
 }
 
+interface RoleChip {
+  readonly id: string;
+  readonly text: string;
+  readonly badgeClass: string;
+  readonly title: string;
+}
+
+function getRoleChips(
+  claimedRoles: ReadonlyArray<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">,
+  definiteRole: Role | undefined,
+  roleProbs: Partial<Record<Role, number>>,
+  definiteLieReasons?: ReadonlyArray<string> | undefined,
+): ReadonlyArray<RoleChip> {
+  const chips: Array<RoleChip> = [];
+
+  // 1. CO役職の真偽判定
+  for (const claimed of claimedRoles) {
+    const roleDef = ROLE_DEFINITIONS[claimed];
+    if (definiteRole === claimed) {
+      chips.push({
+        id: `claimed-${claimed}`,
+        text: claimed === "GUARD_DUTY" ? "留守番" : `真${roleDef.name}`,
+        badgeClass: roleDef.badgeClass,
+        title: `${roleDef.name}確定 (真)`,
+      });
+    } else if ((roleProbs[claimed] ?? 0) === 0) {
+      chips.push({
+        id: `claimed-${claimed}`,
+        text: claimed === "GUARD_DUTY" ? "偽留守番" : `偽${roleDef.name}`,
+        badgeClass: "badge-fake",
+        title: `${roleDef.name}ではないことが確定 (偽)`,
+      });
+    } else {
+      chips.push({
+        id: `claimed-${claimed}`,
+        text: `${roleDef.name}CO`,
+        badgeClass: roleDef.badgeClass,
+        title: `${roleDef.name}名乗り (真偽未確定)`,
+      });
+    }
+  }
+
+  // 2. 確定役職の表示（真COとして既に表示されている場合を除く）
+  if (definiteRole) {
+    const isAlreadyShownAsTrueCO = claimedRoles.includes(
+      definiteRole as "ENGINEER" | "DOCTOR" | "GUARD_DUTY",
+    );
+    if (!isAlreadyShownAsTrueCO) {
+      const def = ROLE_DEFINITIONS[definiteRole];
+      chips.push({
+        id: `definite-${definiteRole}`,
+        text: def.name,
+        badgeClass: def.badgeClass,
+        title: `役職確定: ${def.name}`,
+      });
+    }
+  }
+
+  // 3. 嘘確定 / 密告
+  if (definiteLieReasons && definiteLieReasons.length > 0) {
+    const isSelf = definiteLieReasons.some((r) => r.includes("自分"));
+    chips.push({
+      id: "lie",
+      text: isSelf ? "嘘確定" : "密告",
+      badgeClass: "badge-lie",
+      title: definiteLieReasons.join("\n"),
+    });
+  }
+
+  return chips;
+}
+
 function RoleDonutChart({
   roleProbs,
   definiteRole,
   gnosiaPct,
+  enemyPct,
   tooltip,
 }: {
   readonly roleProbs: Partial<Record<Role, number>>;
   readonly definiteRole?: Role | undefined;
   readonly gnosiaPct: number;
+  readonly enemyPct: number;
   readonly tooltip: string;
 }) {
-  const size = 52;
-  const strokeWidth = 7;
-  const radius = 18;
+  const size = 56;
+  const strokeWidth = 7.5;
+  const radius = 20;
   const center = size / 2;
   const circumference = 2 * Math.PI * radius;
 
@@ -61,6 +135,36 @@ function RoleDonutChart({
     }));
 
   let accumulatedPercent = 0;
+
+  const getCenterLabel = () => {
+    if (definiteRole) {
+      switch (definiteRole) {
+        case "ENGINEER":
+          return "真工";
+        case "DOCTOR":
+          return "真医";
+        case "GUARD_DUTY":
+          return "留";
+        case "GUARDIAN_ANGEL":
+          return "守";
+        case "CREW":
+          return "乗";
+        case "GNOSIA":
+          return "グ";
+        case "AC_FOLLOWER":
+          return "AC";
+        case "BUG":
+          return "バグ";
+        default:
+          return ROLE_DEFINITIONS[definiteRole].shortName;
+      }
+    }
+    if (gnosiaPct > 0) return `${gnosiaPct}%`;
+    if (enemyPct > 0) return `敵${enemyPct}%`;
+    return "0%";
+  };
+
+  const centerLabel = getCenterLabel();
 
   return (
     <div className="role-donut-wrapper" title={tooltip}>
@@ -112,18 +216,16 @@ function RoleDonutChart({
               : gnosiaPct > 0
               ? "var(--color-gnosia)"
               : "var(--text-muted)",
-            fontSize: definiteRole
-              ? (ROLE_DEFINITIONS[definiteRole].shortName.length > 2
-                ? "0.65rem"
-                : "0.75rem")
-              : (gnosiaPct >= 100 ? "0.65rem" : "0.72rem"),
+            fontSize: centerLabel.length >= 4
+              ? "0.6rem"
+              : centerLabel.length === 3
+              ? "0.68rem"
+              : "0.75rem",
             fontWeight: "bold",
             fontFamily: "var(--font-display)",
           }}
         >
-          {definiteRole
-            ? ROLE_DEFINITIONS[definiteRole].shortName
-            : `${gnosiaPct}%`}
+          {centerLabel}
         </text>
       </svg>
     </div>
@@ -189,12 +291,20 @@ export function PlayerCard({
       .join("\n")
     : "確率データなし";
 
+  const chips = getRoleChips(
+    claimedRoles,
+    definiteRole,
+    roleProbs,
+    definiteLieReasons,
+  );
+
   return (
     <div className={cardClass}>
+      {/* 上部: 名前 + 視点 + ステータス */}
       <div className="player-card-header">
         <div className="player-name-row">
           <User
-            size={16}
+            size={14}
             color={isCurrentPerspective
               ? "var(--text-accent)"
               : "var(--text-muted)"}
@@ -207,96 +317,50 @@ export function PlayerCard({
         {getStatusBadge()}
       </div>
 
-      <div className="player-card-body">
-        {/* 円グラフ (ドーナツチャート) */}
-        <RoleDonutChart
-          roleProbs={roleProbs}
-          definiteRole={definiteRole}
-          gnosiaPct={gnosiaPct}
-          tooltip={tooltipText}
-        />
+      {/* 中央: 円グラフ (ドーナツチャート) */}
+      <RoleDonutChart
+        roleProbs={roleProbs}
+        definiteRole={definiteRole}
+        gnosiaPct={gnosiaPct}
+        enemyPct={enemyPct}
+        tooltip={tooltipText}
+      />
 
-        {/* 右側情報ブロック */}
-        <div className="player-card-info">
-          {/* COバッジや嘘確定・役職確定バッジ */}
-          <div className="player-badges-row">
-            {claimedRoles.map((r) => (
-              <span
-                key={r}
-                className={`badge badge-compact ${
-                  ROLE_DEFINITIONS[r].badgeClass
-                }`}
-              >
-                {ROLE_DEFINITIONS[r].name}CO
-              </span>
-            ))}
-
-            {definiteRole && (
-              <span
-                className={`badge badge-compact ${
-                  ROLE_DEFINITIONS[definiteRole].badgeClass
-                }`}
-                style={{ boxShadow: "0 0 6px currentColor" }}
-              >
-                確定: {ROLE_DEFINITIONS[definiteRole].name}
-              </span>
-            )}
-
-            {definiteLieReasons && definiteLieReasons.length > 0 && (
-              <span
-                className="badge badge-compact"
-                style={{
-                  background: "rgba(244, 63, 94, 0.3)",
-                  color: "#fb7185",
-                  border: "1px solid #f43f5e",
-                }}
-                title={definiteLieReasons.join("\n")}
-              >
-                <AlertTriangle size={11} />
-                {definiteLieReasons.some((r) => r.includes("自分"))
-                  ? "嘘確定"
-                  : "密告"}
-              </span>
-            )}
-          </div>
-
-          {/* 敵対・G確率 */}
-          <div className="player-meta-row">
-            <span className="meter-val-enemy">
-              敵対:{" "}
-              <strong
-                style={{
-                  color: enemyPct > 50
-                    ? "var(--color-gnosia)"
-                    : "var(--text-main)",
-                }}
-              >
-                {enemyPct}%
-              </strong>
+      {/* 下部: チップ一覧 */}
+      {chips.length > 0 && (
+        <div className="player-badges-row">
+          {chips.map((chip) => (
+            <span
+              key={chip.id}
+              className={`badge badge-compact ${chip.badgeClass}`}
+              title={chip.title}
+            >
+              {chip.text}
             </span>
-            <span className="meter-val-gnosia">
-              G: <strong>{gnosiaPct}%</strong>
-            </span>
-          </div>
-
-          {/* 内訳ミニピル (上位2件) */}
-          <div className="role-mini-list">
-            {sortedRoles.slice(0, 2).map((slice) => (
-              <span
-                key={slice.role}
-                className="role-mini-pill"
-                title={`${slice.name}: ${Math.round(slice.prob * 100)}%`}
-              >
-                <span
-                  className="role-mini-dot"
-                  style={{ backgroundColor: slice.color }}
-                />
-                {slice.name} {Math.round(slice.prob * 100)}%
-              </span>
-            ))}
-          </div>
+          ))}
         </div>
-      </div>
+      )}
+
+      {/* 未確定時の確率概要 */}
+      {!definiteRole && (
+        <div className="player-meta-row">
+          <span className="meter-val-enemy">
+            敵:{" "}
+            <strong
+              style={{
+                color: enemyPct > 50
+                  ? "var(--color-gnosia)"
+                  : "var(--text-main)",
+              }}
+            >
+              {enemyPct}%
+            </strong>
+          </span>
+          <span className="meter-val-gnosia">
+            G: <strong>{gnosiaPct}%</strong>
+          </span>
+        </div>
+      )}
     </div>
   );
 }

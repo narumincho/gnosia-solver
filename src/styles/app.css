@@ -42,9 +42,9 @@ body {
 
 /* Layout */
 .app-container {
-  max-width: 1400px;
+  max-width: 1560px;
   margin: 0 auto;
-  padding: 1rem 1.5rem 4rem;
+  padding: 1rem 1.25rem 4rem;
 }
 
 /* Header */
@@ -262,11 +262,11 @@ body {
 /* Main Grid */
 .main-grid {
   display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 1.5rem;
+  grid-template-columns: 1fr 340px;
+  gap: 1.25rem;
 }
 
-@media (width <= 1024px) {
+@media (width <= 1100px) {
   .main-grid {
     grid-template-columns: 1fr;
   }
@@ -277,7 +277,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .section-title {
@@ -291,17 +291,29 @@ body {
 
 .player-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 
-@media (width <= 1100px) {
+@media (width <= 1280px) {
+  .player-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (width <= 960px) {
+  .player-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (width <= 680px) {
   .player-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (width <= 640px) {
+@media (width <= 440px) {
   .player-grid {
     grid-template-columns: 1fr;
   }
@@ -311,13 +323,16 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  padding: 0.75rem;
+  padding: 0.55rem 0.45rem;
   position: relative;
   transition: all 0.2s ease;
   backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  align-items: center;
+  text-align: center;
+  gap: 0.35rem;
+  min-height: 142px;
 }
 
 .player-card:hover {
@@ -343,21 +358,23 @@ body {
 }
 
 .player-card-header {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.25rem;
 }
 
 .player-name-row {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.25rem;
   min-width: 0;
 }
 
 .player-name {
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   color: var(--text-main);
   white-space: nowrap;
   overflow: hidden;
@@ -367,21 +384,16 @@ body {
 .perspective-badge {
   font-size: 0.65rem;
   color: var(--text-accent);
-  font-weight: 600;
+  font-weight: 700;
   flex-shrink: 0;
-}
-
-.player-card-body {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
 }
 
 /* Donut Chart (円グラフ) */
 .role-donut-wrapper {
   position: relative;
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
+  margin: 0.15rem auto;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -402,60 +414,53 @@ body {
   user-select: none;
 }
 
-/* Player Card Info Block */
-.player-card-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1;
-  min-width: 0;
-}
-
+/* Player Card Badges & Meta */
 .player-badges-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.2rem;
+  justify-content: center;
   align-items: center;
+  width: 100%;
 }
 
 .badge-compact {
   font-size: 0.65rem;
   padding: 0.1rem 0.35rem;
   line-height: 1.2;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.badge-fake {
+  background: rgb(244 63 94 / 20%);
+  color: #fb7185;
+  border: 1px solid rgb(244 63 94 / 50%);
+}
+
+.badge-lie {
+  background: rgb(244 63 94 / 30%);
+  color: #fb7185;
+  border: 1px solid #f43f5e;
 }
 
 .player-meta-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 0.7rem;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.68rem;
   line-height: 1.2;
+  width: 100%;
 }
 
-.role-mini-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  align-items: center;
-}
-
-.role-mini-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  background: rgb(255 255 255 / 4%);
-  border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: 4px;
-  padding: 0.05rem 0.3rem;
-  white-space: nowrap;
-}
-
-.role-mini-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+.player-status-badge {
+  font-size: 0.6rem;
+  font-weight: 600;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   flex-shrink: 0;
 }
 

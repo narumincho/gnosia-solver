@@ -1,7 +1,9 @@
 import {
+  DisappearanceEvent,
   GameEvent,
   GameSettings,
   GnosiaAttackEvent,
+  InvestigationEvent,
   Role,
   RoleAssignment,
   SolverResult,
@@ -39,6 +41,111 @@ export function isHumanSide(role: Role): boolean {
 
 export function isGnosiaSide(role: Role): boolean {
   return role === "GNOSIA" || role === "AC_FOLLOWER";
+}
+
+/**
+ * 消滅イベントに対応するグノーシア襲撃イベントを取得する
+ */
+function findCorrespondingGnosiaAttack(
+  events: ReadonlyArray<GameEvent>,
+  disappearanceIndex: number,
+): GnosiaAttackEvent | undefined {
+  const ev = events[disappearanceIndex];
+  if (!ev || ev.type !== "DISAPPEARANCE") return undefined;
+
+  // 1. 直前のイベントを逆順に探索 (直前の VOTE や DAY_CHANGE、別の消滅にぶつかるまで)
+  for (let j = disappearanceIndex - 1; j >= 0; j--) {
+    const prev = events[j];
+    if (!prev) continue;
+    if (prev.type === "GNOSIA_ATTACK") {
+      return prev;
+    }
+    if (
+      prev.type === "DISAPPEARANCE" ||
+      prev.type === "DAY_CHANGE" ||
+      prev.type === "VOTE"
+    ) {
+      break;
+    }
+  }
+
+  // 2. フォールバック: 同一の day を持つ GNOSIA_ATTACK
+  return events.find(
+    (e): e is GnosiaAttackEvent =>
+      e.type === "GNOSIA_ATTACK" && e.day === ev.day,
+  );
+}
+
+/**
+ * ある消滅イベントの夜に対応する調査イベント一覧を取得する
+ * 1. 直前の調査（直前の VOTE, DAY_CHANGE, 別の DISAPPEARANCE より後）
+ * 2. 直後の調査（次の VOTE, DAY_CHANGE, 別の DISAPPEARANCE より前）
+ */
+function getInvestigationsForNight(
+  events: ReadonlyArray<GameEvent>,
+  disappearanceIndex: number,
+): ReadonlyArray<InvestigationEvent> {
+  const result: Array<InvestigationEvent> = [];
+  const ev = events[disappearanceIndex];
+  if (!ev || ev.type !== "DISAPPEARANCE") return result;
+
+  // 1. 直前のイベントを逆順に探索
+  for (let j = disappearanceIndex - 1; j >= 0; j--) {
+    const prev = events[j];
+    if (!prev) continue;
+    if (
+      prev.type === "VOTE" ||
+      prev.type === "DAY_CHANGE" ||
+      prev.type === "DISAPPEARANCE"
+    ) {
+      break;
+    }
+    if (prev.type === "INVESTIGATION") {
+      result.push(prev);
+    }
+  }
+
+  // 2. 直後のイベントを順方向に探索
+  for (let j = disappearanceIndex + 1; j < events.length; j++) {
+    const nextEv = events[j];
+    if (!nextEv) continue;
+    if (
+      nextEv.type === "VOTE" ||
+      nextEv.type === "DAY_CHANGE" ||
+      nextEv.type === "DISAPPEARANCE"
+    ) {
+      break;
+    }
+    if (nextEv.type === "INVESTIGATION") {
+      result.push(nextEv);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * 調査イベントに対応する消滅イベントを取得する（直後または直前の同一夜フェーズ）
+ */
+function getRelatedDisappearanceForInvestigation(
+  events: ReadonlyArray<GameEvent>,
+  investigationIndex: number,
+): DisappearanceEvent | undefined {
+  // 1. 直後を探索（調査 -> 消滅の順の場合）
+  for (let j = investigationIndex + 1; j < events.length; j++) {
+    const nextEv = events[j];
+    if (!nextEv) continue;
+    if (nextEv.type === "DISAPPEARANCE") return nextEv;
+    if (nextEv.type === "VOTE" || nextEv.type === "DAY_CHANGE") break;
+  }
+  // 2. 直前を探索（消滅 -> 翌朝調査報告の順の場合）
+  for (let j = investigationIndex - 1; j >= 0; j--) {
+    const prev = events[j];
+    if (!prev) continue;
+    if (prev.type === "DISAPPEARANCE") return prev;
+    if (prev.type === "VOTE" || prev.type === "DAY_CHANGE") break;
+  }
+  return undefined;
 }
 
 /**
@@ -431,13 +538,10 @@ export class GnosiaSolver {
     }
 
     // グノーシア襲撃対象と消滅者の関係からの事前演繹
-    for (const ev of this.events) {
-      if (ev.type === "DISAPPEARANCE") {
-        const gAttack = this.events.find(
-          (e): e is GnosiaAttackEvent =>
-            e.type === "GNOSIA_ATTACK" &&
-            (e.day === ev.day || e.day === ev.day - 1),
-        );
+    for (let i = 0; i < this.events.length; i++) {
+      const ev = this.events[i];
+      if (ev && ev.type === "DISAPPEARANCE") {
+        const gAttack = findCorrespondingGnosiaAttack(this.events, i);
         if (gAttack) {
           const target = gAttack.targetId;
           candidateRoles.get(target)?.delete("GNOSIA");
@@ -783,7 +887,9 @@ export class GnosiaSolver {
       assignment: RoleAssignment,
       isComplete: boolean = false,
     ): boolean => {
-      for (const ev of this.events) {
+      for (let evIdx = 0; evIdx < this.events.length; evIdx++) {
+        const ev = this.events[evIdx];
+        if (!ev) continue;
         if (ev.type === "INVESTIGATION") {
           const invRole = assignment[ev.investigatorId];
           const targetRole = assignment[ev.targetId];
@@ -793,18 +899,18 @@ export class GnosiaSolver {
             if (ev.result === "HUMAN" && isTargetGnosia) return false;
 
             // バグ蒸発ルール:
-            // 真エンジニアが調査した相手がバグなら、その夜に消滅していなければならない
+            // 真エンジニアが調査した相手がバグなら、その夜（直前の夜）に消滅していなければならない
             if (targetRole === "BUG") {
-              const disappearedThatNight = this.events.some(
-                (other) =>
-                  (other.type === "ATTACK" &&
-                    (other.day === ev.day || other.day === ev.day - 1) &&
-                    other.attackedPlayerId === ev.targetId) ||
-                  (other.type === "DISAPPEARANCE" &&
-                    (other.day === ev.day || other.day === ev.day - 1) &&
-                    other.disappearedPlayerIds.includes(ev.targetId)),
+              const prevDis = getRelatedDisappearanceForInvestigation(
+                this.events,
+                evIdx,
               );
-              if (!disappearedThatNight) return false;
+              if (
+                prevDis &&
+                !prevDis.disappearedPlayerIds.includes(ev.targetId)
+              ) {
+                return false;
+              }
             }
           }
         } else if (ev.type === "DOCTOR_REPORT") {
@@ -844,11 +950,9 @@ export class GnosiaSolver {
           }
 
           // 同夜のグノーシア襲撃対象を取得
-          const gAttack = this.events.find(
-            (e): e is GnosiaAttackEvent =>
-              e.type === "GNOSIA_ATTACK" &&
-              (e.day === ev.day || e.day === ev.day - 1),
-          );
+          const gAttack = findCorrespondingGnosiaAttack(this.events, evIdx);
+          // その夜に行われた調査を取得
+          const nightInvs = getInvestigationsForNight(this.events, evIdx);
 
           if (ev.disappearedPlayerIds.length === 0) {
             // 平和（犠牲者ゼロ）
@@ -879,17 +983,12 @@ export class GnosiaSolver {
             }
 
             // 平和な夜に真エンジニアがバグを調査していたら消滅が発生するはずなので矛盾
-            for (const invEv of this.events) {
+            for (const invEv of nightInvs) {
               if (
-                invEv.type === "INVESTIGATION" &&
-                (invEv.day === ev.day || invEv.day === ev.day - 1)
+                assignment[invEv.investigatorId] === "ENGINEER" &&
+                assignment[invEv.targetId] === "BUG"
               ) {
-                if (
-                  assignment[invEv.investigatorId] === "ENGINEER" &&
-                  assignment[invEv.targetId] === "BUG"
-                ) {
-                  return false;
-                }
+                return false;
               }
             }
           } else if (ev.disappearedPlayerIds.length === 1) {
@@ -900,17 +999,12 @@ export class GnosiaSolver {
               const target = gAttack.targetId;
               if (P === target) {
                 // 襲撃対象が順当に消滅
-                for (const invEv of this.events) {
+                for (const invEv of nightInvs) {
                   if (
-                    invEv.type === "INVESTIGATION" &&
-                    (invEv.day === ev.day || invEv.day === ev.day - 1)
+                    assignment[invEv.investigatorId] === "ENGINEER" &&
+                    assignment[invEv.targetId] === "BUG"
                   ) {
-                    if (
-                      assignment[invEv.investigatorId] === "ENGINEER" &&
-                      assignment[invEv.targetId] === "BUG"
-                    ) {
-                      return false;
-                    }
+                    return false;
                   }
                 }
               } else {
@@ -949,34 +1043,24 @@ export class GnosiaSolver {
                   if (!canBeGuardedByGA) return false;
 
                   // 真エンジニアが P を調査した世界のみ有効
-                  for (const invEv of this.events) {
+                  for (const invEv of nightInvs) {
                     if (
-                      invEv.type === "INVESTIGATION" &&
-                      (invEv.day === ev.day || invEv.day === ev.day - 1)
+                      assignment[invEv.investigatorId] === "ENGINEER" &&
+                      invEv.targetId !== P
                     ) {
-                      if (
-                        assignment[invEv.investigatorId] === "ENGINEER" &&
-                        invEv.targetId !== P
-                      ) {
-                        return false;
-                      }
+                      return false;
                     }
                   }
                 }
               }
             } else {
               if (pRole !== undefined && pRole !== "BUG") {
-                for (const invEv of this.events) {
+                for (const invEv of nightInvs) {
                   if (
-                    invEv.type === "INVESTIGATION" &&
-                    (invEv.day === ev.day || invEv.day === ev.day - 1)
+                    assignment[invEv.investigatorId] === "ENGINEER" &&
+                    assignment[invEv.targetId] === "BUG"
                   ) {
-                    if (
-                      assignment[invEv.investigatorId] === "ENGINEER" &&
-                      assignment[invEv.targetId] === "BUG"
-                    ) {
-                      return false;
-                    }
+                    return false;
                   }
                 }
               }
@@ -1008,17 +1092,12 @@ export class GnosiaSolver {
                 return false;
               }
 
-              for (const invEv of this.events) {
+              for (const invEv of nightInvs) {
                 if (
-                  invEv.type === "INVESTIGATION" &&
-                  (invEv.day === ev.day || invEv.day === ev.day - 1)
+                  assignment[invEv.investigatorId] === "ENGINEER" &&
+                  invEv.targetId !== bugPid
                 ) {
-                  if (
-                    assignment[invEv.investigatorId] === "ENGINEER" &&
-                    invEv.targetId !== bugPid
-                  ) {
-                    return false;
-                  }
+                  return false;
                 }
               }
             }

@@ -204,6 +204,56 @@ body {
   border-top: 1px solid rgb(255 255 255 / 6%);
 }
 
+/* Gnosia comrades panel */
+.gnosia-comrades-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  background: rgb(244 63 94 / 8%);
+  border: 1px solid rgb(244 63 94 / 25%);
+  border-radius: 6px;
+}
+
+.gnosia-comrades-label {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #fda4af;
+  white-space: nowrap;
+}
+
+.gnosia-comrades-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.gnosia-comrade-chip {
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  background: rgb(30 41 59 / 80%);
+  border: 1px solid rgb(244 63 94 / 30%);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.gnosia-comrade-chip:hover {
+  border-color: #f43f5e;
+  color: #fda4af;
+}
+
+.gnosia-comrade-chip.selected {
+  background: rgb(244 63 94 / 25%);
+  border-color: #f43f5e;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 0 8px rgb(244 63 94 / 40%);
+}
+
 .summary-item strong {
   color: var(--text-main);
   font-family: var(--font-display);

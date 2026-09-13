@@ -22,6 +22,8 @@ export function App() {
     myRole,
     setMyRole,
     playerStatuses,
+    gnosiaComrades,
+    toggleGnosiaComrade,
     solverResult,
     claimedRoles,
     definiteLies,
@@ -107,9 +109,11 @@ export function App() {
         settings={settings}
         perspective={perspective}
         myRole={myRole}
+        gnosiaComrades={gnosiaComrades}
         onSelectPerspective={selectPerspective}
         onSelectRole={updatePerspectiveRole}
         onSetMyRole={setMyRole}
+        onToggleGnosiaComrade={toggleGnosiaComrade}
       />
 
       <div className="main-grid">
@@ -138,6 +142,8 @@ export function App() {
                 isCurrentPerspective={perspective.id === p.id}
                 solverResult={solverResult}
                 myRole={myRole}
+                isGnosiaComrade={gnosiaComrades.includes(p.id)}
+                onToggleGnosiaComrade={toggleGnosiaComrade}
                 onQuickLie={handleQuickLie}
                 onQuickFreeze={handleQuickFreeze}
                 onQuickAttack={handleQuickAttack}

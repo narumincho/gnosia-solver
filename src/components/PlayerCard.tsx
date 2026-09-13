@@ -14,6 +14,8 @@ interface PlayerCardProps {
   isCurrentPerspective: boolean;
   solverResult: SolverResult;
   myRole?: Role | undefined;
+  isGnosiaComrade?: boolean | undefined;
+  onToggleGnosiaComrade?: ((playerId: string) => void) | undefined;
   onQuickLie: (playerId: string) => void;
   onQuickFreeze: (playerId: string) => void;
   onQuickAttack: (playerId: string) => void;
@@ -30,6 +32,8 @@ export function PlayerCard({
   isCurrentPerspective,
   solverResult,
   myRole,
+  isGnosiaComrade,
+  onToggleGnosiaComrade,
   onQuickLie,
   onQuickFreeze,
   onQuickAttack,
@@ -104,6 +108,18 @@ export function PlayerCard({
             {ROLE_DEFINITIONS[r].name}CO
           </span>
         ))}
+
+        {isGnosiaComrade && (
+          <span
+            className="badge badge-gnosia"
+            style={{
+              boxShadow: "0 0 8px rgba(244, 63, 94, 0.6)",
+              border: "1px solid #f43f5e",
+            }}
+          >
+            😈 仲間
+          </span>
+        )}
 
         {definiteRole && (
           <span
@@ -229,6 +245,28 @@ export function PlayerCard({
           >
             <Skull size={11} /> 消滅
           </button>
+          {myRole === "GNOSIA" && player.id !== "player" &&
+            onToggleGnosiaComrade && (
+            <button
+              type="button"
+              className={`quick-btn ${isGnosiaComrade ? "active" : ""}`}
+              onClick={() => onToggleGnosiaComrade(player.id)}
+              style={{
+                color: isGnosiaComrade ? "#fda4af" : "var(--color-gnosia)",
+                borderColor: isGnosiaComrade
+                  ? "#f43f5e"
+                  : "rgba(244, 63, 94, 0.4)",
+                background: isGnosiaComrade
+                  ? "rgba(244, 63, 94, 0.25)"
+                  : undefined,
+              }}
+              title={isGnosiaComrade
+                ? "仲間グノーシア指定を解除"
+                : "仲間グノーシアに指定"}
+            >
+              😈 {isGnosiaComrade ? "仲間解除" : "仲間"}
+            </button>
+          )}
           {myRole === "GNOSIA" && player.id !== "player" &&
             onQuickGnosiaAttack && (
             <button

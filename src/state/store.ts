@@ -71,6 +71,23 @@ export function useGameStore() {
   const [playerStatuses, setPlayerStatuses] = useState<
     Record<string, PlayerStatus>
   >({});
+  const [gnosiaComrades, setGnosiaComrades] = useState<ReadonlyArray<string>>(
+    [],
+  );
+
+  const toggleGnosiaComrade = (playerId: string) => {
+    if (playerId === "player") return;
+    const maxComrades = Math.max(0, settings.roles.gnosiaCount - 1);
+    setGnosiaComrades((prev) => {
+      if (prev.includes(playerId)) {
+        return prev.filter((id) => id !== playerId);
+      }
+      if (prev.length < maxComrades) {
+        return [...prev, playerId];
+      }
+      return prev;
+    });
+  };
 
   // イベントの並び順から現在の日付 (currentDay) を算出
   const currentDay = useMemo(() => {
@@ -153,13 +170,17 @@ export function useGameStore() {
   // ソルバー実行結果のメモ化
   const solverResult = useMemo(() => {
     const solver = new GnosiaSolver(settings, events);
+    const isSelfGnosia = perspective.id === "player" &&
+      (perspective.role === "GNOSIA" ||
+        (!perspective.role && myRole === "GNOSIA"));
     return solver.solve({
       perspectivePlayerId: perspective.id === "objective"
         ? undefined
         : perspective.id,
       perspectiveRole: perspective.role,
+      gnosiaComrades: isSelfGnosia ? gnosiaComrades : undefined,
     });
-  }, [settings, events, perspective]);
+  }, [settings, events, perspective, myRole, gnosiaComrades]);
 
   // COしている役職のマップ (playerId -> Role[])
   const claimedRoles = useMemo(() => {
@@ -272,6 +293,7 @@ export function useGameStore() {
       setPerspective({ id: "objective", name: "全体 (客観神視点)" });
       setPerspectiveRoles({});
       setMyRoleState(undefined);
+      setGnosiaComrades([]);
     }
   };
 
@@ -287,6 +309,7 @@ export function useGameStore() {
       myRole,
       perspectiveRoles,
       playerStatuses,
+      gnosiaComrades,
     };
   };
 
@@ -337,6 +360,9 @@ export function useGameStore() {
       ) {
         setPlayerStatuses(session.playerStatuses);
       }
+      if (Array.isArray(session.gnosiaComrades)) {
+        setGnosiaComrades(session.gnosiaComrades);
+      }
 
       return { success: true };
     } catch (e: unknown) {
@@ -363,6 +389,9 @@ export function useGameStore() {
     setMyRole,
     playerStatuses: computedStatuses,
     setPlayerStatuses,
+    gnosiaComrades,
+    toggleGnosiaComrade,
+    setGnosiaComrades,
     solverResult,
     claimedRoles,
     definiteLies,

@@ -962,3 +962,80 @@ Deno.test("GnosiaSolver - note例題: エンジニアとドクターの対応（
   assertEquals(result.definiteRoles["kukrushka"], "ENGINEER");
   assertEquals(result.definiteRoles["yuriko"], "DOCTOR");
 });
+
+Deno.test("GnosiaSolver - 自分がグノーシア視点で仲間グノーシアを指定した場合の推論", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "自分" },
+      { id: "setsu", name: "セツ" },
+      { id: "gina", name: "ジナ" },
+      { id: "sq", name: "SQ" },
+      { id: "raqio", name: "ラキオ" },
+    ],
+    roles: {
+      gnosiaCount: 2,
+      hasEngineer: true,
+      hasDoctor: false,
+      hasGuardianAngel: false,
+      hasGuardDuty: false,
+      hasACFollower: false,
+      hasBug: false,
+    },
+    allowHiddenRoles: false,
+  };
+
+  const solver = new GnosiaSolver(settings, []);
+  const result = solver.solve({
+    perspectivePlayerId: "player",
+    perspectiveRole: "GNOSIA",
+    gnosiaComrades: ["setsu"],
+  });
+
+  // 1. 破綻しないこと
+  assertEquals(result.hasContradiction, false);
+  assertEquals(result.totalPossibleWorlds > 0, true);
+
+  // 2. 自分とセツがGNOSIA確定
+  assertEquals(result.definiteRoles["player"], "GNOSIA");
+  assertEquals(result.definiteRoles["setsu"], "GNOSIA");
+  assertEquals(result.gnosiaProbabilities["player"], 1.0);
+  assertEquals(result.gnosiaProbabilities["setsu"], 1.0);
+
+  // 3. グノーシア定員2人（自分＋セツ）のため、他全員（ジナ、SQ、ラキオ）のGNOSIA確率は0%
+  assertEquals(result.gnosiaProbabilities["gina"], 0);
+  assertEquals(result.gnosiaProbabilities["sq"], 0);
+  assertEquals(result.gnosiaProbabilities["raqio"], 0);
+});
+
+Deno.test("GnosiaSolver - 仲間グノーシアが人間確定（エンジニア判定等）と矛盾する場合に破綻すること", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "自分" },
+      { id: "setsu", name: "セツ" },
+      { id: "gina", name: "ジナ" },
+    ],
+    roles: {
+      gnosiaCount: 1,
+      hasEngineer: true,
+      hasDoctor: false,
+      hasGuardianAngel: false,
+      hasGuardDuty: false,
+      hasACFollower: false,
+      hasBug: false,
+    },
+    allowHiddenRoles: false,
+  };
+
+  // 自分視点でジナがエンジニアCOし、セツを人間判定
+  // しかし自分視点でセツを仲間グノーシアに指定した場合、あるいは定員1人なのに自分グノーシア＋セツ仲間で定員オーバーになる
+  const solver = new GnosiaSolver(settings, []);
+  const result = solver.solve({
+    perspectivePlayerId: "player",
+    perspectiveRole: "GNOSIA",
+    gnosiaComrades: ["setsu"],
+  });
+
+  // グノーシア定員1人に対して自分がグノーシア＋セツもグノーシアなので世界が存在せず破綻
+  assertEquals(result.hasContradiction, true);
+  assertEquals(result.totalPossibleWorlds, 0);
+});

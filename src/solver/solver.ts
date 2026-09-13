@@ -21,6 +21,7 @@ export const ALL_ROLES: ReadonlyArray<Role> = [
 export interface SolverOptions {
   perspectivePlayerId?: string | undefined; // 視点プレイヤー (指定なし = 客観・神視点)
   perspectiveRole?: Role | undefined; // 視点プレイヤーの役職固定
+  gnosiaComrades?: ReadonlyArray<string> | undefined; // 仲間グノーシアのプレイヤーID配列 (自分がグノーシアの時)
 }
 
 /**
@@ -144,8 +145,57 @@ export class GnosiaSolver {
       }
     }
 
-    // イベントが0件の場合の高速パス (計算量 O(N) で即座に正確な確率を算出)
-    if (this.events.length === 0) {
+    // 視点による仲間グノーシアの固定（自分がグノーシア視点の場合）
+    if (
+      options.perspectiveRole === "GNOSIA" &&
+      options.gnosiaComrades &&
+      options.gnosiaComrades.length > 0
+    ) {
+      for (const cid of options.gnosiaComrades) {
+        if (cid === options.perspectivePlayerId) continue;
+        const cCandidates = candidateRoles.get(cid);
+        if (cCandidates) {
+          if (!cCandidates.has("GNOSIA")) {
+            return {
+              totalPossibleWorlds: 0,
+              roleProbabilities: {},
+              gnosiaProbabilities: {},
+              enemyProbabilities: {},
+              definiteRoles: {},
+              hasContradiction: true,
+              contradictionReason: `仲間グノーシアに指定された「${
+                players.find((p) => p.id === cid)?.name || cid
+              }」は過去のイベントから非グノーシア確定しているため破綻します。`,
+              sampleWorlds: [],
+            };
+          }
+          candidateRoles.set(cid, new Set(["GNOSIA"]));
+        }
+      }
+
+      // 自分を含めてグノーシア枠がすべて確定している場合、他プレイヤーからGNOSIAを除外
+      const comrades = options.gnosiaComrades.filter((id) =>
+        id !== options.perspectivePlayerId
+      );
+      const confirmedGnosiaCount = 1 + comrades.length;
+      if (confirmedGnosiaCount >= targetRoleCounts.GNOSIA) {
+        const gnosiaSet = new Set([
+          options.perspectivePlayerId,
+          ...comrades,
+        ]);
+        for (const pid of playerIds) {
+          if (!gnosiaSet.has(pid)) {
+            candidateRoles.get(pid)?.delete("GNOSIA");
+          }
+        }
+      }
+    }
+
+    // イベントが0件の場合の高速パス (仲間指定もない場合のみ)
+    if (
+      this.events.length === 0 &&
+      (!options.gnosiaComrades || options.gnosiaComrades.length === 0)
+    ) {
       const allRoles: ReadonlyArray<Role> = [
         "CREW",
         "GNOSIA",
@@ -624,6 +674,11 @@ export class GnosiaSolver {
     const involvedPlayerIds = new Set<string>();
     if (options.perspectivePlayerId) {
       involvedPlayerIds.add(options.perspectivePlayerId);
+    }
+    if (options.gnosiaComrades) {
+      for (const cid of options.gnosiaComrades) {
+        involvedPlayerIds.add(cid);
+      }
     }
     for (const ev of this.events) {
       if (ev.type === "CO") {

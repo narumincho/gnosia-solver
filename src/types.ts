@@ -284,4 +284,5 @@ export interface SessionData {
   myRole?: Role | undefined;
   perspectiveRoles?: Record<string, Role> | undefined;
   playerStatuses?: Record<string, PlayerStatus> | undefined;
+  gnosiaComrades?: ReadonlyArray<string> | undefined;
 }

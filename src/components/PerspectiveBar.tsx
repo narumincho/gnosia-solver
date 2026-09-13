@@ -10,18 +10,22 @@ interface PerspectiveBarProps {
   settings: GameSettings;
   perspective: PerspectiveOption;
   myRole?: Role | undefined;
+  gnosiaComrades?: ReadonlyArray<string> | undefined;
   onSelectPerspective: (id: string, name: string) => void;
   onSelectRole: (role?: Role | undefined) => void;
   onSetMyRole: (role?: Role | undefined) => void;
+  onToggleGnosiaComrade?: ((playerId: string) => void) | undefined;
 }
 
 export function PerspectiveBar({
   settings,
   perspective,
   myRole,
+  gnosiaComrades = [],
   onSelectPerspective,
   onSelectRole,
   onSetMyRole,
+  onToggleGnosiaComrade,
 }: PerspectiveBarProps) {
   const isObjective = perspective.id === "objective";
 
@@ -147,6 +151,36 @@ export function PerspectiveBar({
           );
         })}
       </div>
+
+      {myRole === "GNOSIA" && settings.roles.gnosiaCount > 1 && (
+        <div className="gnosia-comrades-panel">
+          <span className="gnosia-comrades-label">
+            😈 仲間グノーシア指定 (最大{" "}
+            {settings.roles.gnosiaCount - 1}人 / 選択中:{" "}
+            {gnosiaComrades.length}人):
+          </span>
+          <div className="gnosia-comrades-chips">
+            {settings.players
+              .filter((p) => p.id !== "player")
+              .map((p) => {
+                const isSelected = gnosiaComrades.includes(p.id);
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`gnosia-comrade-chip ${
+                      isSelected ? "selected" : ""
+                    }`}
+                    onClick={() => onToggleGnosiaComrade?.(p.id)}
+                  >
+                    {isSelected ? "😈 " : ""}
+                    {p.name}
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+      )}
 
       <div className="status-summary">
         <div className="summary-item">

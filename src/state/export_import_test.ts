@@ -29,6 +29,7 @@ Deno.test("SessionData - エクスポート＆インポートによる整合性�
     events,
     currentDay: 1,
     perspective: { id: "player", name: "自分 (Player)", role: "ENGINEER" },
+    gnosiaComrades: ["setsu"],
   };
 
   // シリアライズ＆デシリアライズ
@@ -38,6 +39,7 @@ Deno.test("SessionData - エクスポート＆インポートによる整合性�
   assertEquals(restored.version, 1);
   assertEquals(restored.events.length, 2);
   assertEquals(restored.perspective.role, "ENGINEER");
+  assertEquals(restored.gnosiaComrades, ["setsu"]);
 
   // 復元したデータでソルバーが正常に解けるか
   const solver = new GnosiaSolver(restored.settings, restored.events);

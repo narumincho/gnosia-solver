@@ -177,8 +177,9 @@ export function EventTimeline({
         );
       }
       case "DISAPPEARANCE": {
+        let content;
         if (ev.disappearedPlayerIds.length === 0) {
-          return (
+          content = (
             <span>
               夜間に{" "}
               <strong style={{ color: "var(--color-crew)" }}>
@@ -187,7 +188,7 @@ export function EventTimeline({
             </span>
           );
         } else if (ev.disappearedPlayerIds.length === 1) {
-          return (
+          content = (
             <span>
               夜間に{" "}
               <strong>{getPlayerName(ev.disappearedPlayerIds[0] ?? "")}</strong>
@@ -197,7 +198,7 @@ export function EventTimeline({
             </span>
           );
         } else {
-          return (
+          content = (
             <span>
               夜間に{" "}
               <strong>{getPlayerName(ev.disappearedPlayerIds[0] ?? "")}</strong>
@@ -220,6 +221,24 @@ export function EventTimeline({
             </span>
           );
         }
+        return (
+          <span>
+            {content}
+            {ev.guardedPlayerId && (
+              <span
+                style={{
+                  display: "block",
+                  color: "var(--color-angel, #eab308)",
+                  fontSize: "0.75rem",
+                  marginTop: "0.2rem",
+                }}
+              >
+                🛡️ 護衛対象:{" "}
+                <strong>{getPlayerName(ev.guardedPlayerId)}</strong>
+              </span>
+            )}
+          </span>
+        );
       }
       case "GNOSIA_ATTACK": {
         return (
@@ -234,6 +253,23 @@ export function EventTimeline({
               style={{ fontSize: "0.7rem", padding: "1px 6px" }}
             >
               G視点
+            </span>
+          </span>
+        );
+      }
+      case "GUARDIAN_GUARD": {
+        return (
+          <span>
+            夜間に{" "}
+            <strong style={{ color: "var(--color-angel, #eab308)" }}>
+              {getPlayerName(ev.targetId)}
+            </strong>{" "}
+            を <strong>【護衛対象に指定】</strong>{" "}
+            <span
+              className="badge badge-angel"
+              style={{ fontSize: "0.7rem", padding: "1px 6px" }}
+            >
+              守護天使視点
             </span>
           </span>
         );
@@ -318,6 +354,7 @@ export function EventTimeline({
       case "GNOSIA_ATTACK":
         return "event-lie";
       case "NO_ATTACK":
+      case "GUARDIAN_GUARD":
         return "event-angel";
       case "VOTE":
         return "event-vote";
@@ -741,6 +778,19 @@ export function EventTimeline({
                 title="自分がグノーシアの際の襲撃対象を記録"
               >
                 <span>🎯 襲撃先</span>
+              </button>
+            )}
+            {myRole === "GUARDIAN_ANGEL" && (
+              <button
+                type="button"
+                className="btn btn-sm btn-angel-action"
+                style={{ flex: 1 }}
+                command="show-modal"
+                commandfor="add-event-dialog"
+                onClick={() => onOpenAddEvent("GUARDIAN_GUARD")}
+                title="自分が守護天使の際の護衛対象を記録"
+              >
+                <span>🛡️ 護衛先</span>
               </button>
             )}
           </div>

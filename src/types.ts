@@ -146,6 +146,7 @@ export type EventType =
   | "VOTE" // コールドスリープ (投票)
   | "DISAPPEARANCE" // 消滅もしくは平和 (夜の出来事: 0〜2人消滅)
   | "GNOSIA_ATTACK" // グノーシア夜間襲撃対象指定 (自分G視点)
+  | "GUARDIAN_GUARD" // 守護天使夜間護衛対象指定 (自分守護天使視点)
   | "ATTACK" // 襲撃・消滅 (夜) - 後方互換用
   | "NO_ATTACK" // 襲撃なし (守護天使護衛 / バグ襲撃) - 後方互換用
   | "DAY_CHANGE" // 翌日へ進行 (日付切り替え)
@@ -198,12 +199,19 @@ export type VoteEvent = BaseGameEvent & {
 export type DisappearanceEvent = BaseGameEvent & {
   type: "DISAPPEARANCE";
   disappearedPlayerIds: ReadonlyArray<string>; // 0人(平和/犠牲者なし), 1人消滅, 2人消滅
+  guardedPlayerId?: string | undefined; // 守護天使の護衛対象（自分視点などの任意情報）
 };
 
 // グノーシア夜間襲撃対象指定 (自分がグノーシアの場合の視点入力)
 export type GnosiaAttackEvent = BaseGameEvent & {
   type: "GNOSIA_ATTACK";
   targetId: string; // 襲撃対象
+};
+
+// 守護天使夜間護衛対象指定 (自分が守護天使の場合の視点入力)
+export type GuardianGuardEvent = BaseGameEvent & {
+  type: "GUARDIAN_GUARD";
+  targetId: string; // 護衛対象
 };
 
 export type AttackEvent = BaseGameEvent & {
@@ -230,6 +238,7 @@ export type GameEvent =
   | VoteEvent
   | DisappearanceEvent
   | GnosiaAttackEvent
+  | GuardianGuardEvent
   | AttackEvent
   | NoAttackEvent
   | DayChangeEvent;
@@ -242,6 +251,7 @@ export type NewGameEvent =
   | (Omit<VoteEvent, "id" | "day"> & { day?: number | undefined })
   | (Omit<DisappearanceEvent, "id" | "day"> & { day?: number | undefined })
   | (Omit<GnosiaAttackEvent, "id" | "day"> & { day?: number | undefined })
+  | (Omit<GuardianGuardEvent, "id" | "day"> & { day?: number | undefined })
   | (Omit<AttackEvent, "id" | "day"> & { day?: number | undefined })
   | (Omit<NoAttackEvent, "id" | "day"> & { day?: number | undefined })
   | (Omit<DayChangeEvent, "id" | "day"> & { day?: number | undefined });

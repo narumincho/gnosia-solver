@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { AlertTriangle, Target, X } from "lucide-preact";
+import { AlertTriangle, Shield, Target, X } from "lucide-preact";
 import {
   EventType,
   GameEvent,
@@ -101,10 +101,16 @@ export function AddEventModal({
     return list;
   }, [settings.roles]);
 
+  // 守護天使の護衛対象候補（自分 "player" 以外の生存プレイヤー）
+  const guardianGuardCandidates = useMemo(() => {
+    return alivePlayers.filter((p) => p.id !== "player");
+  }, [alivePlayers]);
+
   // フォーム用入力ステート
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
   const [selectedGuardDuty, setSelectedGuardDuty] = useState<Array<string>>([]);
   const [targetPlayer, setTargetPlayer] = useState<string>("");
+  const [guardedPlayerId, setGuardedPlayerId] = useState<string>("");
 
   // 調査対象候補（調査者本人以外の全プレイヤー。生存者を優先し、今朝消滅した乗員や過去の消滅・冷凍者も選択可能）
   const investigationTargetCandidates = useMemo(() => {
@@ -166,8 +172,12 @@ export function AddEventModal({
           break;
         case "DISAPPEARANCE":
           setDisappearedPlayerIds(editingEvent.disappearedPlayerIds);
+          setGuardedPlayerId(editingEvent.guardedPlayerId || "");
           break;
         case "GNOSIA_ATTACK":
+          setSelectedPlayer(editingEvent.targetId);
+          break;
+        case "GUARDIAN_GUARD":
           setSelectedPlayer(editingEvent.targetId);
           break;
         case "ATTACK":
@@ -175,6 +185,7 @@ export function AddEventModal({
           break;
         case "NO_ATTACK":
           setDisappearedPlayerIds([]);
+          setGuardedPlayerId(editingEvent.guardedPlayerId || "");
           break;
         default:
           break;
@@ -183,9 +194,13 @@ export function AddEventModal({
       setEventType(initialType);
       if (initialPlayerId) {
         setSelectedPlayer(initialPlayerId);
+      } else if (initialType === "GUARDIAN_GUARD") {
+        const defaultTarget = guardianGuardCandidates[0]?.id || "";
+        setSelectedPlayer(defaultTarget);
       }
       setSelectedGuardDuty([]);
       setTargetPlayer("");
+      setGuardedPlayerId("");
       setReportResult("HUMAN");
       setWitnessPlayer("player");
       setDisappearedPlayerIds([]);
@@ -264,11 +279,18 @@ export function AddEventModal({
         eventData = {
           type: "DISAPPEARANCE",
           disappearedPlayerIds,
+          guardedPlayerId: guardedPlayerId || undefined,
         };
         break;
       case "GNOSIA_ATTACK":
         eventData = {
           type: "GNOSIA_ATTACK",
+          targetId: selectedPlayer,
+        };
+        break;
+      case "GUARDIAN_GUARD":
+        eventData = {
+          type: "GUARDIAN_GUARD",
           targetId: selectedPlayer,
         };
         break;
@@ -334,6 +356,9 @@ export function AddEventModal({
                   alivePlayers.find((p) => p.id !== "player")?.id ||
                   settings.players[0]?.id || "";
                 setSelectedPlayer(defaultTarget);
+              } else if (val === "GUARDIAN_GUARD") {
+                const defaultTarget = guardianGuardCandidates[0]?.id || "";
+                setSelectedPlayer(defaultTarget);
               } else if (val === "DEFINITE_LIE") {
                 setWitnessPlayer("player");
                 if (!selectedPlayer || selectedPlayer === "player") {
@@ -370,6 +395,11 @@ export function AddEventModal({
             {myRole === "GNOSIA" && (
               <option value="GNOSIA_ATTACK">
                 【グノーシア視点】夜の襲撃対象指定
+              </option>
+            )}
+            {myRole === "GUARDIAN_ANGEL" && (
+              <option value="GUARDIAN_GUARD">
+                【守護天使視点】夜の護衛対象指定
               </option>
             )}
             <option value="DEFINITE_LIE">嘘に気づいた</option>
@@ -1006,6 +1036,44 @@ export function AddEventModal({
                 </button>
               </div>
             )}
+
+            {myRole === "GUARDIAN_ANGEL" && (
+              <div
+                style={{
+                  marginTop: "1rem",
+                  paddingTop: "0.75rem",
+                  borderTop: "1px solid rgba(168, 85, 247, 0.2)",
+                }}
+              >
+                <label
+                  className="form-label"
+                  style={{
+                    color: "#facc15",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.4rem",
+                    fontWeight: "bold",
+                    fontSize: "0.85rem",
+                  }}
+                >
+                  <Shield size={15} />
+                  <span>【守護天使】今夜護衛した乗員（任意）</span>
+                </label>
+                <select
+                  className="form-select"
+                  value={guardedPlayerId}
+                  onChange={(e) =>
+                    setGuardedPlayerId((e.target as HTMLSelectElement).value)}
+                >
+                  <option value="">(未選択・指定なし)</option>
+                  {guardianGuardCandidates.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         )}
 
@@ -1066,6 +1134,63 @@ export function AddEventModal({
           </div>
         )}
 
+        {/* 守護天使の護衛対象指定 (GUARDIAN_GUARD) */}
+        {eventType === "GUARDIAN_GUARD" && (
+          <div
+            style={{
+              background: "rgba(234, 179, 8, 0.08)",
+              padding: "1rem",
+              borderRadius: "8px",
+              border: "1px solid rgba(234, 179, 8, 0.3)",
+              marginBottom: "1rem",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                color: "#facc15",
+                marginBottom: "0.5rem",
+                fontSize: "0.85rem",
+                fontWeight: "bold",
+              }}
+            >
+              <Shield size={16} />
+              <span>【守護天使視点】夜に護衛する乗員を指定</span>
+            </div>
+            <p
+              style={{
+                fontSize: "0.75rem",
+                color: "var(--text-muted)",
+                marginBottom: "0.75rem",
+                lineHeight: "1.4",
+              }}
+            >
+              守護天使は毎晩1人をグノーシアの襲撃から護衛します。<br />
+              護衛した夜に犠牲者ゼロ（平和）となった場合、護衛成功により護衛対象の<strong>
+                【非グノーシア】
+              </strong>が確定します。<br />
+              ※守護天使は自分自身を守ることはできません。
+            </p>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">護衛対象 (自分以外の生存者)</label>
+              <select
+                className="form-select"
+                value={selectedPlayer}
+                onChange={(e) =>
+                  setSelectedPlayer((e.target as HTMLSelectElement).value)}
+              >
+                {guardianGuardCandidates.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
         <div
           style={{
             display: "flex",
@@ -1095,7 +1220,9 @@ export function AddEventModal({
                 (!selectedPlayer || !targetPlayer)) ||
               (eventType === "VOTE" && alivePlayers.length === 0) ||
               (eventType === "GNOSIA_ATTACK" &&
-                alivePlayers.filter((p) => p.id !== "player").length === 0)}
+                alivePlayers.filter((p) => p.id !== "player").length === 0) ||
+              (eventType === "GUARDIAN_GUARD" &&
+                (!selectedPlayer || guardianGuardCandidates.length === 0))}
           >
             {editingEvent ? "変更を保存する" : "イベントを記録する"}
           </button>

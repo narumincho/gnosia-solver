@@ -288,3 +288,52 @@ Deno.test("SessionData - 仲間グノーシア視点でインポートされた�
   assertEquals(result.definiteRoles["jonas"], "GNOSIA");
   assertEquals(result.gnosiaProbabilities["jonas"], 1.0);
 });
+
+Deno.test("SessionData - 守護天使視点でのセッション保持と護衛イベントの整合性", () => {
+  const events: ReadonlyArray<GameEvent> = [
+    { id: "1", day: 1, type: "VOTE", frozenPlayerId: "setsu" },
+    { id: "2", day: 1, type: "GUARDIAN_GUARD", targetId: "gina" },
+    {
+      id: "3",
+      day: 1,
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: [],
+      guardedPlayerId: "gina",
+    },
+  ];
+
+  const session: SessionData = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    settings: {
+      ...DEFAULT_SETTINGS,
+      roles: {
+        ...DEFAULT_SETTINGS.roles,
+        hasBug: false,
+      },
+    },
+    events,
+    currentDay: 2,
+    perspective: { id: "player", name: "自分 (Player)", role: "GUARDIAN_ANGEL" },
+    myRole: "GUARDIAN_ANGEL",
+  };
+
+  const json = JSON.stringify(session);
+  const restored: SessionData = JSON.parse(json);
+
+  assertEquals(restored.events.length, 3);
+  assertEquals(restored.events[1]?.type, "GUARDIAN_GUARD");
+  assertEquals(restored.myRole, "GUARDIAN_ANGEL");
+
+  const solver = new GnosiaSolver(restored.settings, restored.events);
+  const result = solver.solve({
+    perspectivePlayerId: restored.perspective.id,
+    perspectiveRole: restored.perspective.role,
+  });
+
+  assertEquals(result.hasContradiction, false);
+  assertEquals(result.definiteRoles["player"], "GUARDIAN_ANGEL");
+  // 護衛成功によりジナのグノーシア確率0%
+  assertEquals(result.gnosiaProbabilities["gina"], 0);
+});
+

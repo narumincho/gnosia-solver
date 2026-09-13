@@ -724,8 +724,8 @@ body {
 }
 
 .event-card.event-angel {
-  border-left: 3px solid #a855f7;
-  background: rgb(168 85 247 / 8%);
+  border-left: 3px solid #eab308;
+  background: rgb(234 179 8 / 8%);
 }
 
 .event-card.event-vote {
@@ -949,6 +949,23 @@ body {
 .btn-gnosia-action:hover {
   background: rgb(244 63 94 / 25%);
   border-color: #fb7185;
+}
+
+.btn-angel-action {
+  background: rgb(234 179 8 / 12%);
+  color: #facc15;
+  border: 1px solid rgb(234 179 8 / 35%);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.btn-angel-action:hover {
+  background: rgb(234 179 8 / 25%);
+  border-color: #facc15;
 }
 
 .quick-doc-name {

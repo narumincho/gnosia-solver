@@ -1,5 +1,5 @@
 import { useState } from "preact/hooks";
-import { User } from "lucide-preact";
+import { Eye } from "lucide-preact";
 import {
   PlayerStatus,
   Role,
@@ -17,6 +17,10 @@ type PlayerCardProps = {
   readonly myRole?: Role | undefined;
   readonly isGnosiaComrade?: boolean | undefined;
   readonly onToggleGnosiaComrade?: ((playerId: string) => void) | undefined;
+  readonly onTogglePerspective?: (
+    playerId: string,
+    playerName: string,
+  ) => void;
   readonly onQuickLie: (playerId: string) => void;
   readonly onQuickFreeze: (playerId: string) => void;
   readonly onQuickAttack: (playerId: string) => void;
@@ -298,6 +302,7 @@ export function PlayerCard({
   definiteLieReasons,
   isCurrentPerspective,
   solverResult,
+  onTogglePerspective,
 }: PlayerCardProps) {
   const roleProbs = solverResult.roleProbabilities[player.id] ?? {};
   const definiteRole = solverResult.definiteRoles[player.id];
@@ -354,15 +359,32 @@ export function PlayerCard({
 
   return (
     <div className={cardClass}>
-      {/* 上部: 名前 + 視点 + ステータス */}
+      {/* 上部: 名前 + 視点切り替え目のアイコン + ステータス */}
       <div className="player-card-header">
         <div className="player-name-row">
-          <User
-            size={14}
-            color={isCurrentPerspective
-              ? "var(--text-accent)"
-              : "var(--text-muted)"}
-          />
+          <button
+            type="button"
+            className={`perspective-eye-btn ${
+              isCurrentPerspective ? "active" : ""
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTogglePerspective?.(player.id, player.name);
+            }}
+            title={isCurrentPerspective
+              ? "視点を解除（全体俯瞰に戻す）"
+              : `${player.name} の視点に切り替える`}
+            aria-label={isCurrentPerspective
+              ? `${player.name} の視点を解除して全体俯瞰に戻す`
+              : `${player.name} の視点に切り替える`}
+          >
+            <Eye
+              size={15}
+              color={isCurrentPerspective
+                ? "var(--accent-primary, #38bdf8)"
+                : "var(--text-muted)"}
+            />
+          </button>
           <span className="player-name">{player.name}</span>
           {isCurrentPerspective && (
             <span className="perspective-badge">(視点)</span>

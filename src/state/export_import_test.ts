@@ -314,7 +314,11 @@ Deno.test("SessionData - 守護天使視点でのセッション保持と護衛�
     },
     events,
     currentDay: 2,
-    perspective: { id: "player", name: "自分 (Player)", role: "GUARDIAN_ANGEL" },
+    perspective: {
+      id: "player",
+      name: "自分 (Player)",
+      role: "GUARDIAN_ANGEL",
+    },
     myRole: "GUARDIAN_ANGEL",
   };
 
@@ -336,4 +340,3 @@ Deno.test("SessionData - 守護天使視点でのセッション保持と護衛�
   // 護衛成功によりジナのグノーシア確率0%
   assertEquals(result.gnosiaProbabilities["gina"], 0);
 });
-

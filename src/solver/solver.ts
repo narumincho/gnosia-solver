@@ -1066,7 +1066,6 @@ export class GnosiaSolver {
             }
           }
         } else if (ev.type === "DISAPPEARANCE") {
-
           // 同夜のグノーシア襲撃対象を取得
           const gAttack = findCorrespondingGnosiaAttack(this.events, evIdx);
           // 同夜の守護天使護衛対象を取得

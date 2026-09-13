@@ -217,7 +217,12 @@ Deno.test("GUARDIAN_GUARD - 複数夜にわたる護衛（プレイヤーズ）�
     },
     { id: "6", day: 2, type: "VOTE", frozenPlayerId: "raqio" },
     { id: "7", day: 2, type: "GUARDIAN_GUARD", targetId: "sq" },
-    { id: "8", day: 2, type: "DISAPPEARANCE", disappearedPlayerIds: ["stella"] },
+    {
+      id: "8",
+      day: 2,
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: ["stella"],
+    },
     {
       id: "9",
       day: 3,

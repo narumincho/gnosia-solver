@@ -406,6 +406,35 @@ body {
   flex-shrink: 0;
 }
 
+.perspective-eye-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 2px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.18s ease;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.perspective-eye-btn:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: var(--accent-primary, #38bdf8);
+  transform: scale(1.15);
+}
+
+.perspective-eye-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.6);
+  color: var(--accent-primary, #38bdf8);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
 /* Pie Chart (円グラフ - SVG) */
 .role-pie-wrapper {
   width: 74px;

@@ -52,6 +52,15 @@ export function App() {
     string | undefined
   >(undefined);
 
+  // 視点トグルハンドラ（同一プレイヤーを再度クリックで全体俯瞰に解除）
+  const handleTogglePerspective = (playerId: string, playerName: string) => {
+    if (perspective.id === playerId) {
+      selectPerspective("objective", "全体 (客観神視点)");
+    } else {
+      selectPerspective(playerId, playerName);
+    }
+  };
+
   // クイックアクション用ハンドラ
   const handleQuickLie = (playerId: string) => {
     setEditingEvent(undefined);
@@ -150,6 +159,7 @@ export function App() {
                 onQuickGnosiaAttack={handleQuickGnosiaAttack}
                 onQuickInvestigate={handleQuickInvestigate}
                 onQuickDoctorReport={handleQuickDoctorReport}
+                onTogglePerspective={handleTogglePerspective}
               />
             ))}
           </div>

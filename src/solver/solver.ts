@@ -836,6 +836,60 @@ export class GnosiaSolver {
       }
     }
 
+    // 守護天使の護衛対象と消滅者の関係からの事前演繹
+    for (let i = 0; i < this.events.length; i++) {
+      const ev = this.events[i];
+      if (ev && ev.type === "DISAPPEARANCE") {
+        const guard = findCorrespondingGuardianGuard(this.events, i);
+        if (guard) {
+          const guardTarget = guard.targetId;
+          // 護衛対象が消滅者に含まれている場合
+          if (ev.disappearedPlayerIds.includes(guardTarget)) {
+            // 守護天使が護衛しているため襲撃死はあり得ず、真エンジニアによる調査蒸発（バグ）のみ可能
+            if (
+              !this.settings.roles.hasBug || !this.settings.roles.hasEngineer
+            ) {
+              return {
+                totalPossibleWorlds: 0,
+                roleProbabilities: {},
+                gnosiaProbabilities: {},
+                enemyProbabilities: {},
+                definiteRoles: {},
+                hasContradiction: true,
+                contradictionReason:
+                  "守護天使が護衛した乗員が消滅しましたが、バグまたはエンジニアが存在しない設定のため矛盾しています。",
+                sampleWorlds: [],
+              };
+            }
+
+            // guardTarget は確実に BUG 確定！
+            const bugCandidates = candidateRoles.get(guardTarget);
+            if (bugCandidates) {
+              if (!bugCandidates.has("BUG")) {
+                return {
+                  totalPossibleWorlds: 0,
+                  roleProbabilities: {},
+                  gnosiaProbabilities: {},
+                  enemyProbabilities: {},
+                  definiteRoles: {},
+                  hasContradiction: true,
+                  contradictionReason:
+                    "守護天使が護衛した乗員が消滅したためバグ確定ですが、他の確定情報と矛盾しています。",
+                  sampleWorlds: [],
+                };
+              }
+              for (const r of ALL_ROLES) {
+                if (r !== "BUG") bugCandidates.delete(r);
+              }
+            }
+            for (const pid of playerIds) {
+              if (pid !== guardTarget) candidateRoles.get(pid)?.delete("BUG");
+            }
+          }
+        }
+      }
+    }
+
     // 潜伏なし設定の場合: COしていないプレイヤーは真ENGINEER/真DOCTORになれない
     if (!this.settings.allowHiddenRoles) {
       if (this.settings.roles.hasEngineer && engineerCOs.size > 0) {
@@ -1103,17 +1157,32 @@ export class GnosiaSolver {
                 }
                 if (isComplete) {
                   if (assignment[guardTarget] !== "BUG") return false;
-                  let investigatedByEngineer = false;
-                  for (const invEv of nightInvs) {
-                    if (
-                      assignment[invEv.investigatorId] === "ENGINEER" &&
-                      invEv.targetId === guardTarget
-                    ) {
-                      investigatedByEngineer = true;
+
+                  // その夜、真エンジニアが生存していなければならない
+                  let canEngineerBeAlive = false;
+                  for (const [pid, r] of Object.entries(assignment)) {
+                    if (r === "ENGINEER" && !deadBefore.has(pid)) {
+                      canEngineerBeAlive = true;
                       break;
                     }
                   }
-                  if (!investigatedByEngineer) return false;
+                  if (
+                    !canEngineerBeAlive &&
+                    remainingRoleCounts["ENGINEER"] > 0
+                  ) {
+                    canEngineerBeAlive = true;
+                  }
+                  if (!canEngineerBeAlive) return false;
+
+                  // もし真エンジニアが guardTarget 以外を調査したイベントが記録されていれば矛盾
+                  for (const invEv of nightInvs) {
+                    if (
+                      assignment[invEv.investigatorId] === "ENGINEER" &&
+                      invEv.targetId !== guardTarget
+                    ) {
+                      return false;
+                    }
+                  }
                 }
               }
             } else if (ev.disappearedPlayerIds.length === 2) {
@@ -1124,17 +1193,32 @@ export class GnosiaSolver {
                 }
                 if (isComplete) {
                   if (assignment[guardTarget] !== "BUG") return false;
-                  let investigatedByEngineer = false;
-                  for (const invEv of nightInvs) {
-                    if (
-                      assignment[invEv.investigatorId] === "ENGINEER" &&
-                      invEv.targetId === guardTarget
-                    ) {
-                      investigatedByEngineer = true;
+
+                  // その夜、真エンジニアが生存していなければならない
+                  let canEngineerBeAlive = false;
+                  for (const [pid, r] of Object.entries(assignment)) {
+                    if (r === "ENGINEER" && !deadBefore.has(pid)) {
+                      canEngineerBeAlive = true;
                       break;
                     }
                   }
-                  if (!investigatedByEngineer) return false;
+                  if (
+                    !canEngineerBeAlive &&
+                    remainingRoleCounts["ENGINEER"] > 0
+                  ) {
+                    canEngineerBeAlive = true;
+                  }
+                  if (!canEngineerBeAlive) return false;
+
+                  // もし真エンジニアが guardTarget 以外を調査したイベントが記録されていれば矛盾
+                  for (const invEv of nightInvs) {
+                    if (
+                      assignment[invEv.investigatorId] === "ENGINEER" &&
+                      invEv.targetId !== guardTarget
+                    ) {
+                      return false;
+                    }
+                  }
                 }
               }
             }

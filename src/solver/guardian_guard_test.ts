@@ -249,3 +249,135 @@ Deno.test("GUARDIAN_GUARD - 複数夜にわたる護衛（プレイヤーズ）�
   assertEquals(result.gnosiaProbabilities["sq"], 1.0);
   assertEquals(result.definiteRoles["sq"], "GNOSIA");
 });
+
+Deno.test("GUARDIAN_GUARD - 護衛対象が消滅した場合はバグ100%確定", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "自分" },
+      { id: "setsu", name: "セツ" },
+      { id: "gina", name: "ジナ" },
+      { id: "sq", name: "SQ" },
+      { id: "raqio", name: "ラキオ" },
+    ],
+    roles: {
+      gnosiaCount: 1,
+      hasEngineer: true,
+      hasDoctor: false,
+      hasGuardianAngel: true,
+      hasGuardDuty: false,
+      hasACFollower: false,
+      hasBug: true,
+    },
+    allowHiddenRoles: false,
+  };
+
+  // Day 1: ジナを守ったが、翌朝ジナが消滅
+  // 護衛により襲撃死はあり得ないため、ジナは真エンジニアによる調査蒸発＝バグ確定！
+  const events: ReadonlyArray<GameEvent> = [
+    { id: "1", day: 1, type: "GUARDIAN_GUARD", targetId: "gina" },
+    { id: "2", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: ["gina"] },
+  ];
+
+  const solver = new GnosiaSolver(settings, events);
+  const result = solver.solve({
+    perspectivePlayerId: "player",
+    perspectiveRole: "GUARDIAN_ANGEL",
+  });
+
+  assertEquals(result.hasContradiction, false);
+  assertEquals(result.definiteRoles["player"], "GUARDIAN_ANGEL");
+  assertEquals(result.definiteRoles["gina"], "BUG");
+  assertEquals(result.roleProbabilities["gina"]?.["BUG"], 1.0);
+});
+
+Deno.test("GUARDIAN_GUARD - 2人消滅時に護衛対象が含まれる場合、護衛対象がバグ確定でもう1人が襲撃死", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "自分" },
+      { id: "setsu", name: "セツ" },
+      { id: "gina", name: "ジナ" },
+      { id: "sq", name: "SQ" },
+      { id: "raqio", name: "ラキオ" },
+    ],
+    roles: {
+      gnosiaCount: 1,
+      hasEngineer: true,
+      hasDoctor: false,
+      hasGuardianAngel: true,
+      hasGuardDuty: false,
+      hasACFollower: false,
+      hasBug: true,
+    },
+    allowHiddenRoles: false,
+  };
+
+  // ジナを守ったが、夜が明けてジナとセツの2人が消滅
+  // ジナは護衛されていたため襲撃死は不可 -> ジナがバグ確定、セツが襲撃死確定！
+  const events: ReadonlyArray<GameEvent> = [
+    { id: "1", day: 1, type: "GUARDIAN_GUARD", targetId: "gina" },
+    {
+      id: "2",
+      day: 1,
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: ["gina", "setsu"],
+    },
+  ];
+
+  const solver = new GnosiaSolver(settings, events);
+  const result = solver.solve({
+    perspectivePlayerId: "player",
+    perspectiveRole: "GUARDIAN_ANGEL",
+  });
+
+  assertEquals(result.hasContradiction, false);
+  assertEquals(result.definiteRoles["gina"], "BUG");
+  // セツは襲撃死なのでバグでもグノーシアでもない
+  assertEquals(result.roleProbabilities["setsu"]?.["BUG"], 0);
+  assertEquals(result.gnosiaProbabilities["setsu"], 0);
+});
+
+Deno.test("GUARDIAN_GUARD - 護衛対象が消滅したが真エンジニアが他者を調査していた場合は破綻検知", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "自分" },
+      { id: "setsu", name: "セツ" },
+      { id: "gina", name: "ジナ" },
+      { id: "sq", name: "SQ" },
+      { id: "raqio", name: "ラキオ" },
+    ],
+    roles: {
+      gnosiaCount: 1,
+      hasEngineer: true,
+      hasDoctor: false,
+      hasGuardianAngel: true,
+      hasGuardDuty: false,
+      hasACFollower: false,
+      hasBug: true,
+    },
+    allowHiddenRoles: false,
+  };
+
+  // ジナを守ってジナが消滅したが、唯一のエンジニアCOであるセツが「ラキオを調査」と報告
+  // 真エンジニアがジナを調査していないためジナが蒸発することはあり得ず破綻
+  const events: ReadonlyArray<GameEvent> = [
+    { id: "1", day: 1, type: "CO", playerId: "setsu", claimedRole: "ENGINEER" },
+    { id: "2", day: 1, type: "GUARDIAN_GUARD", targetId: "gina" },
+    { id: "3", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: ["gina"] },
+    {
+      id: "4",
+      day: 2,
+      type: "INVESTIGATION",
+      investigatorId: "setsu",
+      targetId: "raqio",
+      result: "HUMAN",
+    },
+  ];
+
+  const solver = new GnosiaSolver(settings, events);
+  const result = solver.solve({
+    perspectivePlayerId: "player",
+    perspectiveRole: "GUARDIAN_ANGEL",
+  });
+
+  assertEquals(result.hasContradiction, true);
+});

@@ -130,33 +130,29 @@ function RolePieChart({
   const size = 74;
   const cx = size / 2;
   const cy = size / 2;
-  const r = 34;
-  const innerR = 19;
+  const r = 50;
 
   const getCenterLabel = () => {
-    if (definiteRole) {
-      switch (definiteRole) {
-        case "ENGINEER":
-          return "真工";
-        case "DOCTOR":
-          return "真医";
-        case "GUARD_DUTY":
-          return "留";
-        case "GUARDIAN_ANGEL":
-          return "守";
-        case "CREW":
-          return "乗";
-        case "GNOSIA":
-          return "グ";
-        case "AC_FOLLOWER":
-          return "AC";
-        case "BUG":
-          return "バグ";
-        default:
-          return ROLE_DEFINITIONS[definiteRole].shortName;
-      }
+    switch (definiteRole) {
+      case "ENGINEER":
+        return "真工";
+      case "DOCTOR":
+        return "真医";
+      case "GUARD_DUTY":
+        return "留";
+      case "GUARDIAN_ANGEL":
+        return "守";
+      case "CREW":
+        return "乗";
+      case "GNOSIA":
+        return "グ";
+      case "AC_FOLLOWER":
+        return "AC";
+      case "BUG":
+        return "バグ";
+      default:
+        return "";
     }
-    return "";
   };
 
   const centerLabel = getCenterLabel();
@@ -190,11 +186,11 @@ function RolePieChart({
             cx={cx}
             cy={cy}
             r={r}
-            fill={activeSlices[0].color}
+            fill={activeSlices[0]?.color}
             className="role-pie-slice"
             onMouseEnter={() => setHovered(activeSlices[0])}
           >
-            <title>{`${activeSlices[0].name}: 100%`}</title>
+            <title>{`${activeSlices[0]?.name}: 100%`}</title>
           </circle>
         )}
 
@@ -229,17 +225,6 @@ function RolePieChart({
               </path>
             );
           })}
-
-        {/* 中央の穴 (ドーナツホール) */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={innerR}
-          fill="var(--bg-card)"
-          stroke="rgba(255, 255, 255, 0.15)"
-          strokeWidth="1"
-          style={{ pointerEvents: "none" }}
-        />
 
         {/* 外枠境界線 (クリーンな円周) */}
         <circle

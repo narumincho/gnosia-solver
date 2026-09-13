@@ -102,7 +102,7 @@ export interface CharacterPreset {
 }
 
 export const DEFAULT_CHARACTERS: ReadonlyArray<CharacterPreset> = [
-  { id: "player", name: "自分 (Player)", defaultIncluded: true },
+  { id: "player", name: "主人公", defaultIncluded: true },
   { id: "setsu", name: "セツ", defaultIncluded: true },
   { id: "gina", name: "ジナ", defaultIncluded: true },
   { id: "sq", name: "SQ", defaultIncluded: true },

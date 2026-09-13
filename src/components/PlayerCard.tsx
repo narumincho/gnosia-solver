@@ -7,21 +7,127 @@ import {
 } from "../types.ts";
 
 interface PlayerCardProps {
-  player: { id: string; name: string };
-  status: PlayerStatus;
-  claimedRoles: ReadonlyArray<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">;
-  definiteLieReasons?: ReadonlyArray<string> | undefined;
-  isCurrentPerspective: boolean;
-  solverResult: SolverResult;
-  myRole?: Role | undefined;
-  isGnosiaComrade?: boolean | undefined;
-  onToggleGnosiaComrade?: ((playerId: string) => void) | undefined;
-  onQuickLie: (playerId: string) => void;
-  onQuickFreeze: (playerId: string) => void;
-  onQuickAttack: (playerId: string) => void;
-  onQuickGnosiaAttack?: ((playerId: string) => void) | undefined;
-  onQuickInvestigate: (playerId: string) => void;
-  onQuickDoctorReport?: ((playerId: string) => void) | undefined;
+  readonly player: { readonly id: string; readonly name: string };
+  readonly status: PlayerStatus;
+  readonly claimedRoles: ReadonlyArray<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">;
+  readonly definiteLieReasons?: ReadonlyArray<string> | undefined;
+  readonly isCurrentPerspective: boolean;
+  readonly solverResult: SolverResult;
+  readonly myRole?: Role | undefined;
+  readonly isGnosiaComrade?: boolean | undefined;
+  readonly onToggleGnosiaComrade?: ((playerId: string) => void) | undefined;
+  readonly onQuickLie: (playerId: string) => void;
+  readonly onQuickFreeze: (playerId: string) => void;
+  readonly onQuickAttack: (playerId: string) => void;
+  readonly onQuickGnosiaAttack?: ((playerId: string) => void) | undefined;
+  readonly onQuickInvestigate: (playerId: string) => void;
+  readonly onQuickDoctorReport?: ((playerId: string) => void) | undefined;
+}
+
+interface DonutSlice {
+  readonly role: Role;
+  readonly prob: number;
+  readonly color: string;
+  readonly name: string;
+}
+
+function RoleDonutChart({
+  roleProbs,
+  definiteRole,
+  gnosiaPct,
+  tooltip,
+}: {
+  readonly roleProbs: Partial<Record<Role, number>>;
+  readonly definiteRole?: Role | undefined;
+  readonly gnosiaPct: number;
+  readonly tooltip: string;
+}) {
+  const size = 52;
+  const strokeWidth = 7;
+  const radius = 18;
+  const center = size / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  const activeSlices: ReadonlyArray<DonutSlice> = (
+    Object.entries(roleProbs) as ReadonlyArray<[Role, number]>
+  )
+    .filter(([_, prob]) => prob > 0.005)
+    .sort((a, b) => b[1] - a[1])
+    .map(([role, prob]) => ({
+      role,
+      prob,
+      color: ROLE_DEFINITIONS[role].color,
+      name: ROLE_DEFINITIONS[role].name,
+    }));
+
+  let accumulatedPercent = 0;
+
+  return (
+    <div className="role-donut-wrapper" title={tooltip}>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="role-donut-svg"
+      >
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke="rgba(255, 255, 255, 0.08)"
+          strokeWidth={strokeWidth}
+        />
+        <g transform={`rotate(-90 ${center} ${center})`}>
+          {activeSlices.map((slice) => {
+            const dash = slice.prob * circumference;
+            const offset = accumulatedPercent * circumference;
+            accumulatedPercent += slice.prob;
+
+            return (
+              <circle
+                key={slice.role}
+                cx={center}
+                cy={center}
+                r={radius}
+                fill="none"
+                stroke={slice.color}
+                strokeWidth={strokeWidth}
+                strokeDasharray={`${dash} ${circumference - dash}`}
+                strokeDashoffset={-offset}
+                className="role-donut-slice"
+              />
+            );
+          })}
+        </g>
+        <text
+          x={center}
+          y={center}
+          textAnchor="middle"
+          dominantBaseline="central"
+          className="role-donut-center-text"
+          style={{
+            fill: definiteRole
+              ? ROLE_DEFINITIONS[definiteRole].color
+              : gnosiaPct > 0
+              ? "var(--color-gnosia)"
+              : "var(--text-muted)",
+            fontSize: definiteRole
+              ? (ROLE_DEFINITIONS[definiteRole].shortName.length > 2
+                ? "0.65rem"
+                : "0.75rem")
+              : (gnosiaPct >= 100 ? "0.65rem" : "0.72rem"),
+            fontWeight: "bold",
+            fontFamily: "var(--font-display)",
+          }}
+        >
+          {definiteRole
+            ? ROLE_DEFINITIONS[definiteRole].shortName
+            : `${gnosiaPct}%`}
+        </text>
+      </svg>
+    </div>
+  );
 }
 
 export function PlayerCard({
@@ -65,115 +171,130 @@ export function PlayerCard({
     }
   };
 
+  const sortedRoles: ReadonlyArray<DonutSlice> = (
+    Object.entries(roleProbs) as ReadonlyArray<[Role, number]>
+  )
+    .filter(([_, prob]) => prob > 0.005)
+    .sort((a, b) => b[1] - a[1])
+    .map(([role, prob]) => ({
+      role,
+      prob,
+      color: ROLE_DEFINITIONS[role].color,
+      name: ROLE_DEFINITIONS[role].name,
+    }));
+
+  const tooltipText = sortedRoles.length > 0
+    ? sortedRoles
+      .map((s) => `${s.name}: ${Math.round(s.prob * 100)}%`)
+      .join("\n")
+    : "確率データなし";
+
   return (
     <div className={cardClass}>
       <div className="player-card-header">
         <div className="player-name-row">
           <User
-            size={18}
+            size={16}
             color={isCurrentPerspective
               ? "var(--text-accent)"
               : "var(--text-muted)"}
           />
           <span className="player-name">{player.name}</span>
           {isCurrentPerspective && (
-            <span style={{ fontSize: "0.7rem", color: "var(--text-accent)" }}>
-              (視点)
-            </span>
+            <span className="perspective-badge">(視点)</span>
           )}
         </div>
         {getStatusBadge()}
       </div>
 
-      {/* COバッジや嘘確定バッジ */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "0.35rem",
-          marginBottom: "0.6rem",
-        }}
-      >
-        {claimedRoles.map((r) => (
-          <span key={r} className={`badge ${ROLE_DEFINITIONS[r].badgeClass}`}>
-            {ROLE_DEFINITIONS[r].name}CO
-          </span>
-        ))}
+      <div className="player-card-body">
+        {/* 円グラフ (ドーナツチャート) */}
+        <RoleDonutChart
+          roleProbs={roleProbs}
+          definiteRole={definiteRole}
+          gnosiaPct={gnosiaPct}
+          tooltip={tooltipText}
+        />
 
-        {definiteRole && (
-          <span
-            className={`badge ${ROLE_DEFINITIONS[definiteRole].badgeClass}`}
-            style={{ boxShadow: "0 0 8px currentColor" }}
-          >
-            確定: {ROLE_DEFINITIONS[definiteRole].name}
-          </span>
-        )}
+        {/* 右側情報ブロック */}
+        <div className="player-card-info">
+          {/* COバッジや嘘確定・役職確定バッジ */}
+          <div className="player-badges-row">
+            {claimedRoles.map((r) => (
+              <span
+                key={r}
+                className={`badge badge-compact ${
+                  ROLE_DEFINITIONS[r].badgeClass
+                }`}
+              >
+                {ROLE_DEFINITIONS[r].name}CO
+              </span>
+            ))}
 
-        {definiteLieReasons && definiteLieReasons.length > 0 && (
-          <span
-            className="badge"
-            style={{
-              background: "rgba(244, 63, 94, 0.3)",
-              color: "#fb7185",
-              border: "1px solid #f43f5e",
-            }}
-            title={definiteLieReasons.join("\n")}
-          >
-            <AlertTriangle size={12} />
-            {definiteLieReasons.some((r) => r.includes("自分"))
-              ? "嘘つき確定"
-              : "密告あり"}
-          </span>
-        )}
-      </div>
+            {definiteRole && (
+              <span
+                className={`badge badge-compact ${
+                  ROLE_DEFINITIONS[definiteRole].badgeClass
+                }`}
+                style={{ boxShadow: "0 0 6px currentColor" }}
+              >
+                確定: {ROLE_DEFINITIONS[definiteRole].name}
+              </span>
+            )}
 
-      {/* 役職の帯グラフ (Stacked Role Bar) */}
-      <div className="role-stacked-bar-container">
-        <div className="meter-labels">
-          <span className="meter-val-enemy">
-            敵対:{" "}
-            <strong
-              style={{
-                color: enemyPct > 50
-                  ? "var(--color-gnosia)"
-                  : "var(--text-main)",
-              }}
-            >
-              {enemyPct}%
-            </strong>
-          </span>
-          <span className="meter-val-gnosia">
-            G確率: {gnosiaPct}%
-          </span>
-        </div>
+            {definiteLieReasons && definiteLieReasons.length > 0 && (
+              <span
+                className="badge badge-compact"
+                style={{
+                  background: "rgba(244, 63, 94, 0.3)",
+                  color: "#fb7185",
+                  border: "1px solid #f43f5e",
+                }}
+                title={definiteLieReasons.join("\n")}
+              >
+                <AlertTriangle size={11} />
+                {definiteLieReasons.some((r) => r.includes("自分"))
+                  ? "嘘確定"
+                  : "密告"}
+              </span>
+            )}
+          </div>
 
-        <div className="role-stacked-bar">
-          {(Object.entries(roleProbs) as ReadonlyArray<[Role, number]>)
-            .filter(([_, prob]) => prob > 0.005)
-            .sort((a, b) => b[1] - a[1])
-            .map(([role, prob]) => {
-              const r = role;
-              const def = ROLE_DEFINITIONS[r];
-              const pct = Math.round(prob * 100);
+          {/* 敵対・G確率 */}
+          <div className="player-meta-row">
+            <span className="meter-val-enemy">
+              敵対:{" "}
+              <strong
+                style={{
+                  color: enemyPct > 50
+                    ? "var(--color-gnosia)"
+                    : "var(--text-main)",
+                }}
+              >
+                {enemyPct}%
+              </strong>
+            </span>
+            <span className="meter-val-gnosia">
+              G: <strong>{gnosiaPct}%</strong>
+            </span>
+          </div>
 
-              return (
-                <div
-                  key={role}
-                  className="role-bar-segment"
-                  style={{
-                    width: `${prob * 100}%`,
-                    backgroundColor: def.color,
-                  }}
-                  title={`${def.name}: ${pct}%`}
-                >
-                  {pct >= 14
-                    ? `${def.shortName} ${pct}%`
-                    : pct >= 7
-                    ? def.shortName
-                    : ""}
-                </div>
-              );
-            })}
+          {/* 内訳ミニピル (上位2件) */}
+          <div className="role-mini-list">
+            {sortedRoles.slice(0, 2).map((slice) => (
+              <span
+                key={slice.role}
+                className="role-mini-pill"
+                title={`${slice.name}: ${Math.round(slice.prob * 100)}%`}
+              >
+                <span
+                  className="role-mini-dot"
+                  style={{ backgroundColor: slice.color }}
+                />
+                {slice.name} {Math.round(slice.prob * 100)}%
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </div>

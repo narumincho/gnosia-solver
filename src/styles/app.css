@@ -388,29 +388,41 @@ body {
   flex-shrink: 0;
 }
 
-/* Donut Chart (円グラフ) */
-.role-donut-wrapper {
-  position: relative;
-  width: 56px;
-  height: 56px;
+/* Pie Chart (円グラフ - conic-gradient) */
+.role-pie-wrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
   margin: 0.15rem auto;
-  flex-shrink: 0;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1.5px solid rgb(255 255 255 / 20%);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 50%);
+  flex-shrink: 0;
   cursor: default;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.role-donut-svg {
-  transform: rotate(0deg);
-  overflow: visible;
+.role-pie-wrapper:hover {
+  transform: scale(1.06);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 60%), 0 0 10px rgb(56 189 248 / 35%);
 }
 
-.role-donut-slice {
-  transition: stroke-dasharray 0.3s ease, stroke-dashoffset 0.3s ease;
-}
-
-.role-donut-center-text {
+.role-pie-center-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1.5px solid rgb(255 255 255 / 25%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.72rem;
+  font-family: var(--font-display);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 60%);
   user-select: none;
 }
 

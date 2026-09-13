@@ -103,7 +103,7 @@ function getRoleChips(
   return chips;
 }
 
-function RoleDonutChart({
+function RolePieChart({
   roleProbs,
   definiteRole,
   tooltip,
@@ -112,12 +112,6 @@ function RoleDonutChart({
   readonly definiteRole?: Role | undefined;
   readonly tooltip: string;
 }) {
-  const size = 56;
-  const strokeWidth = 7.5;
-  const radius = 20;
-  const center = size / 2;
-  const circumference = 2 * Math.PI * radius;
-
   const activeSlices: ReadonlyArray<DonutSlice> = (
     Object.entries(roleProbs) as ReadonlyArray<[Role, number]>
   )
@@ -130,7 +124,25 @@ function RoleDonutChart({
       name: ROLE_DEFINITIONS[role].name,
     }));
 
-  let accumulatedPercent = 0;
+  let backgroundStyle = "rgba(255, 255, 255, 0.08)";
+  if (definiteRole) {
+    backgroundStyle = ROLE_DEFINITIONS[definiteRole].color;
+  } else if (activeSlices.length === 1) {
+    backgroundStyle = activeSlices[0].color;
+  } else if (activeSlices.length > 1) {
+    let currentPct = 0;
+    const parts: Array<string> = [];
+    for (let i = 0; i < activeSlices.length; i++) {
+      const slice = activeSlices[i];
+      const start = currentPct;
+      const end = i === activeSlices.length - 1
+        ? 100
+        : currentPct + slice.prob * 100;
+      currentPct = end;
+      parts.push(`${slice.color} ${start.toFixed(1)}% ${end.toFixed(1)}%`);
+    }
+    backgroundStyle = `conic-gradient(${parts.join(", ")})`;
+  }
 
   const getCenterLabel = () => {
     if (definiteRole) {
@@ -161,66 +173,23 @@ function RoleDonutChart({
   const centerLabel = getCenterLabel();
 
   return (
-    <div className="role-donut-wrapper" title={tooltip}>
-      <svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
-        className="role-donut-svg"
-      >
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke="rgba(255, 255, 255, 0.08)"
-          strokeWidth={strokeWidth}
-        />
-        <g transform={`rotate(-90 ${center} ${center})`}>
-          {activeSlices.map((slice) => {
-            const dash = slice.prob * circumference;
-            const offset = accumulatedPercent * circumference;
-            accumulatedPercent += slice.prob;
-            const pct = Math.round(slice.prob * 100);
-
-            return (
-              <circle
-                key={slice.role}
-                cx={center}
-                cy={center}
-                r={radius}
-                fill="none"
-                stroke={slice.color}
-                strokeWidth={strokeWidth}
-                strokeDasharray={`${dash} ${circumference - dash}`}
-                strokeDashoffset={-offset}
-                className="role-donut-slice"
-              >
-                <title>{`${slice.name}: ${pct}%`}</title>
-              </circle>
-            );
-          })}
-        </g>
-        {centerLabel && (
-          <text
-            x={center}
-            y={center}
-            textAnchor="middle"
-            dominantBaseline="central"
-            className="role-donut-center-text"
-            style={{
-              fill: definiteRole
-                ? ROLE_DEFINITIONS[definiteRole].color
-                : "var(--text-main)",
-              fontSize: centerLabel.length >= 3 ? "0.68rem" : "0.75rem",
-              fontWeight: "bold",
-              fontFamily: "var(--font-display)",
-            }}
-          >
-            {centerLabel}
-          </text>
-        )}
-      </svg>
+    <div
+      className="role-pie-wrapper"
+      title={tooltip}
+      style={{ background: backgroundStyle }}
+    >
+      {centerLabel && (
+        <div
+          className="role-pie-center-badge"
+          style={{
+            color: definiteRole
+              ? ROLE_DEFINITIONS[definiteRole].color
+              : "var(--text-main)",
+          }}
+        >
+          {centerLabel}
+        </div>
+      )}
     </div>
   );
 }
@@ -305,8 +274,8 @@ export function PlayerCard({
         {getStatusBadge()}
       </div>
 
-      {/* 中央: 円グラフ (ドーナツチャート) */}
-      <RoleDonutChart
+      {/* 中央: 円グラフ */}
+      <RolePieChart
         roleProbs={roleProbs}
         definiteRole={definiteRole}
         tooltip={tooltipText}
@@ -327,10 +296,10 @@ export function PlayerCard({
         </div>
       )}
 
-      {/* 円グラフの各項目一覧 (未確定時) */}
+      {/* 円グラフの主要項目一覧 (未確定時の上位2役職のみ簡潔に表示) */}
       {!definiteRole && sortedRoles.length > 0 && (
         <div className="role-mini-list">
-          {sortedRoles.map((slice) => {
+          {sortedRoles.slice(0, 2).map((slice) => {
             const pct = Math.round(slice.prob * 100);
             if (pct === 0) return null;
             return (

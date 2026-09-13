@@ -171,37 +171,6 @@ body {
   letter-spacing: 0.05em;
 }
 
-.perspective-selector-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.perspective-btn {
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  background: rgb(30 41 59 / 80%);
-  border: 1px solid rgb(255 255 255 / 10%);
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.perspective-btn:hover {
-  border-color: var(--text-accent);
-  color: var(--text-main);
-}
-
-.perspective-btn.active {
-  background: rgb(56 189 248 / 20%);
-  border-color: var(--text-accent);
-  color: #38bdf8;
-  font-weight: 600;
-  box-shadow: 0 0 10px rgb(56 189 248 / 25%);
-}
-
 .role-lock-select {
   background: #0f172a;
   border: 1px solid var(--border-color);

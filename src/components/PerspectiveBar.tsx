@@ -130,36 +130,6 @@ export function PerspectiveBar({
         </div>
       </div>
 
-      <div className="perspective-selector-row">
-        <button
-          type="button"
-          className={`perspective-btn ${isObjective ? "active" : ""}`}
-          onClick={() => onSelectPerspective("objective", "全体 (客観神視点)")}
-        >
-          全体 (客観神視点)
-        </button>
-
-        {settings.players.map((p) => {
-          const isMe = p.id === "player";
-          const isComrade = myRole === "GNOSIA" &&
-            gnosiaComrades.includes(p.id);
-          return (
-            <button
-              key={p.id}
-              type="button"
-              className={`perspective-btn ${
-                perspective.id === p.id ? "active" : ""
-              }`}
-              onClick={() => onSelectPerspective(p.id, p.name)}
-            >
-              {p.name} 視点
-              {isMe && myRole ? ` (${ROLE_DEFINITIONS[myRole].name})` : ""}
-              {!isMe && isComrade ? " (仲間G)" : ""}
-            </button>
-          );
-        })}
-      </div>
-
       {myRole === "GNOSIA" && settings.roles.gnosiaCount > 1 && (
         <div className="gnosia-comrades-panel">
           <span className="gnosia-comrades-label">
@@ -205,6 +175,23 @@ export function PerspectiveBar({
               ? ` [${ROLE_DEFINITIONS[effectivePerspectiveRole].name}固定]`
               : ""}
           </strong>
+          {!isObjective && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{
+                marginLeft: "0.6rem",
+                padding: "2px 8px",
+                fontSize: "0.75rem",
+                verticalAlign: "middle",
+              }}
+              onClick={() =>
+                onSelectPerspective("objective", "全体 (客観神視点)")}
+              title="全体 (客観神視点) に戻す"
+            >
+              全体俯瞰に戻す
+            </button>
+          )}
         </div>
       </div>
     </div>

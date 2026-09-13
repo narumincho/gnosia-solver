@@ -17,7 +17,16 @@ export function Header({
 }: HeaderProps) {
   return (
     <header className="header">
-      <h1 className="logo-title">GNOSIA SOLVER</h1>
+      <div className="logo-container">
+        <img
+          src="/favicon.svg"
+          alt="GNOSIA SOLVER Logo"
+          className="logo-icon"
+          width="32"
+          height="32"
+        />
+        <h1 className="logo-title">GNOSIA SOLVER</h1>
+      </div>
 
       <div className="header-actions">
         <button

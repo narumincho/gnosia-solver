@@ -1,0 +1,26 @@
+{
+  "name": "GNOSIA SOLVER | グノーシア推理ソルバー",
+  "short_name": "GNOSIA SOLVER",
+  "description": "グノーシアの議論履歴から全配役パターンを自動解析・計算する推理補助ツール",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#0b0f19",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1484,3 +1484,331 @@ Deno.test("GnosiaSolver - 翌朝にバグ消滅者（セツ）への調査報告
   assertEquals(result.totalPossibleWorlds > 0, true);
   assertEquals(result.definiteRoles["setsu"], "BUG");
 });
+
+Deno.test("GnosiaSolver - 実戦完走検証2（15人・3グノーシア・Day 1〜Day 5 完走データ）", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "自分 (Player)" },
+      { id: "setsu", name: "セツ" },
+      { id: "gina", name: "ジナ" },
+      { id: "sq", name: "SQ" },
+      { id: "raqio", name: "ラキオ" },
+      { id: "stella", name: "ステラ" },
+      { id: "shigemichi", name: "しげみち" },
+      { id: "chipie", name: "シピ" },
+      { id: "comet", name: "コメット" },
+      { id: "jonas", name: "ジョナス" },
+      { id: "kukrushka", name: "ククルシカ" },
+      { id: "otome", name: "オトメ" },
+      { id: "remnan", name: "レムナン" },
+      { id: "sha_ming", name: "沙明" },
+      { id: "yuriko", name: "夕里子" },
+    ],
+    roles: {
+      gnosiaCount: 3,
+      hasEngineer: true,
+      hasDoctor: true,
+      hasGuardianAngel: true,
+      hasGuardDuty: true,
+      hasACFollower: true,
+      hasBug: true,
+    },
+    allowHiddenRoles: false,
+  };
+
+  const events: ReadonlyArray<GameEvent> = [
+    // Day 1
+    {
+      type: "CO",
+      playerId: "gina",
+      claimedRole: "ENGINEER",
+      id: "9f4ce97b-4c06-49b6-a696-79a135739d9d",
+      day: 1,
+    },
+    {
+      type: "CO",
+      playerId: "stella",
+      claimedRole: "ENGINEER",
+      id: "1296428b-5fbc-4c20-8d08-7ca8b3852437",
+      day: 1,
+    },
+    {
+      type: "CO",
+      playerId: "shigemichi",
+      partnerPlayerId: "chipie",
+      claimedRole: "GUARD_DUTY",
+      id: "5638fb78-a00d-4156-bdb9-4e8e874453d9",
+      day: 1,
+    },
+    {
+      type: "CO",
+      playerId: "player",
+      claimedRole: "DOCTOR",
+      id: "efffae34-fec8-4903-bd65-fa70277645a3",
+      day: 1,
+    },
+    {
+      type: "CO",
+      playerId: "kukrushka",
+      claimedRole: "DOCTOR",
+      id: "b8638ebe-9d82-4720-bd8d-e44273745ec5",
+      day: 1,
+    },
+    {
+      type: "VOTE",
+      frozenPlayerId: "raqio",
+      id: "a6ce6379-5a23-402d-b5c2-13a99ee3c25a",
+      day: 1,
+    },
+    {
+      type: "GNOSIA_ATTACK",
+      targetId: "chipie",
+      id: "7e280747-deb3-4a3f-b937-6fc00d2a0c15",
+      day: 1,
+    },
+    {
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: ["chipie"],
+      id: "365b6f1f-ad15-499e-a9d0-b607f33ddfde",
+      day: 1,
+    },
+    // Day 2
+    {
+      type: "DOCTOR_REPORT",
+      reporterId: "player",
+      targetId: "raqio",
+      result: "HUMAN",
+      id: "18032b82-160b-4450-bdd7-4f371eb878cc",
+      day: 2,
+    },
+    {
+      type: "DOCTOR_REPORT",
+      reporterId: "kukrushka",
+      targetId: "raqio",
+      result: "HUMAN",
+      id: "93a7f26c-dad5-4292-b464-fbef72ab6c76",
+      day: 2,
+    },
+    {
+      type: "INVESTIGATION",
+      investigatorId: "gina",
+      targetId: "comet",
+      result: "GNOSIA",
+      id: "f75314d1-7398-4ba2-a159-b988df9b1c2c",
+      day: 2,
+    },
+    {
+      type: "INVESTIGATION",
+      investigatorId: "stella",
+      targetId: "sha_ming",
+      result: "HUMAN",
+      id: "765e194e-1142-4510-a16b-94a23f5521dc",
+      day: 2,
+    },
+    {
+      type: "VOTE",
+      frozenPlayerId: "comet",
+      id: "51966509-5c22-4ea3-961e-4362a8d51558",
+      day: 2,
+    },
+    {
+      type: "GNOSIA_ATTACK",
+      targetId: "gina",
+      id: "f884adb1-9a90-40a5-8ce5-44ca9349cd79",
+      day: 2,
+    },
+    {
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: [],
+      id: "416f57f0-02bd-47ea-8a3b-419c1a010c71",
+      day: 2,
+    },
+    // Day 3
+    {
+      type: "DOCTOR_REPORT",
+      reporterId: "player",
+      targetId: "comet",
+      result: "HUMAN",
+      id: "f6c20823-92ec-4670-ba1c-8fe08934756b",
+      day: 3,
+    },
+    {
+      type: "DOCTOR_REPORT",
+      reporterId: "kukrushka",
+      targetId: "comet",
+      result: "HUMAN",
+      id: "d00977ff-1d16-418c-abb0-70ba8624a2ca",
+      day: 3,
+    },
+    {
+      type: "INVESTIGATION",
+      investigatorId: "stella",
+      targetId: "sq",
+      result: "HUMAN",
+      id: "1ed15e34-cbc3-4e0e-a44d-e91092da17d0",
+      day: 3,
+    },
+    {
+      type: "INVESTIGATION",
+      investigatorId: "gina",
+      targetId: "yuriko",
+      result: "GNOSIA",
+      id: "4621add3-2b39-451e-8133-fbac272e6de1",
+      day: 3,
+    },
+    {
+      type: "VOTE",
+      frozenPlayerId: "gina",
+      id: "00b6878b-81c7-419a-8edf-25fb3501317c",
+      day: 3,
+    },
+    {
+      type: "GNOSIA_ATTACK",
+      targetId: "sha_ming",
+      id: "057aaf04-24c4-4ccf-b3f3-7ad90651a7c7",
+      day: 3,
+    },
+    {
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: ["setsu", "sha_ming"],
+      id: "bd831e50-a703-4b80-aae5-b3213831c39f",
+      day: 3,
+    },
+    // Day 4
+    {
+      type: "DOCTOR_REPORT",
+      reporterId: "player",
+      targetId: "gina",
+      result: "HUMAN",
+      id: "98368487-2264-4796-8880-8686fd882a2f",
+      day: 4,
+    },
+    {
+      type: "DOCTOR_REPORT",
+      reporterId: "kukrushka",
+      targetId: "gina",
+      result: "HUMAN",
+      id: "9aa03bf9-1d1a-4fa6-b1dd-6fe880e9328f",
+      day: 4,
+    },
+    {
+      type: "INVESTIGATION",
+      investigatorId: "stella",
+      targetId: "setsu",
+      result: "HUMAN",
+      id: "f41b3441-60ea-4e4a-b86b-7434ca773153",
+      day: 4,
+    },
+    {
+      type: "VOTE",
+      frozenPlayerId: "otome",
+      id: "f7503478-f7ff-407b-8f6f-92fc10b31de0",
+      day: 4,
+    },
+    {
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: ["stella"],
+      id: "e3986971-7c1b-4cf1-848a-2eb04572ee6c",
+      day: 4,
+    },
+    // Day 5
+    {
+      type: "DOCTOR_REPORT",
+      reporterId: "player",
+      targetId: "otome",
+      result: "HUMAN",
+      id: "6c6ecfad-2471-438f-8902-13688347401b",
+      day: 5,
+    },
+    {
+      type: "DOCTOR_REPORT",
+      reporterId: "kukrushka",
+      targetId: "otome",
+      result: "HUMAN",
+      id: "339852af-1e66-458b-bba7-af4acbda239f",
+      day: 5,
+    },
+    {
+      type: "VOTE",
+      frozenPlayerId: "yuriko",
+      id: "64fe5984-4449-42b7-a9f9-18ad8a5fa047",
+      day: 5,
+    },
+  ];
+
+  const solver = new GnosiaSolver(settings, events);
+
+  // 1. 自分 (Player) 視点: グノーシア、仲間 [レムナン, ジョナス]
+  const playerResult = solver.solve({
+    perspectivePlayerId: "player",
+    perspectiveRole: "GNOSIA",
+    gnosiaComrades: ["remnan", "jonas"],
+  });
+
+  assertEquals(playerResult.hasContradiction, false);
+  assertEquals(playerResult.totalPossibleWorlds, 4);
+
+  // グノーシア3名
+  assertEquals(playerResult.definiteRoles["player"], "GNOSIA");
+  assertEquals(playerResult.definiteRoles["remnan"], "GNOSIA");
+  assertEquals(playerResult.definiteRoles["jonas"], "GNOSIA");
+
+  // バグ蒸発（セツ）
+  assertEquals(playerResult.definiteRoles["setsu"], "BUG");
+
+  // AC主義者（ジナ）
+  assertEquals(playerResult.definiteRoles["gina"], "AC_FOLLOWER");
+
+  // 真エンジニア（ステラ）
+  assertEquals(playerResult.definiteRoles["stella"], "ENGINEER");
+
+  // 真ドクター（ククルシカ）
+  assertEquals(playerResult.definiteRoles["kukrushka"], "DOCTOR");
+
+  // 留守番2名（しげみち, シピ）
+  assertEquals(playerResult.definiteRoles["shigemichi"], "GUARD_DUTY");
+  assertEquals(playerResult.definiteRoles["chipie"], "GUARD_DUTY");
+
+  // 確定乗員（ラキオ, コメット）
+  assertEquals(playerResult.definiteRoles["raqio"], "CREW");
+  assertEquals(playerResult.definiteRoles["comet"], "CREW");
+
+  // 残り4名 (sq, otome, sha_ming, yuriko) に守護天使1名と乗員3名が均等に分布 (各25% GA, 75% CREW)
+  const remainingPlayers: ReadonlyArray<string> = [
+    "sq",
+    "otome",
+    "sha_ming",
+    "yuriko",
+  ];
+  for (const pid of remainingPlayers) {
+    assertEquals(
+      playerResult.roleProbabilities[pid]?.["GUARDIAN_ANGEL"],
+      0.25,
+    );
+    assertEquals(playerResult.roleProbabilities[pid]?.["CREW"], 0.75);
+  }
+
+  // 2. 仲間グノーシア（レムナン）視点でも同一の確定役職が導出されること
+  const remnanResult = solver.solve({
+    perspectivePlayerId: "remnan",
+    perspectiveRole: "GNOSIA",
+    gnosiaComrades: ["player", "jonas"],
+  });
+  assertEquals(remnanResult.hasContradiction, false);
+  assertEquals(remnanResult.totalPossibleWorlds, 4);
+  assertEquals(remnanResult.definiteRoles["player"], "GNOSIA");
+  assertEquals(remnanResult.definiteRoles["remnan"], "GNOSIA");
+  assertEquals(remnanResult.definiteRoles["jonas"], "GNOSIA");
+
+  // 3. 客観全体視点
+  const objResult = solver.solve();
+  assertEquals(objResult.hasContradiction, false);
+  assertEquals(objResult.totalPossibleWorlds, 24);
+  assertEquals(objResult.definiteRoles["setsu"], "BUG");
+  assertEquals(objResult.definiteRoles["gina"], "AC_FOLLOWER");
+  assertEquals(objResult.definiteRoles["stella"], "ENGINEER");
+  assertEquals(objResult.definiteRoles["shigemichi"], "GUARD_DUTY");
+  assertEquals(objResult.definiteRoles["chipie"], "GUARD_DUTY");
+  assertEquals(objResult.definiteRoles["raqio"], "CREW");
+  assertEquals(objResult.definiteRoles["comet"], "CREW");
+});

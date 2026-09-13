@@ -9,7 +9,7 @@ export type Role =
   | "AC_FOLLOWER" // AC主義者 (グノーシア陣営・人間判定)
   | "BUG"; // バグ (第3陣営・人間判定・調査で蒸発)
 
-export interface RoleInfo {
+export type RoleInfo = {
   id: Role;
   name: string;
   shortName: string;
@@ -17,7 +17,7 @@ export interface RoleInfo {
   color: string;
   badgeClass: string;
   description: string;
-}
+};
 
 export const ROLE_DEFINITIONS: Record<Role, RoleInfo> = {
   CREW: {
@@ -95,11 +95,11 @@ export const ROLE_DEFINITIONS: Record<Role, RoleInfo> = {
 };
 
 // 登場キャラクターのデフォルトプリセット
-export interface CharacterPreset {
+export type CharacterPreset = {
   id: string;
   name: string;
   defaultIncluded: boolean;
-}
+};
 
 export const DEFAULT_CHARACTERS: ReadonlyArray<CharacterPreset> = [
   { id: "player", name: "主人公", defaultIncluded: true },
@@ -120,7 +120,7 @@ export const DEFAULT_CHARACTERS: ReadonlyArray<CharacterPreset> = [
 ];
 
 // ゲーム設定
-export interface GameSettings {
+export type GameSettings = {
   players: ReadonlyArray<{ id: string; name: string }>;
   roles: {
     gnosiaCount: number;
@@ -132,7 +132,7 @@ export interface GameSettings {
     hasBug: boolean;
   };
   allowHiddenRoles: boolean; // 真エンジニア/真ドクターがCOしない潜伏を許容するか
-}
+};
 
 // プレイヤーの状態
 export type PlayerStatus = "ALIVE" | "FROZEN" | "ATTACKED" | "DISAPPEARED";
@@ -154,73 +154,73 @@ export type EventType =
 // 調査・ドクター判定結果
 export type ReportJudgement = "HUMAN" | "GNOSIA";
 
-export interface BaseGameEvent {
+export type BaseGameEvent = {
   id: string;
   day: number;
   type: EventType;
-}
+};
 
-export interface COEvent extends BaseGameEvent {
+export type COEvent = BaseGameEvent & {
   type: "CO";
   playerId: string;
   partnerPlayerId?: string | undefined; // 留守番CO時の2人目 (留守番COは2人ペア)
   claimedRole: "ENGINEER" | "DOCTOR" | "GUARD_DUTY";
-}
+};
 
-export interface InvestigationEvent extends BaseGameEvent {
+export type InvestigationEvent = BaseGameEvent & {
   type: "INVESTIGATION";
   investigatorId: string;
   targetId: string;
   result: ReportJudgement;
-}
+};
 
-export interface DoctorReportEvent extends BaseGameEvent {
+export type DoctorReportEvent = BaseGameEvent & {
   type: "DOCTOR_REPORT";
   reporterId: string;
   targetId: string;
   result: ReportJudgement;
-}
+};
 
-export interface DefiniteLieEvent extends BaseGameEvent {
+export type DefiniteLieEvent = BaseGameEvent & {
   type: "DEFINITE_LIE";
   targetId: string; // 嘘をついた（とされる）人
   witnessId: string; // 嘘に気づいた人 (自分 = "player", または夜の密告者)
   reason?: string | undefined; // 理由メモ (後方互換用)
-}
+};
 
-export interface VoteEvent extends BaseGameEvent {
+export type VoteEvent = BaseGameEvent & {
   type: "VOTE";
   frozenPlayerId: string;
   votes?: Record<string, string> | undefined; // voterId -> targetId
-}
+};
 
 // 消滅もしくは平和 (夜の出来事: 0〜2人消滅)
-export interface DisappearanceEvent extends BaseGameEvent {
+export type DisappearanceEvent = BaseGameEvent & {
   type: "DISAPPEARANCE";
   disappearedPlayerIds: ReadonlyArray<string>; // 0人(平和/犠牲者なし), 1人消滅, 2人消滅
-}
+};
 
 // グノーシア夜間襲撃対象指定 (自分がグノーシアの場合の視点入力)
-export interface GnosiaAttackEvent extends BaseGameEvent {
+export type GnosiaAttackEvent = BaseGameEvent & {
   type: "GNOSIA_ATTACK";
   targetId: string; // 襲撃対象
-}
+};
 
-export interface AttackEvent extends BaseGameEvent {
+export type AttackEvent = BaseGameEvent & {
   type: "ATTACK";
   attackedPlayerId: string; // 消滅したプレイヤー (後方互換用)
-}
+};
 
-export interface NoAttackEvent extends BaseGameEvent {
+export type NoAttackEvent = BaseGameEvent & {
   type: "NO_ATTACK";
   guardedPlayerId?: string | undefined; // 守護天使が護衛した対象（任意） (後方互換用)
   note?: string | undefined; // メモ (後方互換用)
-}
+};
 
-export interface DayChangeEvent extends BaseGameEvent {
+export type DayChangeEvent = BaseGameEvent & {
   type: "DAY_CHANGE";
   note?: string | undefined; // メモ（「翌日へ」「夜の経過」など）
-}
+};
 
 export type GameEvent =
   | COEvent
@@ -249,7 +249,7 @@ export type NewGameEvent =
 // 1つの配役パターン (World)
 export type RoleAssignment = Record<string, Role>;
 
-export interface SolverResult {
+export type SolverResult = {
   totalPossibleWorlds: number;
   // 各プレイヤーの各役職確率 (0.0 - 1.0)
   roleProbabilities: Record<string, Record<Role, number>>;
@@ -264,17 +264,17 @@ export interface SolverResult {
   contradictionReason?: string | undefined;
   // 有効な配役一覧（上位100件など）
   sampleWorlds: ReadonlyArray<RoleAssignment>;
-}
+};
 
 // プレイヤー視点
-export interface PerspectiveOption {
+export type PerspectiveOption = {
   id: string; // "objective" (全体) または playerId
   name: string;
   role?: Role | undefined; // その視点での自身の役職（指定時）
-}
+};
 
 // エクスポート / インポート用セッションデータ
-export interface SessionData {
+export type SessionData = {
   version: number;
   exportedAt: string;
   settings: GameSettings;
@@ -285,4 +285,4 @@ export interface SessionData {
   perspectiveRoles?: Record<string, Role> | undefined;
   playerStatuses?: Record<string, PlayerStatus> | undefined;
   gnosiaComrades?: ReadonlyArray<string> | undefined;
-}
+};

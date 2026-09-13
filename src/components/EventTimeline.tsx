@@ -20,7 +20,7 @@ import {
   ROLE_DEFINITIONS,
 } from "../types.ts";
 
-interface EventTimelineProps {
+type EventTimelineProps = {
   events: ReadonlyArray<GameEvent>;
   settings: GameSettings;
   currentDay: number;
@@ -44,7 +44,7 @@ interface EventTimelineProps {
   onMoveEvent: (fromIndex: number, toIndex: number) => void;
   hasContradiction: boolean;
   contradictionReason?: string | undefined;
-}
+};
 
 export function EventTimeline({
   events,

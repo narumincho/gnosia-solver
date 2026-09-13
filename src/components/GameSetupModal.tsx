@@ -6,12 +6,12 @@ import {
   ROLE_DEFINITIONS,
 } from "../types.ts";
 
-interface GameSetupModalProps {
+type GameSetupModalProps = {
   isOpen: boolean;
   onClose: () => void;
   currentSettings: GameSettings;
   onSaveSettings: (settings: GameSettings) => void;
-}
+};
 
 export function GameSetupModal({
   isOpen,

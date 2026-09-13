@@ -1,13 +1,13 @@
 import { Globe, X } from "lucide-preact";
 import { GameSettings, ROLE_DEFINITIONS, RoleAssignment } from "../types.ts";
 
-interface WorldListModalProps {
+type WorldListModalProps = {
   isOpen: boolean;
   onClose: () => void;
   sampleWorlds: ReadonlyArray<RoleAssignment>;
   totalWorlds: number;
   settings: GameSettings;
-}
+};
 
 export function WorldListModal({
   isOpen,

@@ -7,7 +7,7 @@ import {
   SolverResult,
 } from "../types.ts";
 
-interface PlayerCardProps {
+type PlayerCardProps = {
   readonly player: { readonly id: string; readonly name: string };
   readonly status: PlayerStatus;
   readonly claimedRoles: ReadonlyArray<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">;
@@ -23,21 +23,21 @@ interface PlayerCardProps {
   readonly onQuickGnosiaAttack?: ((playerId: string) => void) | undefined;
   readonly onQuickInvestigate: (playerId: string) => void;
   readonly onQuickDoctorReport?: ((playerId: string) => void) | undefined;
-}
+};
 
-interface DonutSlice {
+type DonutSlice = {
   readonly role: Role;
   readonly prob: number;
   readonly color: string;
   readonly name: string;
-}
+};
 
-interface RoleChip {
+type RoleChip = {
   readonly id: string;
   readonly text: string;
   readonly badgeClass: string;
   readonly title: string;
-}
+};
 
 function getRoleChips(
   claimedRoles: ReadonlyArray<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">,

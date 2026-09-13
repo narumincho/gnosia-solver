@@ -1,12 +1,12 @@
 import { ArrowUpDown, Globe, RefreshCw, Settings } from "lucide-preact";
 
-interface HeaderProps {
+type HeaderProps = {
   onOpenSettings: () => void;
   onReset: () => void;
   onOpenWorlds: () => void;
   onOpenExportImport: () => void;
   possibleWorldsCount: number;
-}
+};
 
 export function Header({
   onOpenSettings,

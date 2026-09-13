@@ -10,7 +10,7 @@ import {
   Role,
 } from "../types.ts";
 
-interface AddEventModalProps {
+type AddEventModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onAddEvent: (ev: NewGameEvent) => void;
@@ -23,7 +23,7 @@ interface AddEventModalProps {
   playerStatuses: Record<string, PlayerStatus>;
   claimedRoles: Record<string, ReadonlyArray<Role>>;
   myRole?: Role | undefined;
-}
+};
 
 export function AddEventModal({
   isOpen,

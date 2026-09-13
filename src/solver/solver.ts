@@ -20,11 +20,11 @@ export const ALL_ROLES: ReadonlyArray<Role> = [
   "BUG",
 ];
 
-export interface SolverOptions {
+export type SolverOptions = {
   perspectivePlayerId?: string | undefined; // 視点プレイヤー (指定なし = 客観・神視点)
   perspectiveRole?: Role | undefined; // 視点プレイヤーの役職固定
   gnosiaComrades?: ReadonlyArray<string> | undefined; // 仲間グノーシアのプレイヤーID配列 (自分がグノーシアの時)
-}
+};
 
 /**
  * 役職ごとの陣営判定ヘルパー

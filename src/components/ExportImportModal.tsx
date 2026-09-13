@@ -10,12 +10,12 @@ import {
 } from "lucide-preact";
 import { SessionData } from "../types.ts";
 
-interface ExportImportModalProps {
+type ExportImportModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onExport: () => SessionData;
   onImport: (data: unknown) => { success: boolean; error?: string | undefined };
-}
+};
 
 export function ExportImportModal({
   isOpen,

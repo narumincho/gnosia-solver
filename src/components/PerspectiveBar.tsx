@@ -6,7 +6,7 @@ import {
   ROLE_DEFINITIONS,
 } from "../types.ts";
 
-interface PerspectiveBarProps {
+type PerspectiveBarProps = {
   settings: GameSettings;
   perspective: PerspectiveOption;
   myRole?: Role | undefined;
@@ -15,7 +15,7 @@ interface PerspectiveBarProps {
   onSelectRole: (role?: Role | undefined) => void;
   onSetMyRole: (role?: Role | undefined) => void;
   onToggleGnosiaComrade?: ((playerId: string) => void) | undefined;
-}
+};
 
 export function PerspectiveBar({
   settings,

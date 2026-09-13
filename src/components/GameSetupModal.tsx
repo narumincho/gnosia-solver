@@ -1,10 +1,11 @@
-import { useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { Sliders, X } from "lucide-preact";
 import {
   DEFAULT_CHARACTERS,
   GameSettings,
   ROLE_DEFINITIONS,
 } from "../types.ts";
+import { handleDialogBackdropClick } from "../utils/dialog.ts";
 
 type GameSetupModalProps = {
   isOpen: boolean;
@@ -19,14 +20,30 @@ export function GameSetupModal({
   currentSettings,
   onSaveSettings,
 }: GameSetupModalProps) {
-  if (!isOpen) return null;
-
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [settings, setSettings] = useState<GameSettings>({
     ...currentSettings,
   });
-  const [selectedCharIds, setSelectedCharIds] = useState<Set<string>>(
+  const [selectedCharIds, setSelectedCharIds] = useState<ReadonlySet<string>>(
     new Set(currentSettings.players.map((p) => p.id)),
   );
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (isOpen) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+      setSettings({ ...currentSettings });
+      setSelectedCharIds(new Set(currentSettings.players.map((p) => p.id)));
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [isOpen, currentSettings]);
 
   // 役職人数の合計と一般乗員数の計算
   const roleSummary = useMemo(() => {
@@ -136,311 +153,327 @@ export function GameSetupModal({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <Sliders size={20} color="var(--text-accent)" />
-            <h3 className="modal-title">ゲーム設定 (配役 & 参加者)</h3>
-          </div>
-          <button type="button" className="modal-close-btn" onClick={onClose}>
-            <X size={20} />
+    <dialog
+      id="game-setup-dialog"
+      ref={dialogRef}
+      className="modal-dialog"
+      onClose={onClose}
+      onClick={handleDialogBackdropClick}
+    >
+      <div className="modal-header">
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <Sliders size={20} color="var(--text-accent)" />
+          <h3 className="modal-title">ゲーム設定 (配役 & 参加者)</h3>
+        </div>
+        <button
+          type="button"
+          className="modal-close-btn"
+          command="close"
+          commandfor="game-setup-dialog"
+          onClick={onClose}
+          aria-label="閉じる"
+        >
+          <X size={20} />
+        </button>
+      </div>
+
+      {/* プリセット選択 */}
+      <div style={{ marginBottom: "1.2rem" }}>
+        <label className="form-label">配役プリセット</label>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => applyPreset("15_full")}
+          >
+            15人 フル役職 (G:3, AC:1, バグ:1, 他全役職)
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => applyPreset("12_standard")}
+          >
+            12人 標準構成 (G:2, AC:1, バグなし)
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => applyPreset("8_simple")}
+          >
+            8人 シンプル (G:2, エンジニア, 天使)
           </button>
         </div>
+      </div>
 
-        {/* プリセット選択 */}
-        <div style={{ marginBottom: "1.2rem" }}>
-          <label className="form-label">配役プリセット</label>
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            <button
-              type="button"
-              className="btn btn-sm"
-              onClick={() => applyPreset("15_full")}
-            >
-              15人 フル役職 (G:3, AC:1, バグ:1, 他全役職)
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm"
-              onClick={() => applyPreset("12_standard")}
-            >
-              12人 標準構成 (G:2, AC:1, バグなし)
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm"
-              onClick={() => applyPreset("8_simple")}
-            >
-              8人 シンプル (G:2, エンジニア, 天使)
-            </button>
-          </div>
-        </div>
-
-        {/* 役職の有無 */}
-        <div style={{ marginBottom: "1.2rem" }}>
-          <div
+      {/* 役職の有無 */}
+      <div style={{ marginBottom: "1.2rem" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <label className="form-label" style={{ marginBottom: 0 }}>
+            役職構成
+          </label>
+          <span
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+              fontSize: "0.8rem",
+              color: roleSummary.isValid
+                ? "var(--text-muted)"
+                : "var(--color-gnosia)",
             }}
           >
-            <label className="form-label" style={{ marginBottom: 0 }}>
-              役職構成
-            </label>
-            <span
+            参加人数: <strong>{roleSummary.totalPlayers}人</strong> | 乗員枠:
+            {" "}
+            <strong
               style={{
-                fontSize: "0.8rem",
                 color: roleSummary.isValid
-                  ? "var(--text-muted)"
+                  ? "var(--color-crew)"
                   : "var(--color-gnosia)",
               }}
             >
-              参加人数: <strong>{roleSummary.totalPlayers}人</strong> | 乗員枠:
-              {" "}
-              <strong
-                style={{
-                  color: roleSummary.isValid
-                    ? "var(--color-crew)"
-                    : "var(--color-gnosia)",
-                }}
-              >
-                {roleSummary.crewCount}人
-              </strong>
-            </span>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "1rem",
-              marginTop: "0.5rem",
-            }}
-          >
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label
-                className="form-label"
-                style={{ color: "var(--color-gnosia)" }}
-              >
-                グノーシア人数: {settings.roles.gnosiaCount}人
-              </label>
-              <input
-                type="range"
-                min="1"
-                max="6"
-                value={settings.roles.gnosiaCount}
-                onInput={(e) =>
-                  setSettings({
-                    ...settings,
-                    roles: {
-                      ...settings.roles,
-                      gnosiaCount: Number((e.target as HTMLInputElement).value),
-                    },
-                  })}
-                style={{ width: "100%" }}
-              />
-            </div>
-
-            <div className="role-checkboxes-grid">
-              <label className="role-checkbox-item">
-                <input
-                  type="checkbox"
-                  checked={settings.roles.hasEngineer}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      roles: {
-                        ...settings.roles,
-                        hasEngineer: (e.target as HTMLInputElement).checked,
-                      },
-                    })}
-                />
-                <span style={{ color: ROLE_DEFINITIONS.ENGINEER.color }}>
-                  エンジニア (1)
-                </span>
-              </label>
-
-              <label className="role-checkbox-item">
-                <input
-                  type="checkbox"
-                  checked={settings.roles.hasDoctor}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      roles: {
-                        ...settings.roles,
-                        hasDoctor: (e.target as HTMLInputElement).checked,
-                      },
-                    })}
-                />
-                <span style={{ color: ROLE_DEFINITIONS.DOCTOR.color }}>
-                  ドクター (1)
-                </span>
-              </label>
-
-              <label className="role-checkbox-item">
-                <input
-                  type="checkbox"
-                  checked={settings.roles.hasGuardianAngel}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      roles: {
-                        ...settings.roles,
-                        hasGuardianAngel:
-                          (e.target as HTMLInputElement).checked,
-                      },
-                    })}
-                />
-                <span style={{ color: ROLE_DEFINITIONS.GUARDIAN_ANGEL.color }}>
-                  守護天使 (1)
-                </span>
-              </label>
-
-              <label className="role-checkbox-item">
-                <input
-                  type="checkbox"
-                  checked={settings.roles.hasGuardDuty}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      roles: {
-                        ...settings.roles,
-                        hasGuardDuty: (e.target as HTMLInputElement).checked,
-                      },
-                    })}
-                />
-                <span style={{ color: ROLE_DEFINITIONS.GUARD_DUTY.color }}>
-                  留守番 (2)
-                </span>
-              </label>
-
-              <label className="role-checkbox-item">
-                <input
-                  type="checkbox"
-                  checked={settings.roles.hasACFollower}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      roles: {
-                        ...settings.roles,
-                        hasACFollower: (e.target as HTMLInputElement).checked,
-                      },
-                    })}
-                />
-                <span style={{ color: ROLE_DEFINITIONS.AC_FOLLOWER.color }}>
-                  AC主義者 (1)
-                </span>
-              </label>
-
-              <label className="role-checkbox-item">
-                <input
-                  type="checkbox"
-                  checked={settings.roles.hasBug}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      roles: {
-                        ...settings.roles,
-                        hasBug: (e.target as HTMLInputElement).checked,
-                      },
-                    })}
-                />
-                <span style={{ color: ROLE_DEFINITIONS.BUG.color }}>
-                  バグ (1)
-                </span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* 参加キャラクターの選択 */}
-        <div style={{ marginBottom: "1.5rem" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "0.4rem",
-            }}
-          >
-            <label className="form-label" style={{ marginBottom: 0 }}>
-              参加キャラクター ({selectedCharIds.size}人選択中 / 最大15人)
-            </label>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button
-                type="button"
-                className="btn btn-sm"
-                onClick={() =>
-                  setSelectedCharIds(
-                    new Set(DEFAULT_CHARACTERS.map((c) => c.id)),
-                  )}
-              >
-                全員選択
-              </button>
-            </div>
-          </div>
-
-          <div className="character-selection-grid">
-            {DEFAULT_CHARACTERS.map((char) => {
-              const isSelected = selectedCharIds.has(char.id);
-              return (
-                <div
-                  key={char.id}
-                  className={`char-chip ${isSelected ? "selected" : ""}`}
-                  onClick={() => toggleChar(char.id)}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    readOnly
-                  />
-                  <span>{char.name}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ルール詳細オプション */}
-        <div style={{ marginBottom: "1.5rem" }}>
-          <label className="role-checkbox-item">
-            <input
-              type="checkbox"
-              checked={settings.allowHiddenRoles}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  allowHiddenRoles: (e.target as HTMLInputElement).checked,
-                })}
-            />
-            <span style={{ fontSize: "0.85rem" }}>
-              真役職（エンジニア/ドクター）の潜伏（未CO）を許容する
-            </span>
-          </label>
+              {roleSummary.crewCount}人
+            </strong>
+          </span>
         </div>
 
         <div
           style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: "0.75rem",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "1rem",
+            marginTop: "0.5rem",
           }}
         >
-          <button type="button" className="btn" onClick={onClose}>
-            キャンセル
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleSave}
-            disabled={!roleSummary.isValid}
-          >
-            設定を保存して適用
-          </button>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label
+              className="form-label"
+              style={{ color: "var(--color-gnosia)" }}
+            >
+              グノーシア人数: {settings.roles.gnosiaCount}人
+            </label>
+            <input
+              type="range"
+              min="1"
+              max="6"
+              value={settings.roles.gnosiaCount}
+              onInput={(e) =>
+                setSettings({
+                  ...settings,
+                  roles: {
+                    ...settings.roles,
+                    gnosiaCount: Number((e.target as HTMLInputElement).value),
+                  },
+                })}
+              style={{ width: "100%" }}
+            />
+          </div>
+
+          <div className="role-checkboxes-grid">
+            <label className="role-checkbox-item">
+              <input
+                type="checkbox"
+                checked={settings.roles.hasEngineer}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    roles: {
+                      ...settings.roles,
+                      hasEngineer: (e.target as HTMLInputElement).checked,
+                    },
+                  })}
+              />
+              <span style={{ color: ROLE_DEFINITIONS.ENGINEER.color }}>
+                エンジニア (1)
+              </span>
+            </label>
+
+            <label className="role-checkbox-item">
+              <input
+                type="checkbox"
+                checked={settings.roles.hasDoctor}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    roles: {
+                      ...settings.roles,
+                      hasDoctor: (e.target as HTMLInputElement).checked,
+                    },
+                  })}
+              />
+              <span style={{ color: ROLE_DEFINITIONS.DOCTOR.color }}>
+                ドクター (1)
+              </span>
+            </label>
+
+            <label className="role-checkbox-item">
+              <input
+                type="checkbox"
+                checked={settings.roles.hasGuardianAngel}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    roles: {
+                      ...settings.roles,
+                      hasGuardianAngel: (e.target as HTMLInputElement).checked,
+                    },
+                  })}
+              />
+              <span style={{ color: ROLE_DEFINITIONS.GUARDIAN_ANGEL.color }}>
+                守護天使 (1)
+              </span>
+            </label>
+
+            <label className="role-checkbox-item">
+              <input
+                type="checkbox"
+                checked={settings.roles.hasGuardDuty}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    roles: {
+                      ...settings.roles,
+                      hasGuardDuty: (e.target as HTMLInputElement).checked,
+                    },
+                  })}
+              />
+              <span style={{ color: ROLE_DEFINITIONS.GUARD_DUTY.color }}>
+                留守番 (2)
+              </span>
+            </label>
+
+            <label className="role-checkbox-item">
+              <input
+                type="checkbox"
+                checked={settings.roles.hasACFollower}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    roles: {
+                      ...settings.roles,
+                      hasACFollower: (e.target as HTMLInputElement).checked,
+                    },
+                  })}
+              />
+              <span style={{ color: ROLE_DEFINITIONS.AC_FOLLOWER.color }}>
+                AC主義者 (1)
+              </span>
+            </label>
+
+            <label className="role-checkbox-item">
+              <input
+                type="checkbox"
+                checked={settings.roles.hasBug}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    roles: {
+                      ...settings.roles,
+                      hasBug: (e.target as HTMLInputElement).checked,
+                    },
+                  })}
+              />
+              <span style={{ color: ROLE_DEFINITIONS.BUG.color }}>
+                バグ (1)
+              </span>
+            </label>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* 参加キャラクターの選択 */}
+      <div style={{ marginBottom: "1.5rem" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "0.4rem",
+          }}
+        >
+          <label className="form-label" style={{ marginBottom: 0 }}>
+            参加キャラクター ({selectedCharIds.size}人選択中 / 最大15人)
+          </label>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() =>
+                setSelectedCharIds(
+                  new Set(DEFAULT_CHARACTERS.map((c) => c.id)),
+                )}
+            >
+              全員選択
+            </button>
+          </div>
+        </div>
+
+        <div className="character-selection-grid">
+          {DEFAULT_CHARACTERS.map((char) => {
+            const isSelected = selectedCharIds.has(char.id);
+            return (
+              <div
+                key={char.id}
+                className={`char-chip ${isSelected ? "selected" : ""}`}
+                onClick={() => toggleChar(char.id)}
+              >
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  readOnly
+                />
+                <span>{char.name}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ルール詳細オプション */}
+      <div style={{ marginBottom: "1.5rem" }}>
+        <label className="role-checkbox-item">
+          <input
+            type="checkbox"
+            checked={settings.allowHiddenRoles}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                allowHiddenRoles: (e.target as HTMLInputElement).checked,
+              })}
+          />
+          <span style={{ fontSize: "0.85rem" }}>
+            真役職（エンジニア/ドクター）の潜伏（未CO）を許容する
+          </span>
+        </label>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "0.75rem",
+        }}
+      >
+        <button
+          type="button"
+          className="btn"
+          command="close"
+          commandfor="game-setup-dialog"
+          onClick={onClose}
+        >
+          キャンセル
+        </button>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={handleSave}
+          disabled={!roleSummary.isValid}
+        >
+          設定を保存して適用
+        </button>
+      </div>
+    </dialog>
   );
 }

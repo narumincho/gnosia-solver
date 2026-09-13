@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import {
   AlertCircle,
   Check,
@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-preact";
 import { SessionData } from "../types.ts";
+import { handleDialogBackdropClick } from "../utils/dialog.ts";
 
 type ExportImportModalProps = {
   isOpen: boolean;
@@ -23,13 +24,31 @@ export function ExportImportModal({
   onExport,
   onImport,
 }: ExportImportModalProps) {
-  if (!isOpen) return null;
-
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [activeTab, setActiveTab] = useState<"export" | "import">("export");
   const [copied, setCopied] = useState(false);
   const [importText, setImportText] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (isOpen) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+      setCopied(false);
+      setImportText("");
+      setErrorMessage(null);
+      setSuccessMessage(null);
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [isOpen]);
 
   const sessionData = onExport();
   const jsonString = JSON.stringify(sessionData, null, 2);
@@ -78,6 +97,7 @@ export function ExportImportModal({
           setSuccessMessage("インポートが完了しました！");
           setErrorMessage(null);
           setTimeout(() => {
+            dialogRef.current?.close();
             onClose();
           }, 800);
         } else {
@@ -109,6 +129,7 @@ export function ExportImportModal({
         setSuccessMessage("インポートが完了しました！");
         setErrorMessage(null);
         setTimeout(() => {
+          dialogRef.current?.close();
           onClose();
         }, 800);
       } else {
@@ -125,228 +146,242 @@ export function ExportImportModal({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div
-        className="modal-content"
-        style={{ maxWidth: "680px" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-header">
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <FileText size={20} color="var(--text-accent)" />
-            <h3 className="modal-title">
-              セッションのエキスポート / インポート
-            </h3>
-          </div>
-          <button type="button" className="modal-close-btn" onClick={onClose}>
-            <X size={20} />
-          </button>
+    <dialog
+      id="export-import-dialog"
+      ref={dialogRef}
+      className="modal-dialog"
+      style={{ maxWidth: "680px" }}
+      onClose={onClose}
+      onClick={handleDialogBackdropClick}
+    >
+      <div className="modal-header">
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <FileText size={20} color="var(--text-accent)" />
+          <h3 className="modal-title">
+            セッションのエキスポート / インポート
+          </h3>
         </div>
+        <button
+          type="button"
+          className="modal-close-btn"
+          command="close"
+          commandfor="export-import-dialog"
+          onClick={onClose}
+          aria-label="閉じる"
+        >
+          <X size={20} />
+        </button>
+      </div>
 
-        {/* タブ切り替え */}
-        <div
-          style={{
-            display: "flex",
-            gap: "0.5rem",
-            marginBottom: "1.2rem",
-            borderBottom: "1px solid var(--border-color)",
-            paddingBottom: "0.5rem",
+      {/* タブ切り替え */}
+      <div
+        style={{
+          display: "flex",
+          gap: "0.5rem",
+          marginBottom: "1.2rem",
+          borderBottom: "1px solid var(--border-color)",
+          paddingBottom: "0.5rem",
+        }}
+      >
+        <button
+          type="button"
+          className={`btn btn-sm ${
+            activeTab === "export" ? "btn-primary" : ""
+          }`}
+          onClick={() => {
+            setActiveTab("export");
+            setErrorMessage(null);
+            setSuccessMessage(null);
           }}
         >
-          <button
-            type="button"
-            className={`btn btn-sm ${
-              activeTab === "export" ? "btn-primary" : ""
-            }`}
-            onClick={() => {
-              setActiveTab("export");
-              setErrorMessage(null);
-              setSuccessMessage(null);
-            }}
-          >
-            <Download size={14} />
-            <span>エクスポート (保存)</span>
-          </button>
-          <button
-            type="button"
-            className={`btn btn-sm ${
-              activeTab === "import" ? "btn-primary" : ""
-            }`}
-            onClick={() => {
-              setActiveTab("import");
-              setErrorMessage(null);
-              setSuccessMessage(null);
-            }}
-          >
-            <Upload size={14} />
-            <span>インポート (復元)</span>
-          </button>
+          <Download size={14} />
+          <span>エクスポート (保存)</span>
+        </button>
+        <button
+          type="button"
+          className={`btn btn-sm ${
+            activeTab === "import" ? "btn-primary" : ""
+          }`}
+          onClick={() => {
+            setActiveTab("import");
+            setErrorMessage(null);
+            setSuccessMessage(null);
+          }}
+        >
+          <Upload size={14} />
+          <span>インポート (復元)</span>
+        </button>
+      </div>
+
+      {errorMessage && (
+        <div className="alert-box" style={{ marginBottom: "1rem" }}>
+          <AlertCircle size={18} />
+          <span>{errorMessage}</span>
         </div>
+      )}
 
-        {errorMessage && (
-          <div className="alert-box" style={{ marginBottom: "1rem" }}>
-            <AlertCircle size={18} />
-            <span>{errorMessage}</span>
+      {successMessage && (
+        <div
+          style={{
+            background: "rgba(16, 185, 129, 0.15)",
+            border: "1px solid #10b981",
+            color: "#34d399",
+            padding: "0.8rem 1rem",
+            borderRadius: "8px",
+            marginBottom: "1rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            fontSize: "0.85rem",
+          }}
+        >
+          <Check size={18} />
+          <span>{successMessage}</span>
+        </div>
+      )}
+
+      {/* エクスポートタブ */}
+      {activeTab === "export" && (
+        <div>
+          <p
+            style={{
+              fontSize: "0.85rem",
+              color: "var(--text-muted)",
+              marginBottom: "1rem",
+            }}
+          >
+            現在のゲーム設定、記録されたイベント（{sessionData.events
+              .length}件）、現在の日数、視点状態を保存します。
+          </p>
+
+          <div
+            style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem" }}
+          >
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleDownload}
+            >
+              <Download size={16} />
+              <span>JSONファイルをダウンロード</span>
+            </button>
+            <button type="button" className="btn" onClick={handleCopy}>
+              {copied
+                ? <Check size={16} color="#34d399" />
+                : <Copy size={16} />}
+              <span>
+                {copied ? "コピーしました！" : "クリップボードにコピー"}
+              </span>
+            </button>
           </div>
-        )}
 
-        {successMessage && (
+          <div className="form-group">
+            <label className="form-label">JSONデータ プレビュー</label>
+            <textarea
+              readOnly
+              className="form-input"
+              style={{
+                height: "220px",
+                fontFamily: "monospace",
+                fontSize: "0.75rem",
+                resize: "vertical",
+                lineHeight: "1.4",
+              }}
+              value={jsonString}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* インポートタブ */}
+      {activeTab === "import" && (
+        <div>
+          <p
+            style={{
+              fontSize: "0.85rem",
+              color: "var(--text-muted)",
+              marginBottom: "1rem",
+            }}
+          >
+            保存したJSONファイル、またはコピーしたJSONテキストからゲーム状況を完全に復元します。
+          </p>
+
+          <div style={{ marginBottom: "1.2rem" }}>
+            <label className="form-label">方法1: ファイルから読み込む</label>
+            <input
+              type="file"
+              accept=".json,application/json"
+              onChange={handleFileUpload}
+              style={{
+                background: "#1e293b",
+                border: "1px dashed var(--border-color)",
+                padding: "0.75rem",
+                borderRadius: "6px",
+                width: "100%",
+                color: "var(--text-muted)",
+                cursor: "pointer",
+              }}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              方法2: JSONテキストを貼り付けて読み込む
+            </label>
+            <textarea
+              className="form-input"
+              style={{
+                height: "160px",
+                fontFamily: "monospace",
+                fontSize: "0.75rem",
+                resize: "vertical",
+                lineHeight: "1.4",
+              }}
+              placeholder="ここにエクスポートしたJSONを貼り付けてください..."
+              value={importText}
+              onInput={(e) =>
+                setImportText((e.target as HTMLTextAreaElement).value)}
+            />
+          </div>
+
           <div
             style={{
-              background: "rgba(16, 185, 129, 0.15)",
-              border: "1px solid #10b981",
-              color: "#34d399",
-              padding: "0.8rem 1rem",
-              borderRadius: "8px",
-              marginBottom: "1rem",
               display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              fontSize: "0.85rem",
+              justifyContent: "flex-end",
+              gap: "0.75rem",
             }}
           >
-            <Check size={18} />
-            <span>{successMessage}</span>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleTextImport}
+            >
+              <Upload size={16} />
+              <span>テキストからインポート実行</span>
+            </button>
           </div>
-        )}
-
-        {/* エクスポートタブ */}
-        {activeTab === "export" && (
-          <div>
-            <p
-              style={{
-                fontSize: "0.85rem",
-                color: "var(--text-muted)",
-                marginBottom: "1rem",
-              }}
-            >
-              現在のゲーム設定、記録されたイベント（{sessionData.events
-                .length}件）、現在の日数、視点状態を保存します。
-            </p>
-
-            <div
-              style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem" }}
-            >
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleDownload}
-              >
-                <Download size={16} />
-                <span>JSONファイルをダウンロード</span>
-              </button>
-              <button type="button" className="btn" onClick={handleCopy}>
-                {copied
-                  ? <Check size={16} color="#34d399" />
-                  : <Copy size={16} />}
-                <span>
-                  {copied ? "コピーしました！" : "クリップボードにコピー"}
-                </span>
-              </button>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">JSONデータ プレビュー</label>
-              <textarea
-                readOnly
-                className="form-input"
-                style={{
-                  height: "220px",
-                  fontFamily: "monospace",
-                  fontSize: "0.75rem",
-                  resize: "vertical",
-                  lineHeight: "1.4",
-                }}
-                value={jsonString}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* インポートタブ */}
-        {activeTab === "import" && (
-          <div>
-            <p
-              style={{
-                fontSize: "0.85rem",
-                color: "var(--text-muted)",
-                marginBottom: "1rem",
-              }}
-            >
-              保存したJSONファイル、またはコピーしたJSONテキストからゲーム状況を完全に復元します。
-            </p>
-
-            <div style={{ marginBottom: "1.2rem" }}>
-              <label className="form-label">方法1: ファイルから読み込む</label>
-              <input
-                type="file"
-                accept=".json,application/json"
-                onChange={handleFileUpload}
-                style={{
-                  background: "#1e293b",
-                  border: "1px dashed var(--border-color)",
-                  padding: "0.75rem",
-                  borderRadius: "6px",
-                  width: "100%",
-                  color: "var(--text-muted)",
-                  cursor: "pointer",
-                }}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">
-                方法2: JSONテキストを貼り付けて読み込む
-              </label>
-              <textarea
-                className="form-input"
-                style={{
-                  height: "160px",
-                  fontFamily: "monospace",
-                  fontSize: "0.75rem",
-                  resize: "vertical",
-                  lineHeight: "1.4",
-                }}
-                placeholder="ここにエクスポートしたJSONを貼り付けてください..."
-                value={importText}
-                onInput={(e) =>
-                  setImportText((e.target as HTMLTextAreaElement).value)}
-              />
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "0.75rem",
-              }}
-            >
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleTextImport}
-              >
-                <Upload size={16} />
-                <span>テキストからインポート実行</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            marginTop: "1.5rem",
-            borderTop: "1px solid var(--border-color)",
-            paddingTop: "0.75rem",
-          }}
-        >
-          <button type="button" className="btn" onClick={onClose}>
-            閉じる
-          </button>
         </div>
+      )}
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginTop: "1.5rem",
+          borderTop: "1px solid var(--border-color)",
+          paddingTop: "0.75rem",
+        }}
+      >
+        <button
+          type="button"
+          className="btn"
+          command="close"
+          commandfor="export-import-dialog"
+          onClick={onClose}
+        >
+          閉じる
+        </button>
       </div>
-    </div>
+    </dialog>
   );
 }

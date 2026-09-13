@@ -565,6 +565,8 @@ export function EventTimeline({
                           <button
                             type="button"
                             className="event-edit-btn"
+                            command="show-modal"
+                            commandfor="add-event-dialog"
                             onClick={() => onEditEvent(ev)}
                             title="イベントを編集"
                           >
@@ -629,6 +631,8 @@ export function EventTimeline({
                 <button
                   type="button"
                   className="btn btn-sm btn-engineer-report"
+                  command="show-modal"
+                  commandfor="add-event-dialog"
                   onClick={() =>
                     onOpenAddEvent("INVESTIGATION", p.id)}
                   title={`${p.name} の調査結果を記録`}
@@ -687,6 +691,8 @@ export function EventTimeline({
                     <button
                       type="button"
                       className="btn btn-sm btn-doctor-report"
+                      command="show-modal"
+                      commandfor="add-event-dialog"
                       onClick={() => onOpenAddEvent("DOCTOR_REPORT", p.id)}
                       title={`${p.name} の医療報告を入力`}
                     >
@@ -703,6 +709,8 @@ export function EventTimeline({
           <button
             type="button"
             className="btn btn-primary btn-add-event-bottom"
+            command="show-modal"
+            commandfor="add-event-dialog"
             onClick={() => onOpenAddEvent()}
             title="任意のイベント（投票、消滅、CO、看破など）を追加"
           >
@@ -715,6 +723,8 @@ export function EventTimeline({
               type="button"
               className="btn btn-sm btn-night-action"
               style={{ flex: 1 }}
+              command="show-modal"
+              commandfor="add-event-dialog"
               onClick={() => onOpenAddEvent("DISAPPEARANCE")}
               title="夜の出来事 (消滅または平和) を記録"
             >
@@ -725,6 +735,8 @@ export function EventTimeline({
                 type="button"
                 className="btn btn-sm btn-gnosia-action"
                 style={{ flex: 1 }}
+                command="show-modal"
+                commandfor="add-event-dialog"
                 onClick={() => onOpenAddEvent("GNOSIA_ATTACK")}
                 title="自分がグノーシアの際の襲撃対象を記録"
               >

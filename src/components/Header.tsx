@@ -23,6 +23,8 @@ export function Header({
         <button
           type="button"
           className="btn"
+          command="show-modal"
+          commandfor="world-list-dialog"
           onClick={onOpenWorlds}
           title="成立する配役パターン一覧を表示"
         >
@@ -35,6 +37,8 @@ export function Header({
         <button
           type="button"
           className="btn"
+          command="show-modal"
+          commandfor="export-import-dialog"
           onClick={onOpenExportImport}
           title="現在の入力状況をファイルやテキストで保存・復元"
         >
@@ -45,6 +49,8 @@ export function Header({
         <button
           type="button"
           className="btn"
+          command="show-modal"
+          commandfor="game-setup-dialog"
           onClick={onOpenSettings}
           title="参加者や役職設定を変更"
         >

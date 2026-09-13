@@ -707,7 +707,7 @@ export function EventTimeline({
             title="任意のイベント（投票、消滅、CO、看破など）を追加"
           >
             <Plus size={16} />
-            <span>＋ イベントを追加</span>
+            <span>イベントを追加</span>
           </button>
 
           <div style={{ display: "flex", gap: "0.4rem", width: "100%" }}>

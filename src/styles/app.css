@@ -136,6 +136,13 @@ body {
   font-size: 0.75rem;
 }
 
+.btn-icon {
+  padding: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Perspective Selector Banner */
 .perspective-panel {
   background: var(--bg-card);

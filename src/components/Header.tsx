@@ -1,11 +1,12 @@
 import { ArrowUpDown, Globe, RefreshCw, Settings } from "lucide-preact";
+import { GitHubIcon } from "./icons/GitHubIcon.tsx";
 
 type HeaderProps = {
-  onOpenSettings: () => void;
-  onReset: () => void;
-  onOpenWorlds: () => void;
-  onOpenExportImport: () => void;
-  possibleWorldsCount: number;
+  readonly onOpenSettings: () => void;
+  readonly onReset: () => void;
+  readonly onOpenWorlds: () => void;
+  readonly onOpenExportImport: () => void;
+  readonly possibleWorldsCount: number;
 };
 
 export function Header({
@@ -15,6 +16,11 @@ export function Header({
   onOpenExportImport,
   possibleWorldsCount,
 }: HeaderProps) {
+  const commitHash = import.meta.env.VITE_COMMIT_HASH ?? "main";
+  const commitUrl =
+    `https://github.com/narumincho/gnosia-solver/tree/${commitHash}`;
+  const shortHash = commitHash.length > 7 ? commitHash.slice(0, 7) : commitHash;
+
   return (
     <header className="header">
       <div className="logo-container">
@@ -76,6 +82,17 @@ export function Header({
           <RefreshCw size={14} />
           <span>リセット</span>
         </button>
+
+        <a
+          href={commitUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-icon"
+          title={`GitHub: ${shortHash}`}
+          aria-label={`GitHub コミット ${shortHash} を開く`}
+        >
+          <GitHubIcon size={16} />
+        </a>
       </div>
     </header>
   );

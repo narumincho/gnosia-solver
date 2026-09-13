@@ -1,4 +1,4 @@
-import { AlertTriangle, Skull, Snowflake, Target, User } from "lucide-preact";
+import { AlertTriangle, User } from "lucide-preact";
 import {
   PlayerStatus,
   Role,
@@ -31,15 +31,6 @@ export function PlayerCard({
   definiteLieReasons,
   isCurrentPerspective,
   solverResult,
-  myRole,
-  isGnosiaComrade,
-  onToggleGnosiaComrade,
-  onQuickLie,
-  onQuickFreeze,
-  onQuickAttack,
-  onQuickGnosiaAttack,
-  onQuickInvestigate,
-  onQuickDoctorReport,
 }: PlayerCardProps) {
   const gnosiaProb = solverResult.gnosiaProbabilities[player.id] ?? 0;
   const enemyProb = solverResult.enemyProbabilities[player.id] ?? 0;
@@ -108,18 +99,6 @@ export function PlayerCard({
             {ROLE_DEFINITIONS[r].name}CO
           </span>
         ))}
-
-        {isGnosiaComrade && (
-          <span
-            className="badge badge-gnosia"
-            style={{
-              boxShadow: "0 0 8px rgba(244, 63, 94, 0.6)",
-              border: "1px solid #f43f5e",
-            }}
-          >
-            😈 仲間
-          </span>
-        )}
 
         {definiteRole && (
           <span
@@ -197,101 +176,6 @@ export function PlayerCard({
             })}
         </div>
       </div>
-
-      {/* クイックアクション */}
-      {status === "ALIVE" && (
-        <div className="player-quick-actions">
-          {claimedRoles.includes("ENGINEER") && (
-            <button
-              type="button"
-              className="quick-btn"
-              onClick={() => onQuickInvestigate(player.id)}
-              style={{
-                color: "var(--color-engineer)",
-                borderColor: "rgba(56, 189, 248, 0.4)",
-              }}
-              title="このエンジニアの調査報告を作成"
-            >
-              🔍 調査
-            </button>
-          )}
-          {claimedRoles.includes("DOCTOR") && (
-            <button
-              type="button"
-              className="quick-btn"
-              onClick={() => onQuickDoctorReport?.(player.id)}
-              style={{
-                color: "var(--color-doctor)",
-                borderColor: "rgba(52, 211, 153, 0.4)",
-              }}
-              title="このドクターの医療報告を作成"
-            >
-              🩺 報告
-            </button>
-          )}
-          <button
-            type="button"
-            className="quick-btn"
-            onClick={() => onQuickFreeze(player.id)}
-            title="投票でコールドスリープ"
-          >
-            <Snowflake size={11} /> 冷凍
-          </button>
-          <button
-            type="button"
-            className="quick-btn"
-            onClick={() => onQuickAttack(player.id)}
-            title="夜間に消滅"
-          >
-            <Skull size={11} /> 消滅
-          </button>
-          {myRole === "GNOSIA" && player.id !== "player" &&
-            onToggleGnosiaComrade && (
-            <button
-              type="button"
-              className={`quick-btn ${isGnosiaComrade ? "active" : ""}`}
-              onClick={() => onToggleGnosiaComrade(player.id)}
-              style={{
-                color: isGnosiaComrade ? "#fda4af" : "var(--color-gnosia)",
-                borderColor: isGnosiaComrade
-                  ? "#f43f5e"
-                  : "rgba(244, 63, 94, 0.4)",
-                background: isGnosiaComrade
-                  ? "rgba(244, 63, 94, 0.25)"
-                  : undefined,
-              }}
-              title={isGnosiaComrade
-                ? "仲間グノーシア指定を解除"
-                : "仲間グノーシアに指定"}
-            >
-              😈 {isGnosiaComrade ? "仲間解除" : "仲間"}
-            </button>
-          )}
-          {myRole === "GNOSIA" && player.id !== "player" &&
-            onQuickGnosiaAttack && (
-            <button
-              type="button"
-              className="quick-btn"
-              onClick={() => onQuickGnosiaAttack(player.id)}
-              style={{
-                color: "#fb7185",
-                borderColor: "rgba(244, 63, 94, 0.4)",
-              }}
-              title="この乗員を夜の襲撃対象に指定 (グノーシア視点)"
-            >
-              <Target size={11} /> 襲撃
-            </button>
-          )}
-          <button
-            type="button"
-            className="quick-btn quick-btn-lie"
-            onClick={() => onQuickLie(player.id)}
-            title="嘘看破"
-          >
-            <AlertTriangle size={11} /> 嘘
-          </button>
-        </div>
-      )}
     </div>
   );
 }

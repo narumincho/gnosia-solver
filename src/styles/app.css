@@ -444,14 +444,45 @@ body {
   border: 1px solid #f43f5e;
 }
 
-.player-meta-row {
+.role-mini-list {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.2rem;
   justify-content: center;
-  gap: 0.5rem;
-  font-size: 0.68rem;
-  line-height: 1.2;
+  align-items: center;
   width: 100%;
+}
+
+.role-mini-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.65rem;
+  color: var(--text-main);
+  background: rgb(255 255 255 / 5%);
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 3px;
+  padding: 0.05rem 0.25rem;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.role-mini-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.role-mini-name {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.role-mini-pct {
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--text-accent);
 }
 
 .player-status-badge {
@@ -461,16 +492,6 @@ body {
   border-radius: 3px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  flex-shrink: 0;
-}
-
-.player-status-badge {
-  font-size: 0.65rem;
-  font-weight: 600;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   flex-shrink: 0;
 }
 

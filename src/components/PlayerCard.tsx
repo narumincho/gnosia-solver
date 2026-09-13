@@ -106,14 +106,10 @@ function getRoleChips(
 function RoleDonutChart({
   roleProbs,
   definiteRole,
-  gnosiaPct,
-  enemyPct,
   tooltip,
 }: {
   readonly roleProbs: Partial<Record<Role, number>>;
   readonly definiteRole?: Role | undefined;
-  readonly gnosiaPct: number;
-  readonly enemyPct: number;
   readonly tooltip: string;
 }) {
   const size = 56;
@@ -159,9 +155,7 @@ function RoleDonutChart({
           return ROLE_DEFINITIONS[definiteRole].shortName;
       }
     }
-    if (gnosiaPct > 0) return `${gnosiaPct}%`;
-    if (enemyPct > 0) return `敵${enemyPct}%`;
-    return "0%";
+    return "";
   };
 
   const centerLabel = getCenterLabel();
@@ -187,6 +181,7 @@ function RoleDonutChart({
             const dash = slice.prob * circumference;
             const offset = accumulatedPercent * circumference;
             accumulatedPercent += slice.prob;
+            const pct = Math.round(slice.prob * 100);
 
             return (
               <circle
@@ -200,33 +195,31 @@ function RoleDonutChart({
                 strokeDasharray={`${dash} ${circumference - dash}`}
                 strokeDashoffset={-offset}
                 className="role-donut-slice"
-              />
+              >
+                <title>{`${slice.name}: ${pct}%`}</title>
+              </circle>
             );
           })}
         </g>
-        <text
-          x={center}
-          y={center}
-          textAnchor="middle"
-          dominantBaseline="central"
-          className="role-donut-center-text"
-          style={{
-            fill: definiteRole
-              ? ROLE_DEFINITIONS[definiteRole].color
-              : gnosiaPct > 0
-              ? "var(--color-gnosia)"
-              : "var(--text-muted)",
-            fontSize: centerLabel.length >= 4
-              ? "0.6rem"
-              : centerLabel.length === 3
-              ? "0.68rem"
-              : "0.75rem",
-            fontWeight: "bold",
-            fontFamily: "var(--font-display)",
-          }}
-        >
-          {centerLabel}
-        </text>
+        {centerLabel && (
+          <text
+            x={center}
+            y={center}
+            textAnchor="middle"
+            dominantBaseline="central"
+            className="role-donut-center-text"
+            style={{
+              fill: definiteRole
+                ? ROLE_DEFINITIONS[definiteRole].color
+                : "var(--text-main)",
+              fontSize: centerLabel.length >= 3 ? "0.68rem" : "0.75rem",
+              fontWeight: "bold",
+              fontFamily: "var(--font-display)",
+            }}
+          >
+            {centerLabel}
+          </text>
+        )}
       </svg>
     </div>
   );
@@ -240,13 +233,8 @@ export function PlayerCard({
   isCurrentPerspective,
   solverResult,
 }: PlayerCardProps) {
-  const gnosiaProb = solverResult.gnosiaProbabilities[player.id] ?? 0;
-  const enemyProb = solverResult.enemyProbabilities[player.id] ?? 0;
   const roleProbs = solverResult.roleProbabilities[player.id] ?? {};
   const definiteRole = solverResult.definiteRoles[player.id];
-
-  const gnosiaPct = Math.round(gnosiaProb * 100);
-  const enemyPct = Math.round(enemyProb * 100);
 
   // ステータスクラス
   const cardClass = [
@@ -321,8 +309,6 @@ export function PlayerCard({
       <RoleDonutChart
         roleProbs={roleProbs}
         definiteRole={definiteRole}
-        gnosiaPct={gnosiaPct}
-        enemyPct={enemyPct}
         tooltip={tooltipText}
       />
 
@@ -341,24 +327,27 @@ export function PlayerCard({
         </div>
       )}
 
-      {/* 未確定時の確率概要 */}
-      {!definiteRole && (
-        <div className="player-meta-row">
-          <span className="meter-val-enemy">
-            敵:{" "}
-            <strong
-              style={{
-                color: enemyPct > 50
-                  ? "var(--color-gnosia)"
-                  : "var(--text-main)",
-              }}
-            >
-              {enemyPct}%
-            </strong>
-          </span>
-          <span className="meter-val-gnosia">
-            G: <strong>{gnosiaPct}%</strong>
-          </span>
+      {/* 円グラフの各項目一覧 (未確定時) */}
+      {!definiteRole && sortedRoles.length > 0 && (
+        <div className="role-mini-list">
+          {sortedRoles.map((slice) => {
+            const pct = Math.round(slice.prob * 100);
+            if (pct === 0) return null;
+            return (
+              <span
+                key={slice.role}
+                className="role-mini-pill"
+                title={`${slice.name}: ${pct}%`}
+              >
+                <span
+                  className="role-mini-dot"
+                  style={{ backgroundColor: slice.color }}
+                />
+                <span className="role-mini-name">{slice.name}</span>
+                <span className="role-mini-pct">{pct}%</span>
+              </span>
+            );
+          })}
         </div>
       )}
     </div>

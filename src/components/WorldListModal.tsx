@@ -48,7 +48,7 @@ export function WorldListModal({
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <Globe size={20} color="var(--text-accent)" />
           <h3 className="modal-title">
-            成立し得る世界一覧 ({totalWorlds} 通り)
+            可能世界 ({totalWorlds} 通り)
           </h3>
         </div>
         <button

@@ -127,19 +127,6 @@ export function App() {
 
       <div className="main-grid">
         <main className="main-content">
-          <div className="section-header">
-            <h2 className="section-title">
-              乗員一覧・推定確率
-            </h2>
-            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-              {settings.players.length}名中 生存:{" "}
-              <strong style={{ color: "#34d399" }}>
-                {Object.values(playerStatuses).filter((s) => s === "ALIVE")
-                  .length}名
-              </strong>
-            </span>
-          </div>
-
           <div className="player-grid">
             {settings.players.map((p) => (
               <PlayerCard

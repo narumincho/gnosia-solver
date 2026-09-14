@@ -756,17 +756,6 @@ export function EventTimeline({
           </button>
 
           <div style={{ display: "flex", gap: "0.4rem", width: "100%" }}>
-            <button
-              type="button"
-              className="btn btn-sm btn-night-action"
-              style={{ flex: 1 }}
-              command="show-modal"
-              commandfor="add-event-dialog"
-              onClick={() => onOpenAddEvent("DISAPPEARANCE")}
-              title="夜の出来事 (消滅または平和) を記録"
-            >
-              <span>🌙 消滅 / 平和</span>
-            </button>
             {myRole === "GNOSIA" && (
               <button
                 type="button"

@@ -69,7 +69,7 @@ function RolePieChart({
       shortName: ROLE_DEFINITIONS[role].shortName,
     }));
 
-  const size = 74;
+  const size = 70;
   const cx = size / 2;
   const cy = size / 2;
   const r = 35;

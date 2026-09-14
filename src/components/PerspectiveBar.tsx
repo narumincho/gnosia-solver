@@ -48,11 +48,6 @@ export function PerspectiveBar({
   return (
     <div className="perspective-panel">
       <div className="perspective-header">
-        <div className="perspective-title">
-          <Eye size={18} />
-          <span>推論視点 (Perspective)</span>
-        </div>
-
         <div
           style={{
             display: "flex",

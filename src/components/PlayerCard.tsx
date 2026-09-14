@@ -34,6 +34,7 @@ type DonutSlice = {
   readonly prob: number;
   readonly color: string;
   readonly name: string;
+  readonly shortName: string;
 };
 
 function RolePieChart({
@@ -57,12 +58,13 @@ function RolePieChart({
       prob,
       color: ROLE_DEFINITIONS[role].color,
       name: ROLE_DEFINITIONS[role].name,
+      shortName: ROLE_DEFINITIONS[role].shortName,
     }));
 
   const size = 74;
   const cx = size / 2;
   const cy = size / 2;
-  const r = 50;
+  const r = 35;
 
   const getCenterLabel = () => {
     switch (definiteRole) {
@@ -91,6 +93,20 @@ function RolePieChart({
 
   // 扇形スライスの計算
   let currentAngle = -Math.PI / 2; // 12 o'clock
+  const computedSlices = activeSlices.map((slice) => {
+    const angle = slice.prob * 2 * Math.PI;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + angle;
+    currentAngle = endAngle;
+    const midAngle = startAngle + angle / 2;
+    return {
+      ...slice,
+      startAngle,
+      endAngle,
+      midAngle,
+      angle,
+    };
+  });
 
   return (
     <div
@@ -113,48 +129,89 @@ function RolePieChart({
         />
 
         {/* 単一ロール (100%) の場合 */}
-        {activeSlices.length === 1 && (
-          <circle
-            cx={cx}
-            cy={cy}
-            r={r}
-            fill={activeSlices[0]?.color}
-            className="role-pie-slice"
-            onMouseEnter={() => setHovered(activeSlices[0])}
-          >
-            <title>{`${activeSlices[0]?.name}: 100%`}</title>
-          </circle>
+        {computedSlices.length === 1 && (
+          <g>
+            <circle
+              cx={cx}
+              cy={cy}
+              r={r}
+              fill={computedSlices[0]?.color}
+              className={`role-pie-slice ${
+                hovered?.role === computedSlices[0]?.role ? "is-hovered" : ""
+              }`}
+              onMouseEnter={() => setHovered(computedSlices[0])}
+            />
+            {!hovered && (
+              <text
+                x={cx}
+                y={cy}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill="#ffffff"
+                stroke="rgba(0, 0, 0, 0.75)"
+                strokeWidth="2.5"
+                paintOrder="stroke fill"
+                fontSize={centerLabel
+                  ? (centerLabel.length >= 3 ? "10" : "12")
+                  : "12"}
+                fontWeight="800"
+                fontFamily="var(--font-display)"
+                style={{ pointerEvents: "none" }}
+              >
+                {centerLabel || computedSlices[0]?.shortName}
+              </text>
+            )}
+          </g>
         )}
 
-        {/* 複数ロールの場合: SVG扇形パス */}
-        {activeSlices.length > 1 &&
-          activeSlices.map((slice) => {
-            const angle = slice.prob * 2 * Math.PI;
-            const startAngle = currentAngle;
-            const endAngle = currentAngle + angle;
-            currentAngle = endAngle;
-
-            const x1 = cx + r * Math.cos(startAngle);
-            const y1 = cy + r * Math.sin(startAngle);
-            const x2 = cx + r * Math.cos(endAngle);
-            const y2 = cy + r * Math.sin(endAngle);
-            const largeArc = angle > Math.PI ? 1 : 0;
+        {/* 複数ロールの場合: SVG扇形パス + 確率大の頭文字表示 */}
+        {computedSlices.length > 1 &&
+          computedSlices.map((slice) => {
+            const x1 = cx + r * Math.cos(slice.startAngle);
+            const y1 = cy + r * Math.sin(slice.startAngle);
+            const x2 = cx + r * Math.cos(slice.endAngle);
+            const y2 = cy + r * Math.sin(slice.endAngle);
+            const largeArc = slice.angle > Math.PI ? 1 : 0;
 
             const d = `M ${cx} ${cy} L ${x1.toFixed(2)} ${
               y1.toFixed(2)
             } A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
-            const pct = Math.round(slice.prob * 100);
+
+            // 確率が大きい (12%以上) 場合はホバーせずとも役職頭文字を表示
+            const showInitial = slice.prob >= 0.12;
+            const labelR = r * 0.62;
+            const lx = cx + labelR * Math.cos(slice.midAngle);
+            const ly = cy + labelR * Math.sin(slice.midAngle);
 
             return (
-              <path
-                key={slice.role}
-                d={d}
-                fill={slice.color}
-                className="role-pie-slice"
-                onMouseEnter={() => setHovered(slice)}
-              >
-                <title>{`${slice.name}: ${pct}%`}</title>
-              </path>
+              <g key={slice.role}>
+                <path
+                  d={d}
+                  fill={slice.color}
+                  className={`role-pie-slice ${
+                    hovered?.role === slice.role ? "is-hovered" : ""
+                  }`}
+                  onMouseEnter={() => setHovered(slice)}
+                />
+                {showInitial && !hovered && (
+                  <text
+                    x={lx.toFixed(2)}
+                    y={ly.toFixed(2)}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill="#ffffff"
+                    stroke="rgba(0, 0, 0, 0.75)"
+                    strokeWidth="2.5"
+                    paintOrder="stroke fill"
+                    fontSize={slice.shortName.length >= 2 ? "8.5" : "10"}
+                    fontWeight="800"
+                    fontFamily="var(--font-display)"
+                    style={{ pointerEvents: "none" }}
+                  >
+                    {slice.shortName}
+                  </text>
+                )}
+              </g>
             );
           })}
 
@@ -168,57 +225,22 @@ function RolePieChart({
           strokeWidth="1"
           style={{ pointerEvents: "none" }}
         />
-
-        {/* 中央テキスト: ホバー時は役職名と%、非ホバー時は確定役職略称 */}
-        {hovered
-          ? (
-            <g style={{ pointerEvents: "none" }}>
-              <text
-                x={cx}
-                y={cy - 4}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fill={hovered.color}
-                fontSize="8.5"
-                fontWeight="700"
-                fontFamily="var(--font-body)"
-              >
-                {hovered.name}
-              </text>
-              <text
-                x={cx}
-                y={cy + 6}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fill="var(--text-main)"
-                fontSize="10"
-                fontWeight="800"
-                fontFamily="var(--font-display)"
-              >
-                {`${Math.round(hovered.prob * 100)}%`}
-              </text>
-            </g>
-          )
-          : centerLabel
-          ? (
-            <text
-              x={cx}
-              y={cy}
-              textAnchor="middle"
-              dominantBaseline="central"
-              fill={definiteRole
-                ? ROLE_DEFINITIONS[definiteRole].color
-                : "var(--text-main)"}
-              fontSize={centerLabel.length >= 3 ? "10" : "12"}
-              fontWeight="800"
-              fontFamily="var(--font-display)"
-              style={{ pointerEvents: "none" }}
-            >
-              {centerLabel}
-            </text>
-          )
-          : null}
       </svg>
+
+      {/* ホバー時の背景色付きツールチップ */}
+      {hovered && (
+        <div className="role-pie-tooltip">
+          <span
+            className="role-pie-tooltip-name"
+            style={{ color: hovered.color }}
+          >
+            {hovered.name}
+          </span>
+          <span className="role-pie-tooltip-pct">
+            {`${Math.round(hovered.prob * 100)}%`}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

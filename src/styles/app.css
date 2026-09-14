@@ -391,17 +391,17 @@ body {
 }
 
 .perspective-eye-btn:hover {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: rgba(56, 189, 248, 0.4);
+  background: rgb(56 189 248 / 15%);
+  border-color: rgb(56 189 248 / 40%);
   color: var(--accent-primary, #38bdf8);
   transform: scale(1.15);
 }
 
 .perspective-eye-btn.active {
-  background: rgba(56, 189, 248, 0.2);
-  border-color: rgba(56, 189, 248, 0.6);
+  background: rgb(56 189 248 / 20%);
+  border-color: rgb(56 189 248 / 60%);
   color: var(--accent-primary, #38bdf8);
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 8px rgb(56 189 248 / 40%);
 }
 
 /* Pie Chart (円グラフ - SVG) */
@@ -425,6 +425,58 @@ body {
 .role-pie-slice {
   transition: opacity 0.15s ease, filter 0.15s ease;
   cursor: pointer;
+}
+
+.role-pie-slice.is-hovered {
+  filter: brightness(1.2) drop-shadow(0 0 2px rgb(255 255 255 / 50%));
+}
+
+.role-pie-tooltip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgb(15 23 42 / 94%);
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 6px;
+  padding: 3px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 60%), 0 0 0 1px rgb(0 0 0 / 40%);
+  backdrop-filter: blur(6px);
+  min-width: 48px;
+  animation: pie-tooltip-fade-in 0.12s ease-out;
+  line-height: 1.15;
+}
+
+.role-pie-tooltip-name {
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.role-pie-tooltip-pct {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+  font-family: var(--font-display);
+}
+
+@keyframes pie-tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .player-header-badges {

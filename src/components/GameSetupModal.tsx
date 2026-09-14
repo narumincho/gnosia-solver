@@ -157,6 +157,7 @@ export function GameSetupModal({
       id="game-setup-dialog"
       ref={dialogRef}
       className="modal-dialog"
+      closedby="any"
       onClose={onClose}
       onClick={handleDialogBackdropClick}
     >

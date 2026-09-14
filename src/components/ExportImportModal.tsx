@@ -187,6 +187,7 @@ export function ExportImportModal({
       ref={dialogRef}
       className="modal-dialog"
       style={{ maxWidth: "680px" }}
+      closedby="any"
       onClose={onClose}
       onClick={handleDialogBackdropClick}
     >

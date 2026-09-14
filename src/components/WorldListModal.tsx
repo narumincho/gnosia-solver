@@ -41,6 +41,7 @@ export function WorldListModal({
       ref={dialogRef}
       className="modal-dialog"
       style={{ maxWidth: "900px" }}
+      closedby="any"
       onClose={onClose}
       onClick={handleDialogBackdropClick}
     >

@@ -121,6 +121,7 @@ export function AddEventModal({
       id="add-event-dialog"
       ref={dialogRef}
       className="modal-dialog"
+      closedby="any"
       onClose={onClose}
       onClick={handleDialogBackdropClick}
     >

@@ -214,7 +214,6 @@ export function AddEventModal({
             : undefined}
           settings={settings}
           playerStatuses={playerStatuses}
-          myRole={myRole}
           onSubmit={handleFormSubmit}
           onCancel={onClose}
         />

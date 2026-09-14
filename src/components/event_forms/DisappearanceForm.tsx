@@ -1,18 +1,15 @@
 import { useMemo, useState } from "preact/hooks";
-import { Shield } from "lucide-preact";
 import {
   DisappearanceEvent,
   GameSettings,
   NewGameEvent,
   PlayerStatus,
-  Role,
 } from "../../types.ts";
 
 type DisappearanceFormProps = {
   editingEvent?: DisappearanceEvent | undefined;
   settings: GameSettings;
   playerStatuses: Record<string, PlayerStatus>;
-  myRole?: Role | undefined;
   onSubmit: (eventData: NewGameEvent) => void;
   onCancel: () => void;
 };
@@ -21,7 +18,6 @@ export function DisappearanceForm({
   editingEvent,
   settings,
   playerStatuses,
-  myRole,
   onSubmit,
   onCancel,
 }: DisappearanceFormProps) {
@@ -30,11 +26,6 @@ export function DisappearanceForm({
       (playerStatuses[p.id] || "ALIVE") === "ALIVE"
     );
   }, [settings.players, playerStatuses]);
-
-  // 守護天使の護衛対象候補（自分 "player" 以外の生存プレイヤー）
-  const guardianGuardCandidates = useMemo(() => {
-    return alivePlayers.filter((p) => p.id !== "player");
-  }, [alivePlayers]);
 
   const [isMultiMode, setIsMultiMode] = useState<boolean>(
     editingEvent ? editingEvent.disappearedPlayerIds.length > 1 : false,
@@ -47,11 +38,6 @@ export function DisappearanceForm({
     return [];
   });
 
-  const [guardedPlayerId, setGuardedPlayerId] = useState<string>(() => {
-    if (editingEvent) return editingEvent.guardedPlayerId || "";
-    return "";
-  });
-
   // 犠牲者ゼロ (平和) の1クリック作成
   const handlePeaceClick = () => {
     if (editingEvent) {
@@ -61,7 +47,7 @@ export function DisappearanceForm({
     onSubmit({
       type: "DISAPPEARANCE",
       disappearedPlayerIds: [],
-      guardedPlayerId: guardedPlayerId || undefined,
+      guardedPlayerId: editingEvent?.guardedPlayerId,
     });
   };
 
@@ -81,7 +67,7 @@ export function DisappearanceForm({
     onSubmit({
       type: "DISAPPEARANCE",
       disappearedPlayerIds: [playerId],
-      guardedPlayerId: guardedPlayerId || undefined,
+      guardedPlayerId: editingEvent?.guardedPlayerId,
     });
   };
 
@@ -90,7 +76,7 @@ export function DisappearanceForm({
     onSubmit({
       type: "DISAPPEARANCE",
       disappearedPlayerIds,
-      guardedPlayerId: guardedPlayerId || undefined,
+      guardedPlayerId: editingEvent?.guardedPlayerId,
     });
   };
 
@@ -194,44 +180,6 @@ export function DisappearanceForm({
             })}
           </div>
         </div>
-
-        {myRole === "GUARDIAN_ANGEL" && (
-          <div
-            style={{
-              marginTop: "1rem",
-              paddingTop: "0.75rem",
-              borderTop: "1px solid rgba(168, 85, 247, 0.2)",
-            }}
-          >
-            <label
-              className="form-label"
-              style={{
-                color: "#facc15",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.4rem",
-                fontWeight: "bold",
-                fontSize: "0.85rem",
-              }}
-            >
-              <Shield size={15} />
-              <span>【守護天使】今夜護衛した乗員（任意）</span>
-            </label>
-            <select
-              className="form-select"
-              value={guardedPlayerId}
-              onChange={(e) =>
-                setGuardedPlayerId((e.target as HTMLSelectElement).value)}
-            >
-              <option value="">(未選択・指定なし)</option>
-              {guardianGuardCandidates.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
       </div>
 
       <div

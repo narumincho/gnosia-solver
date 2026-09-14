@@ -194,7 +194,7 @@ export function ExportImportModal({
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <FileText size={20} color="var(--text-accent)" />
           <h3 className="modal-title">
-            セッションのエキスポート / インポート
+            エキスポート / インポート
           </h3>
         </div>
         <button
@@ -211,6 +211,8 @@ export function ExportImportModal({
 
       {/* タブ切り替え */}
       <div
+        role="tablist"
+        aria-label="データ管理タブ"
         style={{
           display: "flex",
           gap: "0.5rem",
@@ -220,11 +222,16 @@ export function ExportImportModal({
         }}
       >
         <button
+          id="tab-export"
+          role="tab"
+          aria-selected={activeTab === "export"}
+          aria-controls="tabpanel-export"
           type="button"
           className={`btn btn-sm ${
             activeTab === "export" ? "btn-primary" : ""
           }`}
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             setActiveTab("export");
             setErrorMessage(null);
             setSuccessMessage(null);
@@ -234,11 +241,16 @@ export function ExportImportModal({
           <span>エクスポート (保存)</span>
         </button>
         <button
+          id="tab-import"
+          role="tab"
+          aria-selected={activeTab === "import"}
+          aria-controls="tabpanel-import"
           type="button"
           className={`btn btn-sm ${
             activeTab === "import" ? "btn-primary" : ""
           }`}
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             setActiveTab("import");
             setErrorMessage(null);
             setSuccessMessage(null);
@@ -278,7 +290,11 @@ export function ExportImportModal({
 
       {/* エクスポートタブ */}
       {activeTab === "export" && (
-        <div>
+        <div
+          id="tabpanel-export"
+          role="tabpanel"
+          aria-labelledby="tab-export"
+        >
           <p
             style={{
               fontSize: "0.85rem",
@@ -331,7 +347,11 @@ export function ExportImportModal({
 
       {/* インポートタブ */}
       {activeTab === "import" && (
-        <div>
+        <div
+          id="tabpanel-import"
+          role="tabpanel"
+          aria-labelledby="tab-import"
+        >
           {/* テストケースのサンプルから読み込む */}
           <div
             style={{
@@ -454,21 +474,10 @@ export function ExportImportModal({
                 borderTop: "1px solid var(--border-color)",
               }}
             />
-            <span
-              style={{
-                position: "relative",
-                background: "#0f172a",
-                padding: "0 0.8rem",
-                fontSize: "0.75rem",
-                color: "var(--text-muted)",
-              }}
-            >
-              または独自データを読み込む
-            </span>
           </div>
 
           <div style={{ marginBottom: "1.2rem" }}>
-            <label className="form-label">方法1: ファイルから読み込む</label>
+            <label className="form-label">ファイルから読み込む</label>
             <input
               type="file"
               accept=".json,application/json"
@@ -487,7 +496,7 @@ export function ExportImportModal({
 
           <div className="form-group">
             <label className="form-label">
-              方法2: JSONテキストを貼り付けて読み込む
+              貼り付けて読み込む
             </label>
             <textarea
               className="form-input"

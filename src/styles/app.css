@@ -902,17 +902,120 @@ body {
   border-top: 1px solid rgb(255 255 255 / 10%);
 }
 
-.btn-add-event-bottom {
-  width: 100%;
-  display: flex;
+.add-event-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.btn-add-event {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1rem;
-  font-size: 0.95rem;
-  font-weight: 700;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgb(56 189 248 / 25%);
+  gap: 0.25rem;
+  padding: 0.45rem 0.4rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.btn-add-event span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-add-engineer-co {
+  background: rgb(56 189 248 / 12%);
+  color: #38bdf8;
+  border-color: rgb(56 189 248 / 30%);
+}
+
+.btn-add-engineer-co:hover {
+  background: rgb(56 189 248 / 25%);
+  border-color: #38bdf8;
+}
+
+.btn-add-doctor-co {
+  background: rgb(52 211 153 / 12%);
+  color: #34d399;
+  border-color: rgb(52 211 153 / 30%);
+}
+
+.btn-add-doctor-co:hover {
+  background: rgb(52 211 153 / 25%);
+  border-color: #34d399;
+}
+
+.btn-add-lie {
+  background: rgb(251 113 133 / 15%);
+  color: #fb7185;
+  border-color: rgb(251 113 133 / 35%);
+}
+
+.btn-add-lie:hover {
+  background: rgb(251 113 133 / 28%);
+  border-color: #fb7185;
+}
+
+.btn-add-vote {
+  background: rgb(167 139 250 / 12%);
+  color: #a78bfa;
+  border-color: rgb(167 139 250 / 30%);
+}
+
+.btn-add-vote:hover {
+  background: rgb(167 139 250 / 25%);
+  border-color: #a78bfa;
+}
+
+.btn-add-share-lie {
+  background: rgb(251 146 60 / 12%);
+  color: #fb923c;
+  border-color: rgb(251 146 60 / 30%);
+}
+
+.btn-add-share-lie:hover {
+  background: rgb(251 146 60 / 25%);
+  border-color: #fb923c;
+}
+
+.btn-add-investigation {
+  background: rgb(96 165 250 / 12%);
+  color: #60a5fa;
+  border-color: rgb(96 165 250 / 30%);
+}
+
+.btn-add-investigation:hover {
+  background: rgb(96 165 250 / 25%);
+  border-color: #60a5fa;
+}
+
+.btn-add-guard {
+  background: rgb(250 204 21 / 12%);
+  color: #facc15;
+  border-color: rgb(250 204 21 / 30%);
+}
+
+.btn-add-guard:hover {
+  background: rgb(250 204 21 / 25%);
+  border-color: #facc15;
+}
+
+.btn-add-attack {
+  background: rgb(244 63 94 / 15%);
+  color: #f43f5e;
+  border-color: rgb(244 63 94 / 35%);
+}
+
+.btn-add-attack:hover {
+  background: rgb(244 63 94 / 28%);
+  border-color: #f43f5e;
 }
 
 .btn-night-action {

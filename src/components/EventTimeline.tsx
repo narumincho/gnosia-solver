@@ -20,6 +20,13 @@ import {
   ROLE_DEFINITIONS,
 } from "../types.ts";
 
+export type OpenAddEventOptions = {
+  readonly type: EventType;
+  readonly playerId?: string | undefined;
+  readonly claimedRole?: "ENGINEER" | "DOCTOR" | "GUARD_DUTY" | undefined;
+  readonly witnessId?: string | undefined;
+};
+
 type EventTimelineProps = {
   events: ReadonlyArray<GameEvent>;
   settings: GameSettings;
@@ -31,7 +38,7 @@ type EventTimelineProps = {
   >;
   myRole?: Role | undefined;
   onOpenAddEvent: (
-    initialType?: EventType | undefined,
+    initialType?: EventType | OpenAddEventOptions | undefined,
     initialPlayerId?: string | undefined,
   ) => void;
   onQuickDoctorReport: (
@@ -743,45 +750,134 @@ export function EventTimeline({
 
         {/* タイムライン最下部のイベント追加アクションバー */}
         <div className="timeline-bottom-bar">
-          <button
-            type="button"
-            className="btn btn-primary btn-add-event-bottom"
-            command="show-modal"
-            commandfor="add-event-dialog"
-            onClick={() => onOpenAddEvent()}
-            title="任意のイベント（投票、消滅、CO、看破など）を追加"
-          >
-            <Plus size={16} />
-            <span>イベントを追加</span>
-          </button>
+          <div className="add-event-grid">
+            <button
+              type="button"
+              className="btn btn-add-event btn-add-engineer-co"
+              command="show-modal"
+              commandfor="add-event-dialog"
+              onClick={() =>
+                onOpenAddEvent({
+                  type: "CO",
+                  claimedRole: "ENGINEER",
+                })}
+              title="エンジニアCO (名乗り出) を記録"
+            >
+              <Plus size={13} />
+              <span>エンジニアCO</span>
+            </button>
 
-          <div style={{ display: "flex", gap: "0.4rem", width: "100%" }}>
-            {myRole === "GNOSIA" && (
-              <button
-                type="button"
-                className="btn btn-sm btn-gnosia-action"
-                style={{ flex: 1 }}
-                command="show-modal"
-                commandfor="add-event-dialog"
-                onClick={() => onOpenAddEvent("GNOSIA_ATTACK")}
-                title="自分がグノーシアの際の襲撃対象を記録"
-              >
-                <span>🎯 襲撃先</span>
-              </button>
-            )}
-            {myRole === "GUARDIAN_ANGEL" && (
-              <button
-                type="button"
-                className="btn btn-sm btn-angel-action"
-                style={{ flex: 1 }}
-                command="show-modal"
-                commandfor="add-event-dialog"
-                onClick={() => onOpenAddEvent("GUARDIAN_GUARD")}
-                title="自分が守護天使の際の護衛対象を記録"
-              >
-                <span>🛡️ 護衛先</span>
-              </button>
-            )}
+            <button
+              type="button"
+              className="btn btn-add-event btn-add-doctor-co"
+              command="show-modal"
+              commandfor="add-event-dialog"
+              onClick={() =>
+                onOpenAddEvent({
+                  type: "CO",
+                  claimedRole: "DOCTOR",
+                })}
+              title="ドクターCO (名乗り出) を記録"
+            >
+              <Plus size={13} />
+              <span>ドクターCO</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-add-event btn-add-lie"
+              command="show-modal"
+              commandfor="add-event-dialog"
+              onClick={() =>
+                onOpenAddEvent({
+                  type: "DEFINITE_LIE",
+                  witnessId: "player",
+                })}
+              title="主人公が直感で気づいた嘘を記録"
+            >
+              <Plus size={13} />
+              <span>嘘に気づいた</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-add-event btn-add-vote"
+              command="show-modal"
+              commandfor="add-event-dialog"
+              onClick={() =>
+                onOpenAddEvent({
+                  type: "VOTE",
+                })}
+              title="投票結果 (コールドスリープ) を記録"
+            >
+              <Plus size={13} />
+              <span>投票結果</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-add-event btn-add-share-lie"
+              command="show-modal"
+              commandfor="add-event-dialog"
+              onClick={() => {
+                const firstOther =
+                  settings.players.find((p) => p.id !== "player")
+                    ?.id || "";
+                onOpenAddEvent({
+                  type: "DEFINITE_LIE",
+                  witnessId: firstOther,
+                });
+              }}
+              title="他の乗員からの密告・嘘の共有を記録"
+            >
+              <Plus size={13} />
+              <span>嘘に気づいたのを共有</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-add-event btn-add-investigation"
+              command="show-modal"
+              commandfor="add-event-dialog"
+              onClick={() =>
+                onOpenAddEvent({
+                  type: "INVESTIGATION",
+                })}
+              title="エンジニアの調査結果を記録"
+            >
+              <Plus size={13} />
+              <span>エンジニアの調査</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-add-event btn-add-guard"
+              command="show-modal"
+              commandfor="add-event-dialog"
+              onClick={() =>
+                onOpenAddEvent({
+                  type: "GUARDIAN_GUARD",
+                })}
+              title="守護天使の護衛先を記録"
+            >
+              <Plus size={13} />
+              <span>守護天使の護衛</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-add-event btn-add-attack"
+              command="show-modal"
+              commandfor="add-event-dialog"
+              onClick={() =>
+                onOpenAddEvent({
+                  type: "GNOSIA_ATTACK",
+                })}
+              title="グノーシアの襲撃先を記録"
+            >
+              <Plus size={13} />
+              <span>グノーシアの襲撃</span>
+            </button>
           </div>
         </div>
       </div>

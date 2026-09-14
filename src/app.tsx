@@ -51,6 +51,12 @@ export function App() {
   const [addEventInitialPlayerId, setAddEventInitialPlayerId] = useState<
     string | undefined
   >(undefined);
+  const [addEventInitialClaimedRole, setAddEventInitialClaimedRole] = useState<
+    "ENGINEER" | "DOCTOR" | "GUARD_DUTY" | undefined
+  >(undefined);
+  const [addEventInitialWitnessId, setAddEventInitialWitnessId] = useState<
+    string | undefined
+  >(undefined);
 
   // 視点トグルハンドラ（同一プレイヤーを再度クリックで全体俯瞰に解除）
   const handleTogglePerspective = (playerId: string, playerName: string) => {
@@ -160,10 +166,19 @@ export function App() {
             playerStatuses={playerStatuses}
             claimedRoles={claimedRoles}
             myRole={myRole}
-            onOpenAddEvent={(type, id) => {
+            onOpenAddEvent={(arg, id) => {
               setEditingEvent(undefined);
-              setAddEventInitialType(type || "CO");
-              setAddEventInitialPlayerId(id);
+              if (typeof arg === "object" && arg !== null) {
+                setAddEventInitialType(arg.type);
+                setAddEventInitialPlayerId(arg.playerId);
+                setAddEventInitialClaimedRole(arg.claimedRole);
+                setAddEventInitialWitnessId(arg.witnessId);
+              } else {
+                setAddEventInitialType(arg || "CO");
+                setAddEventInitialPlayerId(id);
+                setAddEventInitialClaimedRole(undefined);
+                setAddEventInitialWitnessId(undefined);
+              }
               setIsAddEventOpen(true);
             }}
             onQuickDoctorReport={(reporterId, targetId, result) => {
@@ -206,6 +221,8 @@ export function App() {
         settings={settings}
         initialType={addEventInitialType}
         initialPlayerId={addEventInitialPlayerId}
+        initialClaimedRole={addEventInitialClaimedRole}
+        initialWitnessId={addEventInitialWitnessId}
         playerStatuses={playerStatuses}
         claimedRoles={claimedRoles}
         myRole={myRole}

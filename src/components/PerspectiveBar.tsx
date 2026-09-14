@@ -1,4 +1,4 @@
-import { Eye, Shield } from "lucide-preact";
+import { Shield } from "lucide-preact";
 import {
   GameSettings,
   PerspectiveOption,

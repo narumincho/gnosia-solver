@@ -21,6 +21,8 @@ type AddEventModalProps = {
   currentDay?: number | undefined;
   initialType?: EventType | undefined;
   initialPlayerId?: string | undefined;
+  initialClaimedRole?: "ENGINEER" | "DOCTOR" | "GUARD_DUTY" | undefined;
+  initialWitnessId?: string | undefined;
   playerStatuses: Record<string, PlayerStatus>;
   claimedRoles: Record<string, ReadonlyArray<Role>>;
   myRole?: Role | undefined;
@@ -36,6 +38,8 @@ export function AddEventModal({
   currentDay: _currentDay = 1,
   initialType = "DEFINITE_LIE",
   initialPlayerId,
+  initialClaimedRole,
+  initialWitnessId,
   playerStatuses,
   claimedRoles,
   myRole,
@@ -92,15 +96,6 @@ export function AddEventModal({
     });
   }, [settings.players, claimedRoles, myRole]);
 
-  // 設定上登場するCO役職の一覧
-  const availableCORoles = useMemo(() => {
-    const list: Array<"ENGINEER" | "DOCTOR" | "GUARD_DUTY"> = [];
-    if (settings.roles.hasEngineer) list.push("ENGINEER");
-    if (settings.roles.hasDoctor) list.push("DOCTOR");
-    if (settings.roles.hasGuardDuty) list.push("GUARD_DUTY");
-    return list;
-  }, [settings.roles]);
-
   // 守護天使の護衛対象候補（自分 "player" 以外の生存プレイヤー）
   const guardianGuardCandidates = useMemo(() => {
     return alivePlayers.filter((p) => p.id !== "player");
@@ -108,7 +103,9 @@ export function AddEventModal({
 
   // フォーム用入力ステート
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
-  const [selectedGuardDuty, setSelectedGuardDuty] = useState<Array<string>>([]);
+  const [selectedGuardDuty, setSelectedGuardDuty] = useState<
+    ReadonlyArray<string>
+  >([]);
   const [targetPlayer, setTargetPlayer] = useState<string>("");
   const [guardedPlayerId, setGuardedPlayerId] = useState<string>("");
 
@@ -192,20 +189,56 @@ export function AddEventModal({
       }
     } else {
       setEventType(initialType);
+      if (initialClaimedRole) {
+        setClaimedRole(initialClaimedRole);
+      }
+      if (initialWitnessId) {
+        setWitnessPlayer(initialWitnessId);
+      } else {
+        setWitnessPlayer("player");
+      }
       if (initialPlayerId) {
         setSelectedPlayer(initialPlayerId);
       } else if (initialType === "GUARDIAN_GUARD") {
         const defaultTarget = guardianGuardCandidates[0]?.id || "";
         setSelectedPlayer(defaultTarget);
+      } else if (initialType === "GNOSIA_ATTACK") {
+        const defaultTarget = alivePlayers.find((p) => p.id !== "player")?.id ||
+          settings.players[0]?.id || "";
+        setSelectedPlayer(defaultTarget);
+      } else if (initialType === "CO") {
+        const defaultCO = coCandidates[0]?.id || alivePlayers[0]?.id || "";
+        setSelectedPlayer(defaultCO);
+      } else if (initialType === "VOTE") {
+        const defaultTarget = alivePlayers[0]?.id || "";
+        setSelectedPlayer(defaultTarget);
+      } else if (initialType === "INVESTIGATION") {
+        const defaultInv = engineerCandidates[0]?.id || alivePlayers[0]?.id ||
+          "";
+        setSelectedPlayer(defaultInv);
+        const cand = settings.players.find((p) => p.id !== defaultInv);
+        setTargetPlayer(cand?.id || "");
+      } else if (initialType === "DEFINITE_LIE") {
+        const witness = initialWitnessId || "player";
+        const cand = settings.players.find((p) => p.id !== witness);
+        setSelectedPlayer(cand?.id || "");
       }
       setSelectedGuardDuty([]);
-      setTargetPlayer("");
+      if (initialType !== "INVESTIGATION") {
+        setTargetPlayer("");
+      }
       setGuardedPlayerId("");
       setReportResult("HUMAN");
-      setWitnessPlayer("player");
       setDisappearedPlayerIds([]);
     }
-  }, [editingEvent, initialType, initialPlayerId, isOpen]);
+  }, [
+    editingEvent,
+    initialType,
+    initialPlayerId,
+    initialClaimedRole,
+    initialWitnessId,
+    isOpen,
+  ]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -314,6 +347,36 @@ export function AddEventModal({
     onClose();
   };
 
+  const getModalTitle = () => {
+    if (editingEvent) {
+      return "イベントの編集";
+    }
+    switch (eventType) {
+      case "CO":
+        if (claimedRole === "ENGINEER") return "エンジニアCO の記録";
+        if (claimedRole === "DOCTOR") return "ドクターCO の記録";
+        if (claimedRole === "GUARD_DUTY") return "留守番CO の記録";
+        return "役職名乗り出 (CO) の記録";
+      case "DEFINITE_LIE":
+        if (witnessPlayer === "player") return "嘘に気づいた の記録";
+        return "嘘に気づいたのを共有 の記録";
+      case "VOTE":
+        return "投票結果 (コールドスリープ) の記録";
+      case "INVESTIGATION":
+        return "エンジニアの調査 の記録";
+      case "GUARDIAN_GUARD":
+        return "守護天使の護衛 の記録";
+      case "GNOSIA_ATTACK":
+        return "グノーシアの襲撃 の記録";
+      case "DOCTOR_REPORT":
+        return "ドクター医療報告 の記録";
+      case "DISAPPEARANCE":
+        return "消滅もしくは平和 の記録";
+      default:
+        return "イベントの記録";
+    }
+  };
+
   return (
     <dialog
       id="add-event-dialog"
@@ -324,7 +387,7 @@ export function AddEventModal({
     >
       <div className="modal-header">
         <h3 className="modal-title">
-          {editingEvent ? "イベントの編集" : "イベントの記録"}
+          {getModalTitle()}
         </h3>
         <button
           type="button"
@@ -339,83 +402,6 @@ export function AddEventModal({
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label className="form-label">イベント種類</label>
-          <select
-            className="form-select"
-            value={eventType}
-            onChange={(e) => {
-              const val = (e.target as HTMLSelectElement).value as EventType;
-              setEventType(val);
-              if (val === "DISAPPEARANCE") {
-                setDisappearedPlayerIds(
-                  selectedPlayer ? [selectedPlayer] : [],
-                );
-              } else if (val === "GNOSIA_ATTACK") {
-                const defaultTarget =
-                  alivePlayers.find((p) => p.id !== "player")?.id ||
-                  settings.players[0]?.id || "";
-                setSelectedPlayer(defaultTarget);
-              } else if (val === "GUARDIAN_GUARD") {
-                const defaultTarget = guardianGuardCandidates[0]?.id || "";
-                setSelectedPlayer(defaultTarget);
-              } else if (val === "DEFINITE_LIE") {
-                setWitnessPlayer("player");
-                if (!selectedPlayer || selectedPlayer === "player") {
-                  const defaultTarget = settings.players.find((p) =>
-                    p.id !== "player"
-                  )?.id ||
-                    settings.players[0]?.id || "";
-                  setSelectedPlayer(defaultTarget);
-                }
-              } else if (val === "CO") {
-                if (!coCandidates.some((p) => p.id === selectedPlayer)) {
-                  setSelectedPlayer(coCandidates[0]?.id || "");
-                }
-              } else if (val === "INVESTIGATION") {
-                const inv = engineerCandidates[0]?.id ||
-                  alivePlayers[0]?.id || "";
-                setSelectedPlayer(inv);
-                setTargetPlayer(
-                  alivePlayers.find((p) => p.id !== inv)?.id || "",
-                );
-              } else if (val === "DOCTOR_REPORT") {
-                setSelectedPlayer(
-                  doctorCandidates[0]?.id || alivePlayers[0]?.id || "",
-                );
-                setTargetPlayer(frozenPlayers[0]?.id || "");
-              } else if (val === "VOTE") {
-                setSelectedPlayer(alivePlayers[0]?.id || "");
-              }
-            }}
-          >
-            <option value="DISAPPEARANCE">
-              消滅もしくは平和 (夜の出来事: 0〜2人)
-            </option>
-            {myRole === "GNOSIA" && (
-              <option value="GNOSIA_ATTACK">
-                【グノーシア視点】夜の襲撃対象指定
-              </option>
-            )}
-            {myRole === "GUARDIAN_ANGEL" && (
-              <option value="GUARDIAN_GUARD">
-                【守護天使視点】夜の護衛対象指定
-              </option>
-            )}
-            <option value="DEFINITE_LIE">嘘に気づいた</option>
-            {availableCORoles.length > 0 && (
-              <option value="CO">役職名乗り出 (CO)</option>
-            )}
-            {settings.roles.hasEngineer && (
-              <option value="INVESTIGATION">エンジニア調査報告</option>
-            )}
-            {settings.roles.hasDoctor && (
-              <option value="DOCTOR_REPORT">ドクター医療報告</option>
-            )}
-            <option value="VOTE">コールドスリープ (投票)</option>
-          </select>
-        </div>
-
         {/* 嘘をついていることが確定 */}
         {eventType === "DEFINITE_LIE" && (
           <div
@@ -448,29 +434,56 @@ export function AddEventModal({
 
             <div className="form-group">
               <label className="form-label">
-                嘘に気づいた / 密告した人物
+                嘘に気づいた / 共有した人物
               </label>
-              <select
-                className="form-select"
-                value={witnessPlayer}
-                onChange={(e) => {
-                  const newWitness = (e.target as HTMLSelectElement).value;
-                  setWitnessPlayer(newWitness);
-                  if (selectedPlayer === newWitness) {
-                    const other = settings.players.find((p) =>
-                      p.id !== newWitness
-                    );
-                    if (other) setSelectedPlayer(other.id);
-                  }
-                }}
-              >
-                {settings.players.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}{" "}
-                    {p.id === "player" ? "(直感で看破)" : "(夜の自室で密告)"}
-                  </option>
-                ))}
-              </select>
+              {!editingEvent && witnessPlayer === "player"
+                ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <span
+                      className="badge badge-crew"
+                      style={{
+                        fontSize: "0.85rem",
+                        padding: "0.25rem 0.55rem",
+                      }}
+                    >
+                      自分 (直感で看破)
+                    </span>
+                  </div>
+                )
+                : (
+                  <select
+                    className="form-select"
+                    value={witnessPlayer}
+                    onChange={(e) => {
+                      const newWitness = (e.target as HTMLSelectElement).value;
+                      setWitnessPlayer(newWitness);
+                      if (selectedPlayer === newWitness) {
+                        const other = settings.players.find((p) =>
+                          p.id !== newWitness
+                        );
+                        if (other) setSelectedPlayer(other.id);
+                      }
+                    }}
+                  >
+                    {(editingEvent
+                      ? settings.players
+                      : settings.players.filter((p) => p.id !== "player")).map((
+                        p,
+                      ) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} {p.id === "player"
+                            ? "(直感で看破)"
+                            : "(夜の自室で密告・共有)"}
+                        </option>
+                      ))}
+                  </select>
+                )}
             </div>
 
             <div className="form-group" style={{ marginBottom: 0 }}>
@@ -482,9 +495,7 @@ export function AddEventModal({
                   setSelectedPlayer((e.target as HTMLSelectElement).value)}
               >
                 {settings.players
-                  .filter((p) =>
-                    p.id !== witnessPlayer
-                  )
+                  .filter((p) => p.id !== witnessPlayer)
                   .map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name} {playerStatuses[p.id] === "FROZEN"
@@ -504,27 +515,59 @@ export function AddEventModal({
           <div>
             <div className="form-group" style={{ marginBottom: "1rem" }}>
               <label className="form-label">宣言役職</label>
-              <select
-                className="form-select"
-                value={claimedRole}
-                onChange={(e) =>
-                  setClaimedRole(
-                    (e.target as HTMLSelectElement).value as
-                      | "ENGINEER"
-                      | "DOCTOR"
-                      | "GUARD_DUTY",
-                  )}
-              >
-                {settings.roles.hasEngineer && (
-                  <option value="ENGINEER">エンジニア</option>
+              {!editingEvent
+                ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <span
+                      className={`badge ${
+                        claimedRole === "ENGINEER"
+                          ? "badge-engineer"
+                          : claimedRole === "DOCTOR"
+                          ? "badge-doctor"
+                          : "badge-guard"
+                      }`}
+                      style={{
+                        fontSize: "0.85rem",
+                        padding: "0.25rem 0.55rem",
+                      }}
+                    >
+                      {claimedRole === "ENGINEER"
+                        ? "エンジニア"
+                        : claimedRole === "DOCTOR"
+                        ? "ドクター"
+                        : "留守番"}
+                    </span>
+                  </div>
+                )
+                : (
+                  <select
+                    className="form-select"
+                    value={claimedRole}
+                    onChange={(e) =>
+                      setClaimedRole(
+                        (e.target as HTMLSelectElement).value as
+                          | "ENGINEER"
+                          | "DOCTOR"
+                          | "GUARD_DUTY",
+                      )}
+                  >
+                    {settings.roles.hasEngineer && (
+                      <option value="ENGINEER">エンジニア</option>
+                    )}
+                    {settings.roles.hasDoctor && (
+                      <option value="DOCTOR">ドクター</option>
+                    )}
+                    {settings.roles.hasGuardDuty && (
+                      <option value="GUARD_DUTY">留守番 (2人組・白確定)</option>
+                    )}
+                  </select>
                 )}
-                {settings.roles.hasDoctor && (
-                  <option value="DOCTOR">ドクター</option>
-                )}
-                {settings.roles.hasGuardDuty && (
-                  <option value="GUARD_DUTY">留守番 (2人組・白確定)</option>
-                )}
-              </select>
             </div>
 
             {claimedRole === "GUARD_DUTY"

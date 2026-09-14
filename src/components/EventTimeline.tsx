@@ -5,6 +5,7 @@ import {
   ArrowDown,
   ArrowUp,
   Calendar,
+  Clock,
   GripVertical,
   Pencil,
   Plus,
@@ -17,8 +18,9 @@ import {
   PlayerStatus,
   ReportJudgement,
   Role,
-  ROLE_DEFINITIONS,
 } from "../types.ts";
+import { EventDescription } from "./timeline/EventDescription.tsx";
+import { TimelineCheckpoint } from "./timeline/TimelineCheckpoint.tsx";
 
 export type OpenAddEventOptions = {
   readonly type: EventType;
@@ -37,6 +39,8 @@ type EventTimelineProps = {
     ReadonlyArray<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">
   >;
   myRole?: Role | undefined;
+  inspectedEventIndex?: number | null | undefined;
+  onSelectCheckpoint?: ((index: number | null) => void) | undefined;
   onOpenAddEvent: (
     initialType?: EventType | OpenAddEventOptions | undefined,
     initialPlayerId?: string | undefined,
@@ -60,6 +64,8 @@ export function EventTimeline({
   playerStatuses,
   claimedRoles,
   myRole,
+  inspectedEventIndex = null,
+  onSelectCheckpoint,
   onOpenAddEvent,
   onQuickDoctorReport,
   onEditEvent,
@@ -68,284 +74,6 @@ export function EventTimeline({
   hasContradiction,
   contradictionReason,
 }: EventTimelineProps) {
-  const getPlayerName = (id: string) => {
-    return settings.players.find((p) => p.id === id)?.name || id;
-  };
-
-  const renderEventDescription = (ev: GameEvent) => {
-    switch (ev.type) {
-      case "CO": {
-        const roleDef = ROLE_DEFINITIONS[ev.claimedRole];
-        if (ev.claimedRole === "GUARD_DUTY" && ev.partnerPlayerId) {
-          return (
-            <span>
-              <strong>{getPlayerName(ev.playerId)}</strong> と{" "}
-              <strong>{getPlayerName(ev.partnerPlayerId)}</strong> が{" "}
-              <span style={{ color: roleDef.color, fontWeight: "bold" }}>
-                {roleDef.name}
-              </span>{" "}
-              と名乗り出た (CO)
-            </span>
-          );
-        }
-        return (
-          <span>
-            <strong>{getPlayerName(ev.playerId)}</strong> が{" "}
-            <span style={{ color: roleDef.color, fontWeight: "bold" }}>
-              {roleDef.name}
-            </span>{" "}
-            と名乗り出た (CO)
-          </span>
-        );
-      }
-      case "INVESTIGATION": {
-        const isGnosia = ev.result === "GNOSIA";
-        return (
-          <span>
-            <strong>{getPlayerName(ev.investigatorId)}</strong> の調査:{" "}
-            <strong>{getPlayerName(ev.targetId)}</strong> は{" "}
-            <strong
-              style={{
-                color: isGnosia ? "var(--color-gnosia)" : "var(--color-crew)",
-              }}
-            >
-              {isGnosia ? "【グノーシア】" : "【人間】"}
-            </strong>
-          </span>
-        );
-      }
-      case "DOCTOR_REPORT": {
-        const isGnosia = ev.result === "GNOSIA";
-        return (
-          <span>
-            <strong>{getPlayerName(ev.reporterId)}</strong> の医療報告:{" "}
-            <strong>{getPlayerName(ev.targetId)}</strong> は{" "}
-            <strong
-              style={{
-                color: isGnosia ? "var(--color-gnosia)" : "var(--color-crew)",
-              }}
-            >
-              {isGnosia ? "【グノーシア】" : "【人間】"}
-            </strong>
-          </span>
-        );
-      }
-      case "DEFINITE_LIE": {
-        const isSelf = ev.witnessId === "player" || !ev.witnessId;
-        const witnessName = isSelf ? "自分" : getPlayerName(ev.witnessId);
-        return (
-          <span>
-            {isSelf
-              ? (
-                <>
-                  <strong>自分</strong> が{" "}
-                  <strong style={{ color: "var(--color-gnosia)" }}>
-                    {getPlayerName(ev.targetId)}
-                  </strong>{" "}
-                  の嘘を看破{" "}
-                  <span
-                    className="badge badge-enemy"
-                    style={{ fontSize: "0.7rem", padding: "1px 6px" }}
-                  >
-                    敵確定
-                  </span>
-                </>
-              )
-              : (
-                <>
-                  <strong>{witnessName}</strong> が{" "}
-                  <strong style={{ color: "var(--color-gnosia)" }}>
-                    {getPlayerName(ev.targetId)}
-                  </strong>{" "}
-                  の嘘を密告{" "}
-                  <span
-                    className="badge"
-                    style={{
-                      fontSize: "0.7rem",
-                      padding: "1px 6px",
-                      background: "rgba(244, 63, 94, 0.2)",
-                      color: "#fb7185",
-                    }}
-                  >
-                    密告
-                  </span>
-                </>
-              )}
-          </span>
-        );
-      }
-      case "VOTE": {
-        return (
-          <span>
-            投票により <strong>{getPlayerName(ev.frozenPlayerId)}</strong> が
-            {" "}
-            <span style={{ color: "var(--color-crew)" }}>コールドスリープ</span>
-          </span>
-        );
-      }
-      case "DISAPPEARANCE": {
-        let content;
-        if (ev.disappearedPlayerIds.length === 0) {
-          content = (
-            <span>
-              夜間に{" "}
-              <strong style={{ color: "var(--color-crew)" }}>
-                犠牲者なし (平和)
-              </strong>
-            </span>
-          );
-        } else if (ev.disappearedPlayerIds.length === 1) {
-          content = (
-            <span>
-              夜間に{" "}
-              <strong>{getPlayerName(ev.disappearedPlayerIds[0] ?? "")}</strong>
-              {" "}
-              が <span style={{ color: "var(--color-gnosia)" }}>消滅</span>{" "}
-              (非グノーシア確定)
-            </span>
-          );
-        } else {
-          content = (
-            <span>
-              夜間に{" "}
-              <strong>{getPlayerName(ev.disappearedPlayerIds[0] ?? "")}</strong>
-              {" "}
-              と{" "}
-              <strong>{getPlayerName(ev.disappearedPlayerIds[1] ?? "")}</strong>
-              {" "}
-              が <span style={{ color: "var(--color-gnosia)" }}>消滅</span>{" "}
-              <span
-                className="badge"
-                style={{
-                  fontSize: "0.7rem",
-                  padding: "1px 6px",
-                  background: "rgba(168, 85, 247, 0.2)",
-                  color: "#c084fc",
-                }}
-              >
-                2人消滅
-              </span>
-            </span>
-          );
-        }
-        return (
-          <span>
-            {content}
-            {ev.guardedPlayerId && (
-              <span
-                style={{
-                  display: "block",
-                  color: "var(--color-angel, #eab308)",
-                  fontSize: "0.75rem",
-                  marginTop: "0.2rem",
-                }}
-              >
-                🛡️ 護衛対象:{" "}
-                <strong>{getPlayerName(ev.guardedPlayerId)}</strong>
-              </span>
-            )}
-          </span>
-        );
-      }
-      case "GNOSIA_ATTACK": {
-        return (
-          <span>
-            夜間に{" "}
-            <strong style={{ color: "var(--color-gnosia)" }}>
-              {getPlayerName(ev.targetId)}
-            </strong>{" "}
-            を <strong>【襲撃対象に指定】</strong>{" "}
-            <span
-              className="badge badge-enemy"
-              style={{ fontSize: "0.7rem", padding: "1px 6px" }}
-            >
-              G視点
-            </span>
-          </span>
-        );
-      }
-      case "GUARDIAN_GUARD": {
-        return (
-          <span>
-            夜間に{" "}
-            <strong style={{ color: "var(--color-angel, #eab308)" }}>
-              {getPlayerName(ev.targetId)}
-            </strong>{" "}
-            を <strong>【護衛対象に指定】</strong>{" "}
-            <span
-              className="badge badge-angel"
-              style={{ fontSize: "0.7rem", padding: "1px 6px" }}
-            >
-              守護天使視点
-            </span>
-          </span>
-        );
-      }
-      case "ATTACK": {
-        return (
-          <span>
-            夜間に <strong>{getPlayerName(ev.attackedPlayerId)}</strong> が{" "}
-            <span style={{ color: "var(--color-gnosia)" }}>消滅</span>{" "}
-            (非グノーシア確定)
-          </span>
-        );
-      }
-      case "NO_ATTACK": {
-        return (
-          <span>
-            夜間の<strong>【襲撃なし】</strong> (犠牲者ゼロ)
-            {ev.guardedPlayerId && (
-              <span
-                style={{
-                  display: "block",
-                  color: "var(--color-angel)",
-                  fontSize: "0.75rem",
-                }}
-              >
-                護衛対象: <strong>{getPlayerName(ev.guardedPlayerId)}</strong>
-                {" "}
-                (非グノーシア確定)
-              </span>
-            )}
-            {ev.note && (
-              <span
-                style={{
-                  color: "var(--text-muted)",
-                  fontSize: "0.75rem",
-                  display: "block",
-                }}
-              >
-                ({ev.note})
-              </span>
-            )}
-          </span>
-        );
-      }
-      case "DAY_CHANGE": {
-        return (
-          <span
-            style={{ color: "var(--accent-primary, #38bdf8)", fontWeight: 600 }}
-          >
-            🌅 翌日へ進行 (Day {ev.day + 1} へ)
-            {ev.note && (
-              <span
-                style={{
-                  color: "var(--text-muted)",
-                  fontSize: "0.75rem",
-                  display: "block",
-                }}
-              >
-                ({ev.note})
-              </span>
-            )}
-          </span>
-        );
-      }
-      default:
-        return <span>不明なイベント</span>;
-    }
-  };
-
   const getEventClass = (type: GameEvent["type"]) => {
     switch (type) {
       case "DEFINITE_LIE":
@@ -449,17 +177,44 @@ export function EventTimeline({
           </h2>
         </div>
 
-        <span
-          className="badge"
-          style={{
-            fontSize: "0.75rem",
-            background: "rgba(56, 189, 248, 0.1)",
-            color: "var(--accent-primary, #38bdf8)",
-            border: "1px solid rgba(56, 189, 248, 0.3)",
-          }}
-        >
-          全 {events.length} イベント
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+          <span
+            className="badge"
+            style={{
+              fontSize: "0.75rem",
+              background: "rgba(56, 189, 248, 0.1)",
+              color: "var(--accent-primary, #38bdf8)",
+              border: "1px solid rgba(56, 189, 248, 0.3)",
+            }}
+          >
+            全 {events.length} イベント
+          </span>
+          {inspectedEventIndex !== null && onSelectCheckpoint && (
+            <button
+              type="button"
+              className="badge"
+              style={{
+                fontSize: "0.72rem",
+                background: "rgba(14, 116, 144, 0.35)",
+                color: "#38bdf8",
+                border: "1px solid #38bdf8",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.3rem",
+              }}
+              onClick={() => onSelectCheckpoint(null)}
+              title="最新時点の推論に戻る"
+            >
+              <Clock size={12} />
+              <span>
+                {inspectedEventIndex < 0
+                  ? "初期状態"
+                  : `#${inspectedEventIndex + 1} 時点`} (最新に戻る ✕)
+              </span>
+            </button>
+          )}
+        </div>
       </div>
 
       {hasContradiction && (
@@ -533,8 +288,18 @@ export function EventTimeline({
               const prevEv = events[index - 1];
               const isFirstOfDay = index === 0 ||
                 (prevEv ? prevEv.day !== ev.day : true);
+              const isFuture = inspectedEventIndex !== null &&
+                index > inspectedEventIndex;
               return (
                 <Fragment key={ev.id}>
+                  {index === 0 && onSelectCheckpoint && (
+                    <TimelineCheckpoint
+                      checkpointIndex={-1}
+                      isActive={inspectedEventIndex === -1}
+                      onSelect={onSelectCheckpoint}
+                      label="初期状態 (イベント0件)"
+                    />
+                  )}
                   {isFirstOfDay && (
                     <div
                       id={`timeline-day-${ev.day}`}
@@ -545,7 +310,9 @@ export function EventTimeline({
                     </div>
                   )}
                   <div
-                    className={`event-card ${getEventClass(ev.type)}`}
+                    className={`event-card ${getEventClass(ev.type)} ${
+                      isFuture ? "future-card" : ""
+                    }`}
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer?.setData("text/plain", String(index));
@@ -628,9 +395,16 @@ export function EventTimeline({
                       </div>
                     </div>
                     <div className="event-body">
-                      {renderEventDescription(ev)}
+                      <EventDescription event={ev} players={settings.players} />
                     </div>
                   </div>
+                  {onSelectCheckpoint && (
+                    <TimelineCheckpoint
+                      checkpointIndex={index}
+                      isActive={inspectedEventIndex === index}
+                      onSelect={onSelectCheckpoint}
+                    />
+                  )}
                 </Fragment>
               );
             })

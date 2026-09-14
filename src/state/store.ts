@@ -149,6 +149,34 @@ export function useGameStore() {
     }
   };
 
+  // 過去時点検証用のインデックス (null = 最新, -1 = イベント0件, 0..N-1 = 各イベント完了時点)
+  const [inspectedEventIndex, setInspectedEventIndex] = useState<number | null>(
+    null,
+  );
+
+  // 過去時点を検証中かどうかに応じた実効イベントリスト
+  const effectiveEvents = useMemo(() => {
+    if (inspectedEventIndex === null) return events;
+    if (inspectedEventIndex < 0) return [];
+    return events.slice(0, inspectedEventIndex + 1);
+  }, [events, inspectedEventIndex]);
+
+  // 実効イベントから計算された Day
+  const effectiveDay = useMemo(() => {
+    if (effectiveEvents.length === 0) return 1;
+    const last = effectiveEvents[effectiveEvents.length - 1];
+    if (!last) return 1;
+    if (
+      last.type === "DISAPPEARANCE" ||
+      last.type === "ATTACK" ||
+      last.type === "NO_ATTACK" ||
+      last.type === "DAY_CHANGE"
+    ) {
+      return last.day + 1;
+    }
+    return last.day;
+  }, [effectiveEvents]);
+
   // プレイヤーの生存/状態計算 (イベントから自動推定 or 手動オーバーライド)
   const computedStatuses = useMemo(() => {
     const statuses: Record<string, PlayerStatus> = {};
@@ -156,7 +184,7 @@ export function useGameStore() {
       statuses[p.id] = playerStatuses[p.id] || "ALIVE";
     }
 
-    for (const ev of events) {
+    for (const ev of effectiveEvents) {
       if (ev.type === "VOTE") {
         statuses[ev.frozenPlayerId] = "FROZEN";
       } else if (ev.type === "DISAPPEARANCE") {
@@ -168,11 +196,11 @@ export function useGameStore() {
       }
     }
     return statuses;
-  }, [settings.players, events, playerStatuses]);
+  }, [settings.players, effectiveEvents, playerStatuses]);
 
   // ソルバー実行結果のメモ化
   const solverResult = useMemo(() => {
-    const solver = new GnosiaSolver(settings, events);
+    const solver = new GnosiaSolver(settings, effectiveEvents);
     const isPlayerGnosia = myRole === "GNOSIA" ||
       perspectiveRoles["player"] === "GNOSIA";
     const gnosiaTeam: ReadonlyArray<string> = isPlayerGnosia
@@ -198,12 +226,19 @@ export function useGameStore() {
       perspectiveRole: effectivePerspectiveRole,
       gnosiaComrades: effectiveComrades,
     });
-  }, [settings, events, perspective, myRole, perspectiveRoles, gnosiaComrades]);
+  }, [
+    settings,
+    effectiveEvents,
+    perspective,
+    myRole,
+    perspectiveRoles,
+    gnosiaComrades,
+  ]);
 
   // COしている役職のマップ (playerId -> Role[])
   const claimedRoles = useMemo(() => {
     const map: Record<string, Array<"ENGINEER" | "DOCTOR" | "GUARD_DUTY">> = {};
-    for (const ev of events) {
+    for (const ev of effectiveEvents) {
       if (ev.type === "CO") {
         let pRoles = map[ev.playerId];
         if (!pRoles) {
@@ -226,12 +261,12 @@ export function useGameStore() {
       }
     }
     return map;
-  }, [events]);
+  }, [effectiveEvents]);
 
   // 各プレイヤーが嘘をついたと確定または密告されているか (targetId -> labels[])
   const definiteLies = useMemo(() => {
     const map: Record<string, Array<string>> = {};
-    for (const ev of events) {
+    for (const ev of effectiveEvents) {
       if (ev.type === "DEFINITE_LIE") {
         let list = map[ev.targetId];
         if (!list) {
@@ -248,7 +283,7 @@ export function useGameStore() {
       }
     }
     return map;
-  }, [events, settings.players]);
+  }, [effectiveEvents, settings.players]);
 
   // イベント追加 (並び順に応じてDayを自動設定)
   const addEvent = (event: NewGameEvent) => {
@@ -258,6 +293,7 @@ export function useGameStore() {
       day: event.day ?? 1, // recalculateDaysで位置に応じた正しいDayが割り当てられる
     } as GameEvent;
     setEvents((prev) => recalculateDays([...prev, newEvent]));
+    setInspectedEventIndex(null);
   };
 
   // イベント更新 (編集)
@@ -267,11 +303,13 @@ export function useGameStore() {
         prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)),
       )
     );
+    setInspectedEventIndex(null);
   };
 
   // イベント削除
   const removeEvent = (id: string) => {
     setEvents((prev) => recalculateDays(prev.filter((e) => e.id !== id)));
+    setInspectedEventIndex(null);
   };
 
   // イベントの並び替え (fromIndex -> toIndex)
@@ -293,6 +331,7 @@ export function useGameStore() {
       }
       return recalculateDays(next);
     });
+    setInspectedEventIndex(null);
   };
 
   // 次の日へ進行 (明示的な日付変更イベントを追加)
@@ -312,6 +351,7 @@ export function useGameStore() {
       setPerspectiveRoles({});
       setMyRoleState(undefined);
       setGnosiaComrades([]);
+      setInspectedEventIndex(null);
     }
   };
 
@@ -321,7 +361,7 @@ export function useGameStore() {
       version: 1,
       exportedAt: new Date().toISOString(),
       settings,
-      events,
+      events: [...events],
       currentDay,
       perspective,
       myRole,
@@ -361,6 +401,7 @@ export function useGameStore() {
 
       setSettings(session.settings);
       setEvents(recalculateDays(session.events));
+      setInspectedEventIndex(null);
       if (session.perspective && typeof session.perspective.id === "string") {
         setPerspective(session.perspective);
       }
@@ -399,6 +440,10 @@ export function useGameStore() {
     events,
     setEvents,
     currentDay,
+    effectiveDay,
+    inspectedEventIndex,
+    setInspectedEventIndex,
+    isInspectingPast: inspectedEventIndex !== null,
     perspective,
     setPerspective,
     selectPerspective,

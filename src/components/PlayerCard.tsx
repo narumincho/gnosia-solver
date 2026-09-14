@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useRef, useState } from "preact/hooks";
 import { Eye } from "lucide-preact";
 import {
   PlayerStatus,
@@ -47,6 +47,14 @@ function RolePieChart({
   readonly tooltip: string;
 }) {
   const [hovered, setHovered] = useState<DonutSlice | undefined>(undefined);
+  const [mousePos, setMousePos] = useState<{
+    readonly x: number;
+    readonly y: number;
+  }>({
+    x: 0,
+    y: 0,
+  });
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const activeSlices: ReadonlyArray<DonutSlice> = (
     Object.entries(roleProbs) as ReadonlyArray<[Role, number]>
@@ -108,10 +116,21 @@ function RolePieChart({
     };
   });
 
+  const updateMousePos = (e: MouseEvent) => {
+    if (!wrapperRef.current) return;
+    const rect = wrapperRef.current.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
   return (
     <div
+      ref={wrapperRef}
       className="role-pie-wrapper"
       title={tooltip}
+      onMouseMove={updateMousePos}
       onMouseLeave={() => setHovered(undefined)}
     >
       <svg
@@ -139,28 +158,33 @@ function RolePieChart({
               className={`role-pie-slice ${
                 hovered?.role === computedSlices[0]?.role ? "is-hovered" : ""
               }`}
-              onMouseEnter={() => setHovered(computedSlices[0])}
+              onMouseEnter={(e: MouseEvent) => {
+                setHovered(computedSlices[0]);
+                updateMousePos(e);
+              }}
             />
-            {!hovered && (
-              <text
-                x={cx}
-                y={cy}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fill="#ffffff"
-                stroke="rgba(0, 0, 0, 0.75)"
-                strokeWidth="2.5"
-                paintOrder="stroke fill"
-                fontSize={centerLabel
-                  ? (centerLabel.length >= 3 ? "10" : "12")
-                  : "12"}
-                fontWeight="800"
-                fontFamily="var(--font-display)"
-                style={{ pointerEvents: "none" }}
-              >
-                {centerLabel || computedSlices[0]?.shortName}
-              </text>
-            )}
+            <text
+              x={cx}
+              y={cy}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="#ffffff"
+              stroke="rgba(0, 0, 0, 0.85)"
+              strokeWidth="1.3"
+              paintOrder="stroke fill"
+              fontSize={centerLabel
+                ? (centerLabel.length >= 3 ? "10" : "11")
+                : "11"}
+              fontWeight="800"
+              fontFamily="var(--font-display)"
+              style={{
+                pointerEvents: "none",
+                userSelect: "none",
+                filter: "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8))",
+              }}
+            >
+              {centerLabel || computedSlices[0]?.shortName}
+            </text>
           </g>
         )}
 
@@ -177,11 +201,23 @@ function RolePieChart({
               y1.toFixed(2)
             } A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
 
-            // 確率が大きい (12%以上) 場合はホバーせずとも役職頭文字を表示
-            const showInitial = slice.prob >= 0.12;
-            const labelR = r * 0.62;
+            // 扇形内に文字が絶対に収まる条件：
+            // 2文字（AC, バグ）は20%以上、1文字（乗, グ等）は14%以上
+            const isMultiChar = slice.shortName.length >= 2;
+            const showInitial = isMultiChar
+              ? slice.prob >= 0.20
+              : slice.prob >= 0.14;
+
+            // スライス内での文字配置半径（外周にも中心にも飛び出さない位置）
+            const labelR = 21;
             const lx = cx + labelR * Math.cos(slice.midAngle);
             const ly = cy + labelR * Math.sin(slice.midAngle);
+
+            const fontSize = isMultiChar
+              ? "7.5"
+              : slice.prob >= 0.25
+              ? "9"
+              : "8";
 
             return (
               <g key={slice.role}>
@@ -191,22 +227,29 @@ function RolePieChart({
                   className={`role-pie-slice ${
                     hovered?.role === slice.role ? "is-hovered" : ""
                   }`}
-                  onMouseEnter={() => setHovered(slice)}
+                  onMouseEnter={(e: MouseEvent) => {
+                    setHovered(slice);
+                    updateMousePos(e);
+                  }}
                 />
-                {showInitial && !hovered && (
+                {showInitial && (
                   <text
                     x={lx.toFixed(2)}
                     y={ly.toFixed(2)}
                     textAnchor="middle"
                     dominantBaseline="central"
                     fill="#ffffff"
-                    stroke="rgba(0, 0, 0, 0.75)"
-                    strokeWidth="2.5"
+                    stroke="rgba(0, 0, 0, 0.9)"
+                    strokeWidth="1.2"
                     paintOrder="stroke fill"
-                    fontSize={slice.shortName.length >= 2 ? "8.5" : "10"}
+                    fontSize={fontSize}
                     fontWeight="800"
                     fontFamily="var(--font-display)"
-                    style={{ pointerEvents: "none" }}
+                    style={{
+                      pointerEvents: "none",
+                      userSelect: "none",
+                      filter: "drop-shadow(0 1px 1px rgba(0, 0, 0, 0.8))",
+                    }}
                   >
                     {slice.shortName}
                   </text>
@@ -227,9 +270,15 @@ function RolePieChart({
         />
       </svg>
 
-      {/* ホバー時の背景色付きツールチップ */}
+      {/* ホバー時: マウスカーソル右下に表示してグラフと被らないツールチップ */}
       {hovered && (
-        <div className="role-pie-tooltip">
+        <div
+          className="role-pie-tooltip"
+          style={{
+            left: `${mousePos.x + 12}px`,
+            top: `${mousePos.y + 12}px`,
+          }}
+        >
           <span
             className="role-pie-tooltip-name"
             style={{ color: hovered.color }}

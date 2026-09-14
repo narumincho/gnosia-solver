@@ -433,24 +433,21 @@ body {
 
 .role-pie-tooltip {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgb(15 23 42 / 94%);
+  background: rgb(15 23 42 / 96%);
   border: 1px solid rgb(255 255 255 / 25%);
-  border-radius: 6px;
-  padding: 3px 6px;
+  border-radius: 5px;
+  padding: 2px 7px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  z-index: 10;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 60%), 0 0 0 1px rgb(0 0 0 / 40%);
+  z-index: 50;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 70%), 0 0 0 1px rgb(0 0 0 / 40%);
   backdrop-filter: blur(6px);
-  min-width: 48px;
-  animation: pie-tooltip-fade-in 0.12s ease-out;
-  line-height: 1.15;
+  white-space: nowrap;
+  line-height: 1.2;
+  animation: pie-tooltip-fade-in 0.08s ease-out;
 }
 
 .role-pie-tooltip-name {
@@ -470,12 +467,10 @@ body {
 @keyframes pie-tooltip-fade-in {
   from {
     opacity: 0;
-    transform: translate(-50%, -46%) scale(0.95);
   }
 
   to {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
   }
 }
 

@@ -36,6 +36,10 @@ export function DisappearanceForm({
     return alivePlayers.filter((p) => p.id !== "player");
   }, [alivePlayers]);
 
+  const [isMultiMode, setIsMultiMode] = useState<boolean>(
+    editingEvent ? editingEvent.disappearedPlayerIds.length > 1 : false,
+  );
+
   const [disappearedPlayerIds, setDisappearedPlayerIds] = useState<
     ReadonlyArray<string>
   >(() => {
@@ -47,6 +51,39 @@ export function DisappearanceForm({
     if (editingEvent) return editingEvent.guardedPlayerId || "";
     return "";
   });
+
+  // 犠牲者ゼロ (平和) の1クリック作成
+  const handlePeaceClick = () => {
+    if (editingEvent) {
+      setDisappearedPlayerIds([]);
+      return;
+    }
+    onSubmit({
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: [],
+      guardedPlayerId: guardedPlayerId || undefined,
+    });
+  };
+
+  // 乗員タイルクリック
+  const handlePlayerClick = (playerId: string) => {
+    if (isMultiMode || editingEvent) {
+      // 複数選択モード
+      if (disappearedPlayerIds.includes(playerId)) {
+        setDisappearedPlayerIds((prev) => prev.filter((id) => id !== playerId));
+      } else if (disappearedPlayerIds.length < 2) {
+        setDisappearedPlayerIds((prev) => [...prev, playerId]);
+      }
+      return;
+    }
+
+    // 通常モード: 1クリックで1人消滅を即登録！
+    onSubmit({
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: [playerId],
+      guardedPlayerId: guardedPlayerId || undefined,
+    });
+  };
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
@@ -85,109 +122,78 @@ export function DisappearanceForm({
           >
             夜の出来事 (消滅もしくは平和)
           </div>
-          <span
-            className="badge"
-            style={{
-              background: disappearedPlayerIds.length === 0
-                ? "rgba(34, 197, 94, 0.2)"
-                : "rgba(244, 63, 94, 0.2)",
-              color: disappearedPlayerIds.length === 0 ? "#4ade80" : "#fb7185",
-              fontWeight: "bold",
-            }}
-          >
-            {disappearedPlayerIds.length === 0
-              ? "🕊️ 犠牲者ゼロ (平和)"
-              : `💀 ${disappearedPlayerIds.length}人消滅`}
-          </span>
-        </div>
-        <p
-          style={{
-            fontSize: "0.8rem",
-            color: "var(--text-muted)",
-            marginBottom: "0.75rem",
-            lineHeight: "1.4",
-          }}
-        >
-          夜間に消滅した乗員を <strong>0〜2人</strong> 選択してください。<br />
-          ※誰も選ばない（0人）場合は「犠牲者なし（平和）」となります。
-        </p>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
-            gap: "0.5rem",
-          }}
-        >
-          {alivePlayers.map((p) => {
-            const isSelected = disappearedPlayerIds.includes(p.id);
-            const isMaxReached = disappearedPlayerIds.length >= 2 &&
-              !isSelected;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                disabled={isMaxReached}
-                onClick={() => {
-                  if (isSelected) {
-                    setDisappearedPlayerIds((prev) =>
-                      prev.filter((id) => id !== p.id)
-                    );
-                  } else {
-                    if (disappearedPlayerIds.length < 2) {
-                      setDisappearedPlayerIds((prev) => [...prev, p.id]);
-                    }
-                  }
-                }}
-                style={{
-                  padding: "0.6rem 0.5rem",
-                  borderRadius: "6px",
-                  border: isSelected
-                    ? "2px solid #f43f5e"
-                    : "1px solid var(--border-color)",
-                  background: isSelected
-                    ? "rgba(244, 63, 94, 0.25)"
-                    : "var(--bg-secondary)",
-                  color: isSelected
-                    ? "#fff"
-                    : isMaxReached
-                    ? "var(--text-muted)"
-                    : "var(--text-main)",
-                  cursor: isMaxReached ? "not-allowed" : "pointer",
-                  fontSize: "0.85rem",
-                  fontWeight: isSelected ? "bold" : "normal",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.35rem",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                {isSelected ? "💀 " : ""}
-                {p.name}
-              </button>
-            );
-          })}
-        </div>
-
-        {disappearedPlayerIds.length > 0 && (
-          <div
-            style={{
-              marginTop: "0.75rem",
-              display: "flex",
-              justifyContent: "flex-end",
-            }}
-          >
+          {!editingEvent && (
             <button
               type="button"
               className="btn btn-sm"
-              onClick={() => setDisappearedPlayerIds([])}
-              style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}
+              onClick={() => {
+                setIsMultiMode(!isMultiMode);
+                setDisappearedPlayerIds([]);
+              }}
+              style={{
+                fontSize: "0.75rem",
+                color: isMultiMode
+                  ? "var(--color-gnosia)"
+                  : "var(--text-muted)",
+              }}
             >
-              選択をクリア (犠牲者ゼロにする)
+              {isMultiMode ? "← 通常モードに戻す" : "2人消滅(バグ蒸発等)を入力"}
             </button>
+          )}
+        </div>
+
+        {/* 犠牲者ゼロ (平和) ボタン */}
+        <div style={{ marginBottom: "0.75rem" }}>
+          <button
+            type="button"
+            className={`player-tile ${
+              disappearedPlayerIds.length === 0 && (isMultiMode || editingEvent)
+                ? "selected"
+                : ""
+            }`}
+            style={{
+              padding: "0.75rem",
+              background: "rgba(34, 197, 94, 0.15)",
+              borderColor: "rgba(34, 197, 94, 0.35)",
+              color: "#4ade80",
+            }}
+            onClick={handlePeaceClick}
+          >
+            <span style={{ fontSize: "0.95rem" }}>🕊️ 犠牲者ゼロ (平和)</span>
+            <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+              {isMultiMode
+                ? "（クリックで犠牲者ゼロに設定）"
+                : "タップして犠牲者なしで即登録"}
+            </span>
+          </button>
+        </div>
+
+        <div className="form-group" style={{ marginBottom: 0 }}>
+          <label className="form-label">
+            {isMultiMode
+              ? "消滅した乗員を最大2人選択してください (選択中: " +
+                disappearedPlayerIds.length + "人)"
+              : "消滅した乗員をタップしてください (1タップで即登録)"}
+          </label>
+          <div className="player-tile-grid">
+            {alivePlayers.map((p) => {
+              const isSelected = disappearedPlayerIds.includes(p.id);
+              const isMaxReached = isMultiMode &&
+                disappearedPlayerIds.length >= 2 && !isSelected;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  disabled={isMaxReached}
+                  className={`player-tile ${isSelected ? "selected" : ""}`}
+                  onClick={() => handlePlayerClick(p.id)}
+                >
+                  <span>{isSelected ? "💀 " : ""}{p.name}</span>
+                </button>
+              );
+            })}
           </div>
-        )}
+        </div>
 
         {myRole === "GUARDIAN_ANGEL" && (
           <div
@@ -233,7 +239,7 @@ export function DisappearanceForm({
           display: "flex",
           justifyContent: "flex-end",
           gap: "0.75rem",
-          marginTop: "1.5rem",
+          marginTop: "1.2rem",
         }}
       >
         <button
@@ -245,12 +251,16 @@ export function DisappearanceForm({
         >
           キャンセル
         </button>
-        <button
-          type="submit"
-          className="btn btn-primary"
-        >
-          {editingEvent ? "変更を保存する" : "イベントを記録する"}
-        </button>
+        {(isMultiMode || editingEvent) && (
+          <button
+            type="submit"
+            className="btn btn-primary"
+          >
+            {disappearedPlayerIds.length === 0
+              ? "犠牲者ゼロで記録する"
+              : `${disappearedPlayerIds.length}人消滅で記録する`}
+          </button>
+        )}
       </div>
     </form>
   );

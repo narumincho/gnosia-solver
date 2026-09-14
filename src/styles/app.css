@@ -1007,6 +1007,17 @@ body {
   border-color: #facc15;
 }
 
+.btn-add-guard-duty {
+  background: rgb(14 165 233 / 12%);
+  color: #38bdf8;
+  border-color: rgb(14 165 233 / 30%);
+}
+
+.btn-add-guard-duty:hover {
+  background: rgb(14 165 233 / 25%);
+  border-color: #38bdf8;
+}
+
 .btn-add-attack {
   background: rgb(244 63 94 / 15%);
   color: #f43f5e;
@@ -1016,6 +1027,152 @@ body {
 .btn-add-attack:hover {
   background: rgb(244 63 94 / 28%);
   border-color: #f43f5e;
+}
+
+.btn-add-disappearance {
+  background: rgb(168 85 247 / 15%);
+  color: #c084fc;
+  border-color: rgb(168 85 247 / 35%);
+}
+
+.btn-add-disappearance:hover {
+  background: rgb(168 85 247 / 28%);
+  border-color: #c084fc;
+}
+
+/* Player Tile Grid for One-Click Event Creation */
+.player-tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+  gap: 0.5rem;
+  max-height: 290px;
+  overflow-y: auto;
+  padding: 0.25rem;
+}
+
+.player-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.6rem 0.5rem;
+  background: #1e293b;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 8px;
+  color: var(--text-main);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  user-select: none;
+  text-align: center;
+  width: 100%;
+}
+
+.player-tile:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.player-tile:hover:not(:disabled) {
+  background: rgb(56 189 248 / 18%);
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgb(56 189 248 / 20%);
+}
+
+.player-tile.selected {
+  background: rgb(56 189 248 / 25%);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  box-shadow: 0 0 10px rgb(56 189 248 / 30%);
+}
+
+.player-tile-status {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: normal;
+}
+
+/* Player Tile with Report Actions (Human / Gnosia) */
+.player-report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 290px;
+  overflow-y: auto;
+  padding: 0.25rem;
+}
+
+.player-report-tile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.75rem;
+  background: #1e293b;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 8px;
+  gap: 0.5rem;
+  transition: all 0.15s ease;
+}
+
+.player-report-tile:hover {
+  border-color: rgb(255 255 255 / 25%);
+  background: #243247;
+}
+
+.player-report-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.player-report-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-report-human {
+  background: rgb(56 189 248 / 15%);
+  color: #38bdf8;
+  border: 1px solid rgb(56 189 248 / 35%);
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-report-human:hover {
+  background: rgb(56 189 248 / 30%);
+  border-color: #38bdf8;
+  box-shadow: 0 2px 8px rgb(56 189 248 / 25%);
+}
+
+.btn-report-gnosia {
+  background: rgb(244 63 94 / 15%);
+  color: #fb7185;
+  border: 1px solid rgb(244 63 94 / 35%);
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-report-gnosia:hover {
+  background: rgb(244 63 94 / 30%);
+  border-color: #fb7185;
+  box-shadow: 0 2px 8px rgb(244 63 94 / 25%);
 }
 
 .btn-night-action {

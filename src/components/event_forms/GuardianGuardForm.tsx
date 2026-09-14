@@ -38,8 +38,20 @@ export function GuardianGuardForm({
   const [selectedPlayer, setSelectedPlayer] = useState<string>(() => {
     if (editingEvent) return editingEvent.targetId;
     if (initialPlayerId) return initialPlayerId;
-    return guardianGuardCandidates[0]?.id || "";
+    return "";
   });
+
+  const handlePlayerClick = (playerId: string) => {
+    if (editingEvent) {
+      setSelectedPlayer(playerId);
+      return;
+    }
+    // 1クリックで即登録！
+    onSubmit({
+      type: "GUARDIAN_GUARD",
+      targetId: playerId,
+    });
+  };
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
@@ -49,9 +61,6 @@ export function GuardianGuardForm({
       targetId: selectedPlayer,
     });
   };
-
-  const isSubmitDisabled = !selectedPlayer ||
-    guardianGuardCandidates.length === 0;
 
   return (
     <form onSubmit={handleSubmit}>
@@ -87,25 +96,30 @@ export function GuardianGuardForm({
           }}
         >
           守護天使は毎晩1人をグノーシアの襲撃から護衛します。<br />
-          護衛した夜に犠牲者ゼロ（平和）となった場合、護衛成功により護衛対象の<strong>
+          護衛した夜に犠牲者ゼロ（平和）となった場合、護衛対象の<strong>
             【非グノーシア】
-          </strong>が確定します。<br />
-          ※守護天使は自分自身を守ることはできません。
+          </strong>が確定します（自分は護衛できません）。
         </p>
+
         <div className="form-group" style={{ marginBottom: 0 }}>
-          <label className="form-label">護衛対象 (自分以外の生存者)</label>
-          <select
-            className="form-select"
-            value={selectedPlayer}
-            onChange={(e) =>
-              setSelectedPlayer((e.target as HTMLSelectElement).value)}
-          >
-            {guardianGuardCandidates.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <label className="form-label">
+            護衛する乗員をタップしてください
+          </label>
+          <div className="player-tile-grid">
+            {guardianGuardCandidates.map((p) => {
+              const isSelected = editingEvent && selectedPlayer === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={`player-tile ${isSelected ? "selected" : ""}`}
+                  onClick={() => handlePlayerClick(p.id)}
+                >
+                  <span>🛡️ {p.name}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -114,7 +128,7 @@ export function GuardianGuardForm({
           display: "flex",
           justifyContent: "flex-end",
           gap: "0.75rem",
-          marginTop: "1.5rem",
+          marginTop: "1.2rem",
         }}
       >
         <button
@@ -126,13 +140,15 @@ export function GuardianGuardForm({
         >
           キャンセル
         </button>
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={isSubmitDisabled}
-        >
-          {editingEvent ? "変更を保存する" : "イベントを記録する"}
-        </button>
+        {editingEvent && (
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={!selectedPlayer}
+          >
+            変更を保存する
+          </button>
+        )}
       </div>
     </form>
   );

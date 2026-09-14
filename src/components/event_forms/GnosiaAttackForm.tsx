@@ -37,8 +37,20 @@ export function GnosiaAttackForm({
   const [selectedPlayer, setSelectedPlayer] = useState<string>(() => {
     if (editingEvent) return editingEvent.targetId;
     if (initialPlayerId) return initialPlayerId;
-    return attackCandidates[0]?.id || settings.players[0]?.id || "";
+    return "";
   });
+
+  const handlePlayerClick = (playerId: string) => {
+    if (editingEvent) {
+      setSelectedPlayer(playerId);
+      return;
+    }
+    // 1クリックで即登録！
+    onSubmit({
+      type: "GNOSIA_ATTACK",
+      targetId: playerId,
+    });
+  };
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
@@ -48,8 +60,6 @@ export function GnosiaAttackForm({
       targetId: selectedPlayer,
     });
   };
-
-  const isSubmitDisabled = attackCandidates.length === 0 || !selectedPlayer;
 
   return (
     <form onSubmit={handleSubmit}>
@@ -88,20 +98,26 @@ export function GnosiaAttackForm({
             【バグ確定】
           </strong>となり、守護天使が生存して襲撃対象を守った世界のみが導出されます。
         </p>
+
         <div className="form-group" style={{ marginBottom: 0 }}>
-          <label className="form-label">襲撃対象 (生存者)</label>
-          <select
-            className="form-select"
-            value={selectedPlayer}
-            onChange={(e) =>
-              setSelectedPlayer((e.target as HTMLSelectElement).value)}
-          >
-            {attackCandidates.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <label className="form-label">
+            襲撃する乗員をタップしてください
+          </label>
+          <div className="player-tile-grid">
+            {attackCandidates.map((p) => {
+              const isSelected = editingEvent && selectedPlayer === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={`player-tile ${isSelected ? "selected" : ""}`}
+                  onClick={() => handlePlayerClick(p.id)}
+                >
+                  <span>🎯 {p.name}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -110,7 +126,7 @@ export function GnosiaAttackForm({
           display: "flex",
           justifyContent: "flex-end",
           gap: "0.75rem",
-          marginTop: "1.5rem",
+          marginTop: "1.2rem",
         }}
       >
         <button
@@ -122,13 +138,15 @@ export function GnosiaAttackForm({
         >
           キャンセル
         </button>
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={isSubmitDisabled}
-        >
-          {editingEvent ? "変更を保存する" : "イベントを記録する"}
-        </button>
+        {editingEvent && (
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={!selectedPlayer}
+          >
+            変更を保存する
+          </button>
+        )}
       </div>
     </form>
   );

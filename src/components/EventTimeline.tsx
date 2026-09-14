@@ -785,6 +785,22 @@ export function EventTimeline({
 
             <button
               type="button"
+              className="btn btn-add-event btn-add-guard-duty"
+              command="show-modal"
+              commandfor="add-event-dialog"
+              onClick={() =>
+                onOpenAddEvent({
+                  type: "CO",
+                  claimedRole: "GUARD_DUTY",
+                })}
+              title="留守番CO (2人組名乗り出) を記録"
+            >
+              <Plus size={13} />
+              <span>留守番CO</span>
+            </button>
+
+            <button
+              type="button"
               className="btn btn-add-event btn-add-lie"
               command="show-modal"
               commandfor="add-event-dialog"
@@ -877,6 +893,21 @@ export function EventTimeline({
             >
               <Plus size={13} />
               <span>グノーシアの襲撃</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-add-event btn-add-disappearance"
+              command="show-modal"
+              commandfor="add-event-dialog"
+              onClick={() =>
+                onOpenAddEvent({
+                  type: "DISAPPEARANCE",
+                })}
+              title="夜の消滅 (犠牲者なし または 1〜2人消滅) を記録"
+            >
+              <Plus size={13} />
+              <span>夜の消滅</span>
             </button>
           </div>
         </div>

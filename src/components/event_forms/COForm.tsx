@@ -64,7 +64,7 @@ export function COForm({
   const [selectedPlayer, setSelectedPlayer] = useState<string>(() => {
     if (editingEvent) return editingEvent.playerId;
     if (initialPlayerId) return initialPlayerId;
-    return coCandidates[0]?.id || alivePlayers[0]?.id || "";
+    return "";
   });
 
   const [selectedGuardDuty, setSelectedGuardDuty] = useState<
@@ -79,6 +79,46 @@ export function COForm({
     }
     return [];
   });
+
+  // 単一CO (エンジニア / ドクター) の乗員タイルクリック
+  const handleSinglePlayerClick = (playerId: string) => {
+    if (editingEvent) {
+      setSelectedPlayer(playerId);
+      return;
+    }
+    // 1クリックで即座に作成！
+    onSubmit({
+      type: "CO",
+      playerId,
+      claimedRole,
+    });
+  };
+
+  // 留守番CO (2人組) の乗員タイルクリック
+  const handleGuardDutyPlayerClick = (playerId: string) => {
+    if (selectedGuardDuty.includes(playerId)) {
+      setSelectedGuardDuty((prev) => prev.filter((id) => id !== playerId));
+      return;
+    }
+
+    if (selectedGuardDuty.length === 0) {
+      setSelectedGuardDuty([playerId]);
+    } else if (selectedGuardDuty.length === 1) {
+      const p1 = selectedGuardDuty[0]!;
+      const p2 = playerId;
+      setSelectedGuardDuty([p1, p2]);
+
+      // 新規作成時は2人目クリックで自動確定！
+      if (!editingEvent) {
+        onSubmit({
+          type: "CO",
+          playerId: p1,
+          partnerPlayerId: p2,
+          claimedRole: "GUARD_DUTY",
+        });
+      }
+    }
+  };
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
@@ -101,10 +141,6 @@ export function COForm({
       });
     }
   };
-
-  const isSubmitDisabled = claimedRole === "GUARD_DUTY"
-    ? selectedGuardDuty.length !== 2
-    : !selectedPlayer || coCandidates.length === 0;
 
   return (
     <form onSubmit={handleSubmit}>
@@ -170,7 +206,7 @@ export function COForm({
               }}
             >
               <label className="form-label" style={{ marginBottom: 0 }}>
-                名乗り出た留守番 (2人をチェック)
+                名乗り出た留守番 (2人をタップ)
               </label>
               <span
                 className={`badge ${
@@ -189,130 +225,76 @@ export function COForm({
               }}
             >
               ※
-              留守番COは必ず2人同時に行われます。名乗り出た2人にチェックを入れてください。
+              留守番COは2人組で行われます。名乗り出た2人をタップしてください（2人目で自動登録されます）。
             </p>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
-                gap: "0.5rem",
-                background: "var(--bg-secondary)",
-                padding: "0.75rem",
-                borderRadius: "8px",
-                border: "1px solid var(--border-color)",
-                maxHeight: "220px",
-                overflowY: "auto",
-              }}
-            >
+            <div className="player-tile-grid">
               {(coCandidates.length >= 2 ? coCandidates : alivePlayers).map(
                 (p) => {
-                  const isChecked = selectedGuardDuty.includes(p.id);
-                  const isDisabled = !isChecked &&
-                    selectedGuardDuty.length >= 2;
+                  const isSelected = selectedGuardDuty.includes(p.id);
                   return (
-                    <label
+                    <button
                       key={p.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                        padding: "0.45rem 0.65rem",
-                        borderRadius: "6px",
-                        background: isChecked
-                          ? "rgba(56, 189, 248, 0.15)"
-                          : "var(--bg-tertiary)",
-                        border: isChecked
-                          ? "1px solid var(--accent-primary, #38bdf8)"
-                          : "1px solid transparent",
-                        cursor: isDisabled ? "not-allowed" : "pointer",
-                        opacity: isDisabled ? 0.5 : 1,
-                        fontSize: "0.85rem",
-                        userSelect: "none",
-                        transition: "all 0.15s ease",
-                      }}
+                      type="button"
+                      className={`player-tile ${isSelected ? "selected" : ""}`}
+                      onClick={() => handleGuardDutyPlayerClick(p.id)}
                     >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        disabled={isDisabled}
-                        onChange={() => {
-                          if (isChecked) {
-                            setSelectedGuardDuty(
-                              selectedGuardDuty.filter((id) => id !== p.id),
-                            );
-                          } else if (selectedGuardDuty.length < 2) {
-                            setSelectedGuardDuty([
-                              ...selectedGuardDuty,
-                              p.id,
-                            ]);
-                          }
-                        }}
-                        style={{
-                          cursor: isDisabled ? "not-allowed" : "pointer",
-                        }}
-                      />
-                      <span
-                        style={{
-                          fontWeight: isChecked ? 600 : "normal",
-                          color: isChecked
-                            ? "var(--accent-primary, #38bdf8)"
-                            : "inherit",
-                        }}
-                      >
-                        {p.name}
-                      </span>
-                    </label>
+                      <span>{isSelected ? "🛡️ " : ""}{p.name}</span>
+                    </button>
                   );
                 },
               )}
             </div>
-            {selectedGuardDuty.length !== 2 && (
-              <span
+            {selectedGuardDuty.length > 0 && (
+              <div
                 style={{
-                  color: "var(--color-gnosia)",
-                  fontSize: "0.75rem",
-                  marginTop: "0.35rem",
-                  display: "block",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  marginTop: "0.4rem",
                 }}
               >
-                ※ 留守番は必ず2人選択してください
-              </span>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => setSelectedGuardDuty([])}
+                  style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}
+                >
+                  選択をリセット
+                </button>
+              </div>
             )}
           </div>
         )
         : (
           <div className="form-group">
             <label className="form-label">
-              名乗り出た人物 (未CO者のみ)
+              名乗り出た人物をタップしてください
             </label>
-            <select
-              className="form-select"
-              value={selectedPlayer}
-              onChange={(e) =>
-                setSelectedPlayer((e.target as HTMLSelectElement).value)}
-              disabled={coCandidates.length === 0}
-            >
-              {coCandidates.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
+            <div className="player-tile-grid">
+              {coCandidates.map((p) => {
+                const isSelected = editingEvent && selectedPlayer === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`player-tile ${isSelected ? "selected" : ""}`}
+                    onClick={() => handleSinglePlayerClick(p.id)}
+                  >
+                    <span>{p.name}</span>
+                  </button>
+                );
+              })}
               {coCandidates.length === 0 && (
-                <option value="">(全員すでにCO済みです)</option>
+                <span
+                  style={{
+                    color: "var(--text-muted)",
+                    fontSize: "0.8rem",
+                    padding: "0.5rem",
+                  }}
+                >
+                  ※ 生存している全員がすでに役職CO済みです
+                </span>
               )}
-            </select>
-            {coCandidates.length === 0 && (
-              <span
-                style={{
-                  color: "var(--text-muted)",
-                  fontSize: "0.75rem",
-                  marginTop: "0.25rem",
-                  display: "block",
-                }}
-              >
-                ※ 生存している全員がすでに役職CO済みです
-              </span>
-            )}
+            </div>
           </div>
         )}
 
@@ -321,7 +303,7 @@ export function COForm({
           display: "flex",
           justifyContent: "flex-end",
           gap: "0.75rem",
-          marginTop: "1.5rem",
+          marginTop: "1.2rem",
         }}
       >
         <button
@@ -333,13 +315,17 @@ export function COForm({
         >
           キャンセル
         </button>
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={isSubmitDisabled}
-        >
-          {editingEvent ? "変更を保存する" : "イベントを記録する"}
-        </button>
+        {editingEvent && (
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={claimedRole === "GUARD_DUTY"
+              ? selectedGuardDuty.length !== 2
+              : !selectedPlayer}
+          >
+            変更を保存する
+          </button>
+        )}
       </div>
     </form>
   );

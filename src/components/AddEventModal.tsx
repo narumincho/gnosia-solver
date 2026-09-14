@@ -108,7 +108,7 @@ export function AddEventModal({
       case "DOCTOR_REPORT":
         return "ドクター医療報告 の記録";
       case "DISAPPEARANCE":
-        return "消滅もしくは平和 の記録";
+        return "夜の消滅 (消滅もしくは平和) の記録";
       default:
         return "イベントの記録";
     }
@@ -138,7 +138,7 @@ export function AddEventModal({
         </button>
       </div>
 
-      {eventType === "CO" && (
+      {isOpen && eventType === "CO" && (
         <COForm
           editingEvent={editingEvent?.type === "CO" ? editingEvent : undefined}
           settings={settings}
@@ -151,7 +151,7 @@ export function AddEventModal({
         />
       )}
 
-      {eventType === "DEFINITE_LIE" && (
+      {isOpen && eventType === "DEFINITE_LIE" && (
         <DefiniteLieForm
           editingEvent={editingEvent?.type === "DEFINITE_LIE"
             ? editingEvent
@@ -164,7 +164,7 @@ export function AddEventModal({
         />
       )}
 
-      {eventType === "VOTE" && (
+      {isOpen && eventType === "VOTE" && (
         <VoteForm
           editingEvent={editingEvent?.type === "VOTE"
             ? editingEvent
@@ -177,7 +177,7 @@ export function AddEventModal({
         />
       )}
 
-      {eventType === "INVESTIGATION" && (
+      {isOpen && eventType === "INVESTIGATION" && (
         <InvestigationForm
           editingEvent={editingEvent?.type === "INVESTIGATION"
             ? editingEvent
@@ -192,7 +192,7 @@ export function AddEventModal({
         />
       )}
 
-      {eventType === "DOCTOR_REPORT" && (
+      {isOpen && eventType === "DOCTOR_REPORT" && (
         <DoctorReportForm
           editingEvent={editingEvent?.type === "DOCTOR_REPORT"
             ? editingEvent
@@ -207,7 +207,7 @@ export function AddEventModal({
         />
       )}
 
-      {eventType === "DISAPPEARANCE" && (
+      {isOpen && eventType === "DISAPPEARANCE" && (
         <DisappearanceForm
           editingEvent={editingEvent?.type === "DISAPPEARANCE"
             ? editingEvent
@@ -220,7 +220,7 @@ export function AddEventModal({
         />
       )}
 
-      {eventType === "GNOSIA_ATTACK" && (
+      {isOpen && eventType === "GNOSIA_ATTACK" && (
         <GnosiaAttackForm
           editingEvent={editingEvent?.type === "GNOSIA_ATTACK"
             ? editingEvent
@@ -233,7 +233,7 @@ export function AddEventModal({
         />
       )}
 
-      {eventType === "GUARDIAN_GUARD" && (
+      {isOpen && eventType === "GUARDIAN_GUARD" && (
         <GuardianGuardForm
           editingEvent={editingEvent?.type === "GUARDIAN_GUARD"
             ? editingEvent

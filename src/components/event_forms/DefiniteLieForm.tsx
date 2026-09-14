@@ -24,6 +24,9 @@ export function DefiniteLieForm({
   onSubmit,
   onCancel,
 }: DefiniteLieFormProps) {
+  const isSelfWitness = !editingEvent &&
+    (initialWitnessId === "player" || !initialWitnessId);
+
   const [witnessPlayer, setWitnessPlayer] = useState<string>(() => {
     if (editingEvent) return editingEvent.witnessId || "player";
     return initialWitnessId || "player";
@@ -31,10 +34,22 @@ export function DefiniteLieForm({
 
   const [selectedPlayer, setSelectedPlayer] = useState<string>(() => {
     if (editingEvent) return editingEvent.targetId;
-    const witness = initialWitnessId || "player";
-    const cand = settings.players.find((p) => p.id !== witness);
-    return cand?.id || "";
+    return "";
   });
+
+  // 嘘をついた乗員タイルをクリック
+  const handleTargetPlayerClick = (targetId: string) => {
+    if (editingEvent) {
+      setSelectedPlayer(targetId);
+      return;
+    }
+    // 1クリックで即登録！
+    onSubmit({
+      type: "DEFINITE_LIE",
+      targetId,
+      witnessId: witnessPlayer,
+    });
+  };
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
@@ -46,7 +61,9 @@ export function DefiniteLieForm({
     });
   };
 
-  const isSubmitDisabled = !selectedPlayer || selectedPlayer === witnessPlayer;
+  const targetCandidates = settings.players.filter((p) =>
+    p.id !== witnessPlayer
+  );
 
   return (
     <form onSubmit={handleSubmit}>
@@ -78,80 +95,66 @@ export function DefiniteLieForm({
           </span>
         </div>
 
-        <div className="form-group">
-          <label className="form-label">
-            嘘に気づいた / 共有した人物
-          </label>
-          {!editingEvent && witnessPlayer === "player"
-            ? (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                }}
-              >
-                <span
-                  className="badge badge-crew"
-                  style={{
-                    fontSize: "0.85rem",
-                    padding: "0.25rem 0.55rem",
-                  }}
-                >
-                  自分 (直感で看破)
-                </span>
-              </div>
-            )
-            : (
-              <select
-                className="form-select"
-                value={witnessPlayer}
-                onChange={(e) => {
-                  const newWitness = (e.target as HTMLSelectElement).value;
-                  setWitnessPlayer(newWitness);
-                  if (selectedPlayer === newWitness) {
-                    const other = settings.players.find((p) =>
-                      p.id !== newWitness
-                    );
-                    if (other) setSelectedPlayer(other.id);
-                  }
-                }}
-              >
-                {(editingEvent
-                  ? settings.players
-                  : settings.players.filter((p) => p.id !== "player")).map((
-                    p,
-                  ) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} {p.id === "player"
-                        ? "(直感で看破)"
-                        : "(夜の自室で密告・共有)"}
-                    </option>
-                  ))}
-              </select>
-            )}
-        </div>
+        {!isSelfWitness && (
+          <div className="form-group" style={{ marginBottom: "1rem" }}>
+            <label className="form-label">
+              1. 嘘に気づいた / 共有した人物 (密告者)
+            </label>
+            <select
+              className="form-select"
+              value={witnessPlayer}
+              onChange={(e) => {
+                const newWitness = (e.target as HTMLSelectElement).value;
+                setWitnessPlayer(newWitness);
+                if (selectedPlayer === newWitness) {
+                  setSelectedPlayer("");
+                }
+              }}
+            >
+              {(editingEvent
+                ? settings.players
+                : settings.players.filter((p) =>
+                  p.id !== "player"
+                )).map((
+                  p,
+                ) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} {p.id === "player"
+                      ? "(直感で看破)"
+                      : "(夜の自室で密告・共有)"}
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
 
         <div className="form-group" style={{ marginBottom: 0 }}>
-          <label className="form-label">嘘をついた人物</label>
-          <select
-            className="form-select"
-            value={selectedPlayer}
-            onChange={(e) =>
-              setSelectedPlayer((e.target as HTMLSelectElement).value)}
-          >
-            {settings.players
-              .filter((p) => p.id !== witnessPlayer)
-              .map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} {playerStatuses[p.id] === "FROZEN"
-                    ? "(冷凍済)"
-                    : playerStatuses[p.id] === "ATTACKED"
-                    ? "(消滅済)"
-                    : ""}
-                </option>
-              ))}
-          </select>
+          <label className="form-label">
+            {isSelfWitness
+              ? "嘘をついた人物をタップしてください"
+              : "2. 嘘をついた人物をタップしてください"}
+          </label>
+          <div className="player-tile-grid">
+            {targetCandidates.map((p) => {
+              const isSelected = editingEvent && selectedPlayer === p.id;
+              const status = playerStatuses[p.id];
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={`player-tile ${isSelected ? "selected" : ""}`}
+                  onClick={() => handleTargetPlayerClick(p.id)}
+                >
+                  <span>{p.name}</span>
+                  {status && status !== "ALIVE" && (
+                    <span className="player-tile-status">
+                      ({status === "FROZEN" ? "冷凍" : "消滅"})
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -160,7 +163,7 @@ export function DefiniteLieForm({
           display: "flex",
           justifyContent: "flex-end",
           gap: "0.75rem",
-          marginTop: "1.5rem",
+          marginTop: "1.2rem",
         }}
       >
         <button
@@ -172,13 +175,15 @@ export function DefiniteLieForm({
         >
           キャンセル
         </button>
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={isSubmitDisabled}
-        >
-          {editingEvent ? "変更を保存する" : "イベントを記録する"}
-        </button>
+        {editingEvent && (
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={!selectedPlayer || selectedPlayer === witnessPlayer}
+          >
+            変更を保存する
+          </button>
+        )}
       </div>
     </form>
   );

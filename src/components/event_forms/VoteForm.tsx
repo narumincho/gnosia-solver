@@ -32,8 +32,20 @@ export function VoteForm({
   const [selectedPlayer, setSelectedPlayer] = useState<string>(() => {
     if (editingEvent) return editingEvent.frozenPlayerId;
     if (initialPlayerId) return initialPlayerId;
-    return alivePlayers[0]?.id || "";
+    return "";
   });
+
+  const handlePlayerClick = (playerId: string) => {
+    if (editingEvent) {
+      setSelectedPlayer(playerId);
+      return;
+    }
+    // 1クリックで即登録！
+    onSubmit({
+      type: "VOTE",
+      frozenPlayerId: playerId,
+    });
+  };
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
@@ -44,26 +56,27 @@ export function VoteForm({
     });
   };
 
-  const isSubmitDisabled = !selectedPlayer || alivePlayers.length === 0;
-
   return (
     <form onSubmit={handleSubmit}>
       <div className="form-group">
         <label className="form-label">
-          コールドスリープされた人物 (生存者のみ)
+          コールドスリープされた人物をタップしてください
         </label>
-        <select
-          className="form-select"
-          value={selectedPlayer}
-          onChange={(e) =>
-            setSelectedPlayer((e.target as HTMLSelectElement).value)}
-        >
-          {alivePlayers.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+        <div className="player-tile-grid">
+          {alivePlayers.map((p) => {
+            const isSelected = editingEvent && selectedPlayer === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className={`player-tile ${isSelected ? "selected" : ""}`}
+                onClick={() => handlePlayerClick(p.id)}
+              >
+                <span>❄️ {p.name}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div
@@ -71,7 +84,7 @@ export function VoteForm({
           display: "flex",
           justifyContent: "flex-end",
           gap: "0.75rem",
-          marginTop: "1.5rem",
+          marginTop: "1.2rem",
         }}
       >
         <button
@@ -83,13 +96,15 @@ export function VoteForm({
         >
           キャンセル
         </button>
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={isSubmitDisabled}
-        >
-          {editingEvent ? "変更を保存する" : "イベントを記録する"}
-        </button>
+        {editingEvent && (
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={!selectedPlayer}
+          >
+            変更を保存する
+          </button>
+        )}
       </div>
     </form>
   );

@@ -25,6 +25,7 @@ type AddEventModalProps = {
   onUpdateEvent?: ((ev: GameEvent) => void) | undefined;
   editingEvent?: GameEvent | undefined;
   settings: GameSettings;
+  events?: ReadonlyArray<GameEvent> | undefined;
   currentDay?: number | undefined;
   initialType?: EventType | undefined;
   initialPlayerId?: string | undefined;
@@ -42,7 +43,8 @@ export function AddEventModal({
   onUpdateEvent,
   editingEvent,
   settings,
-  currentDay: _currentDay = 1,
+  events = [],
+  currentDay = 1,
   initialType = "DEFINITE_LIE",
   initialPlayerId,
   initialClaimedRole,
@@ -183,6 +185,8 @@ export function AddEventModal({
             ? editingEvent
             : undefined}
           settings={settings}
+          events={events}
+          currentDay={currentDay}
           playerStatuses={playerStatuses}
           claimedRoles={claimedRoles}
           myRole={myRole}

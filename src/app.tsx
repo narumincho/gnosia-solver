@@ -219,6 +219,8 @@ export function App() {
         onUpdateEvent={updateEvent}
         editingEvent={editingEvent}
         settings={settings}
+        events={events}
+        currentDay={currentDay}
         initialType={addEventInitialType}
         initialPlayerId={addEventInitialPlayerId}
         initialClaimedRole={addEventInitialClaimedRole}

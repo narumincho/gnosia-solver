@@ -1,5 +1,6 @@
-import { useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import {
+  GameEvent,
   GameSettings,
   InvestigationEvent,
   NewGameEvent,
@@ -11,6 +12,8 @@ import {
 type InvestigationFormProps = {
   editingEvent?: InvestigationEvent | undefined;
   settings: GameSettings;
+  events: ReadonlyArray<GameEvent>;
+  currentDay: number;
   playerStatuses: Record<string, PlayerStatus>;
   claimedRoles: Record<string, ReadonlyArray<Role>>;
   myRole?: Role | undefined;
@@ -22,6 +25,8 @@ type InvestigationFormProps = {
 export function InvestigationForm({
   editingEvent,
   settings,
+  events,
+  currentDay,
   playerStatuses,
   claimedRoles,
   myRole,
@@ -63,10 +68,71 @@ export function InvestigationForm({
     return "HUMAN";
   });
 
-  // 調査対象候補（調査者本人以外の全プレイヤー）
+  // 調査対象候補（生存しているか、昨晩に消滅した乗員で、かつこのエンジニア自身が未調査の乗員）
   const targetCandidates = useMemo(() => {
-    return settings.players.filter((p) => p.id !== selectedInvestigator);
-  }, [settings.players, selectedInvestigator]);
+    const targetDay = editingEvent?.day ?? currentDay;
+
+    // 昨晩（targetDay - 1）に消滅した乗員ID
+    const lastNightDisappeared = new Set<string>();
+    if (targetDay > 1) {
+      for (const ev of events) {
+        if (ev.day === targetDay - 1) {
+          if (ev.type === "DISAPPEARANCE") {
+            for (const pid of ev.disappearedPlayerIds) {
+              lastNightDisappeared.add(pid);
+            }
+          } else if (ev.type === "ATTACK") {
+            lastNightDisappeared.add(ev.attackedPlayerId);
+          }
+        }
+      }
+    }
+    const lastNightDisappearedSet: ReadonlySet<string> = lastNightDisappeared;
+
+    // 既にこのエンジニア自身が調査済みの対象ID（編集中イベントの対象は除外しない）
+    const alreadyInvestigated = new Set<string>();
+    for (const ev of events) {
+      if (
+        ev.type === "INVESTIGATION" &&
+        ev.investigatorId === selectedInvestigator &&
+        ev.id !== editingEvent?.id
+      ) {
+        alreadyInvestigated.add(ev.targetId);
+      }
+    }
+    const alreadyInvestigatedSet: ReadonlySet<string> = alreadyInvestigated;
+
+    return settings.players.filter((p) => {
+      // 調査者本人は除外
+      if (p.id === selectedInvestigator) return false;
+
+      // 編集中のイベント自身の対象であれば常に含める
+      if (editingEvent && p.id === editingEvent.targetId) return true;
+
+      // 既にこのエンジニア自身が調査済みの乗員は除外
+      if (alreadyInvestigatedSet.has(p.id)) return false;
+
+      // 生存しているか、昨晩に消滅した乗員に限る
+      const isAlive = (playerStatuses[p.id] || "ALIVE") === "ALIVE";
+      const disappearedLastNight = lastNightDisappearedSet.has(p.id);
+
+      return isAlive || disappearedLastNight;
+    });
+  }, [
+    settings.players,
+    selectedInvestigator,
+    events,
+    playerStatuses,
+    currentDay,
+    editingEvent,
+  ]);
+
+  // 調査者が切り替わった場合などに無効になった targetPlayer をリセット
+  useEffect(() => {
+    if (targetPlayer && !targetCandidates.some((p) => p.id === targetPlayer)) {
+      setTargetPlayer("");
+    }
+  }, [targetCandidates, targetPlayer]);
 
   // 1クリックで判定と対象を確定
   const handleReportClick = (targetId: string, result: ReportJudgement) => {
@@ -144,53 +210,72 @@ export function InvestigationForm({
           調査対象と判定結果をタップしてください (白または黒をタップで即登録)
         </label>
         <div className="player-report-list">
-          {targetCandidates.map((p) => {
-            const status = playerStatuses[p.id];
-            const isSelected = editingEvent && targetPlayer === p.id;
-            return (
+          {targetCandidates.length === 0
+            ? (
               <div
-                key={p.id}
-                className="player-report-tile"
                 style={{
-                  background: isSelected
-                    ? "rgba(56, 189, 248, 0.15)"
-                    : undefined,
-                  borderColor: isSelected ? "#38bdf8" : undefined,
+                  color: "var(--text-muted)",
+                  fontSize: "0.85rem",
+                  padding: "1.5rem",
+                  textAlign: "center",
+                  background: "rgba(255, 255, 255, 0.03)",
+                  borderRadius: "8px",
+                  border: "1px dashed var(--border-color)",
                 }}
               >
-                <span className="player-report-name">
-                  {p.name}
-                  {status && status !== "ALIVE" && (
-                    <span
-                      style={{
-                        fontSize: "0.7rem",
-                        color: "var(--text-muted)",
-                        fontWeight: "normal",
-                      }}
-                    >
-                      ({status === "FROZEN" ? "冷凍" : "消滅"})
-                    </span>
-                  )}
-                </span>
-                <div className="player-report-actions">
-                  <button
-                    type="button"
-                    className="btn-report-human"
-                    onClick={() => handleReportClick(p.id, "HUMAN")}
-                  >
-                    ⚪ 人間 (白)
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-report-gnosia"
-                    onClick={() => handleReportClick(p.id, "GNOSIA")}
-                  >
-                    ⚫ グノーシア (黒)
-                  </button>
-                </div>
+                調査可能な乗員がいません（生存者・昨晩消滅者をすべて調査済み、または対象なし）
               </div>
-            );
-          })}
+            )
+            : (
+              targetCandidates.map((p) => {
+                const status = playerStatuses[p.id];
+                const isSelected = editingEvent && targetPlayer === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    className="player-report-tile"
+                    style={{
+                      background: isSelected
+                        ? "rgba(56, 189, 248, 0.15)"
+                        : undefined,
+                      borderColor: isSelected ? "#38bdf8" : undefined,
+                    }}
+                  >
+                    <span className="player-report-name">
+                      {p.name}
+                      {status && status !== "ALIVE" && (
+                        <span
+                          style={{
+                            fontSize: "0.72rem",
+                            color: "var(--text-muted)",
+                            fontWeight: "normal",
+                            marginLeft: "0.3rem",
+                          }}
+                        >
+                          (昨晩消滅)
+                        </span>
+                      )}
+                    </span>
+                    <div className="player-report-actions">
+                      <button
+                        type="button"
+                        className="btn-report-human"
+                        onClick={() => handleReportClick(p.id, "HUMAN")}
+                      >
+                        ⚪ 人間 (白)
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-report-gnosia"
+                        onClick={() => handleReportClick(p.id, "GNOSIA")}
+                      >
+                        ⚫ グノーシア (黒)
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
         </div>
       </div>
 

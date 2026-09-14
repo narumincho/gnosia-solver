@@ -312,7 +312,7 @@ export const FULL_MATCH_3_SESSION: SampleSession = {
     currentDay: 5,
     perspective: {
       id: "player",
-      name: "自分 (Player)",
+      name: "主人公",
       role: "GUARDIAN_ANGEL",
     },
     myRole: "GUARDIAN_ANGEL",

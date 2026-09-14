@@ -245,7 +245,7 @@ export function ExportImportModal({
           }}
         >
           <Upload size={14} />
-          <span>インポート (復元)</span>
+          <span>インポート (読込)</span>
         </button>
       </div>
 

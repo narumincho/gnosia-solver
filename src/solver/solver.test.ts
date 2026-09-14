@@ -421,7 +421,7 @@ Deno.test("GnosiaSolver - 留守番CO（2人同時ペアCO）による確定留�
 Deno.test("GnosiaSolver - 実戦フルプレイ検証（15人・4グノーシア・Day 1〜Day 6 完走データ）", () => {
   const settings: GameSettings = {
     players: [
-      { id: "player", name: "自分 (Player)" },
+      { id: "player", name: "主人公" },
       { id: "setsu", name: "セツ" },
       { id: "gina", name: "ジナ" },
       { id: "sq", name: "SQ" },
@@ -1043,7 +1043,7 @@ Deno.test("GnosiaSolver - 仲間グノーシアが人間確定（エンジニア
 Deno.test("GnosiaSolver - 仲間グノーシア視点でも自分(player)がグノーシア100%になること", () => {
   const settings: GameSettings = {
     players: [
-      { id: "player", name: "自分 (Player)" },
+      { id: "player", name: "主人公" },
       { id: "setsu", name: "セツ" },
       { id: "gina", name: "ジナ" },
       { id: "sq", name: "SQ" },
@@ -1147,7 +1147,7 @@ Deno.test("GnosiaSolver - 仲間グノーシア視点でも自分(player)がグ�
 Deno.test("GnosiaSolver - 複数日にわたる襲撃と2人消滅（バグ蒸発＋襲撃）で破綻しないこと", () => {
   const settings: GameSettings = {
     players: [
-      { id: "player", name: "自分 (Player)" },
+      { id: "player", name: "主人公" },
       { id: "setsu", name: "セツ" },
       { id: "gina", name: "ジナ" },
       { id: "sq", name: "SQ" },
@@ -1309,7 +1309,7 @@ Deno.test("GnosiaSolver - 複数日にわたる襲撃と2人消滅（バグ蒸�
 Deno.test("GnosiaSolver - 翌朝にバグ消滅者（セツ）への調査報告が追加された場合も正常に計算できること", () => {
   const settings: GameSettings = {
     players: [
-      { id: "player", name: "自分 (Player)" },
+      { id: "player", name: "主人公" },
       { id: "setsu", name: "セツ" },
       { id: "gina", name: "ジナ" },
       { id: "sq", name: "SQ" },
@@ -1488,7 +1488,7 @@ Deno.test("GnosiaSolver - 翌朝にバグ消滅者（セツ）への調査報告
 Deno.test("GnosiaSolver - 実戦完走検証2（15人・3グノーシア・Day 1〜Day 5 完走データ）", () => {
   const settings: GameSettings = {
     players: [
-      { id: "player", name: "自分 (Player)" },
+      { id: "player", name: "主人公" },
       { id: "setsu", name: "セツ" },
       { id: "gina", name: "ジナ" },
       { id: "sq", name: "SQ" },
@@ -1738,7 +1738,7 @@ Deno.test("GnosiaSolver - 実戦完走検証2（15人・3グノーシア・Day 1
 
   const solver = new GnosiaSolver(settings, events);
 
-  // 1. 自分 (Player) 視点: グノーシア、仲間 [レムナン, ジョナス]
+  // 1. 主人公 視点: グノーシア、仲間 [レムナン, ジョナス]
   const playerResult = solver.solve({
     perspectivePlayerId: "player",
     perspectiveRole: "GNOSIA",

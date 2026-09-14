@@ -10,7 +10,7 @@ export type SampleSession = {
 
 // 15人標準メンバー
 export const DEFAULT_15_PLAYERS = [
-  { id: "player", name: "自分 (Player)" },
+  { id: "player", name: "主人公" },
   { id: "setsu", name: "セツ" },
   { id: "gina", name: "ジナ" },
   { id: "sq", name: "SQ" },

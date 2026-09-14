@@ -91,7 +91,7 @@ export const SCENARIO_SESSIONS: ReadonlyArray<SampleSession> = [
       exportedAt: "2026-09-14T00:00:00.000Z",
       settings: {
         players: [
-          { id: "player", name: "自分 (Player)" },
+          { id: "player", name: "主人公" },
           { id: "setsu", name: "セツ" },
           { id: "gina", name: "ジナ" },
           { id: "sq", name: "SQ" },
@@ -112,7 +112,7 @@ export const SCENARIO_SESSIONS: ReadonlyArray<SampleSession> = [
       currentDay: 3,
       perspective: {
         id: "player",
-        name: "自分 (Player)",
+        name: "主人公",
         role: "GUARDIAN_ANGEL",
       },
       myRole: "GUARDIAN_ANGEL",
@@ -165,7 +165,7 @@ export const SCENARIO_SESSIONS: ReadonlyArray<SampleSession> = [
       exportedAt: "2026-09-14T00:00:00.000Z",
       settings: {
         players: [
-          { id: "player", name: "自分 (Player)" },
+          { id: "player", name: "主人公" },
           { id: "setsu", name: "セツ" },
           { id: "gina", name: "ジナ" },
           { id: "sq", name: "SQ" },
@@ -185,7 +185,7 @@ export const SCENARIO_SESSIONS: ReadonlyArray<SampleSession> = [
       currentDay: 2,
       perspective: {
         id: "player",
-        name: "自分 (Player)",
+        name: "主人公",
         role: "GUARDIAN_ANGEL",
       },
       myRole: "GUARDIAN_ANGEL",
@@ -219,7 +219,7 @@ export const SCENARIO_SESSIONS: ReadonlyArray<SampleSession> = [
       exportedAt: "2026-09-14T00:00:00.000Z",
       settings: SETTINGS_15P_3G,
       currentDay: 1,
-      perspective: { id: "player", name: "自分 (Player)", role: "GNOSIA" },
+      perspective: { id: "player", name: "主人公", role: "GNOSIA" },
       myRole: "GNOSIA",
       gnosiaComrades: ["sha_ming", "shigemichi"],
       events: [
@@ -258,7 +258,7 @@ export const SCENARIO_SESSIONS: ReadonlyArray<SampleSession> = [
       exportedAt: "2026-09-14T00:00:00.000Z",
       settings: SETTINGS_15P_3G,
       currentDay: 3,
-      perspective: { id: "player", name: "自分 (Player)", role: "GNOSIA" },
+      perspective: { id: "player", name: "主人公", role: "GNOSIA" },
       myRole: "GNOSIA",
       gnosiaComrades: ["remnan", "jonas"],
       events: [

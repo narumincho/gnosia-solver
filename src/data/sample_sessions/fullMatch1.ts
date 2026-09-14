@@ -11,7 +11,7 @@ export const FULL_MATCH_1_SESSION: SampleSession = {
     exportedAt: "2026-09-14T00:00:00.000Z",
     settings: SETTINGS_15P_4G,
     currentDay: 6,
-    perspective: { id: "player", name: "自分 (Player)", role: "ENGINEER" },
+    perspective: { id: "player", name: "主人公", role: "ENGINEER" },
     myRole: "ENGINEER",
     events: [
       {

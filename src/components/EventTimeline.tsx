@@ -5,7 +5,6 @@ import {
   ArrowDown,
   ArrowUp,
   Calendar,
-  Clock,
   GripVertical,
   Pencil,
   Plus,
@@ -187,33 +186,8 @@ export function EventTimeline({
               border: "1px solid rgba(56, 189, 248, 0.3)",
             }}
           >
-            全 {events.length} イベント
+            {events.length} イベント
           </span>
-          {inspectedEventIndex !== null && onSelectCheckpoint && (
-            <button
-              type="button"
-              className="badge"
-              style={{
-                fontSize: "0.72rem",
-                background: "rgba(14, 116, 144, 0.35)",
-                color: "#38bdf8",
-                border: "1px solid #38bdf8",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.3rem",
-              }}
-              onClick={() => onSelectCheckpoint(null)}
-              title="最新時点の推論に戻る"
-            >
-              <Clock size={12} />
-              <span>
-                {inspectedEventIndex < 0
-                  ? "初期状態"
-                  : `#${inspectedEventIndex + 1} 時点`} (最新に戻る ✕)
-              </span>
-            </button>
-          )}
         </div>
       </div>
 

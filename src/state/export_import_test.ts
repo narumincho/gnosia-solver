@@ -28,7 +28,7 @@ Deno.test("SessionData - エクスポート＆インポートによる整合性�
     settings: DEFAULT_SETTINGS,
     events,
     currentDay: 1,
-    perspective: { id: "player", name: "自分 (Player)", role: "ENGINEER" },
+    perspective: { id: "player", name: "主人公", role: "ENGINEER" },
     gnosiaComrades: ["setsu"],
   };
 
@@ -173,7 +173,7 @@ Deno.test("SessionData - 仲間グノーシア視点でインポートされた�
     exportedAt: "2026-09-13T02:14:54.189Z",
     settings: {
       players: [
-        { id: "player", name: "自分 (Player)" },
+        { id: "player", name: "主人公" },
         { id: "setsu", name: "セツ" },
         { id: "gina", name: "ジナ" },
         { id: "sq", name: "SQ" },
@@ -316,7 +316,7 @@ Deno.test("SessionData - 守護天使視点でのセッション保持と護衛�
     currentDay: 2,
     perspective: {
       id: "player",
-      name: "自分 (Player)",
+      name: "主人公",
       role: "GUARDIAN_ANGEL",
     },
     myRole: "GUARDIAN_ANGEL",

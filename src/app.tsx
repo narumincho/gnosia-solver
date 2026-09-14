@@ -1,5 +1,4 @@
 import { useState } from "preact/hooks";
-import { Clock } from "lucide-preact";
 import { useGameStore } from "./state/store.ts";
 import { Header } from "./components/Header.tsx";
 import { PerspectiveBar } from "./components/PerspectiveBar.tsx";
@@ -17,10 +16,8 @@ export function App() {
     setSettings,
     events,
     currentDay,
-    effectiveDay,
     inspectedEventIndex,
     setInspectedEventIndex,
-    isInspectingPast,
     perspective,
     selectPerspective,
     updatePerspectiveRole,
@@ -138,44 +135,6 @@ export function App() {
 
       <div className="main-grid">
         <main className="main-content">
-          {isInspectingPast && (
-            <div className="inspecting-past-banner">
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  fontWeight: 500,
-                }}
-              >
-                <Clock size={16} color="var(--accent-primary, #38bdf8)" />
-                <span>
-                  過去時点の推論を表示中:{" "}
-                  <strong>
-                    {inspectedEventIndex! < 0
-                      ? "初期状態 (イベント0件)"
-                      : `イベント #${inspectedEventIndex! + 1} 完了時点`}
-                  </strong>{" "}
-                  (Day {effectiveDay}) — 全 {solverResult.totalPossibleWorlds}
-                  {" "}
-                  世界
-                </span>
-              </div>
-              <button
-                type="button"
-                className="btn btn-sm btn-primary"
-                onClick={() => setInspectedEventIndex(null)}
-                style={{
-                  padding: "0.25rem 0.75rem",
-                  fontSize: "0.78rem",
-                  fontWeight: 600,
-                }}
-              >
-                最新の推理に戻る ✕
-              </button>
-            </div>
-          )}
-
           <div className="player-grid">
             {settings.players.map((p) => (
               <PlayerCard

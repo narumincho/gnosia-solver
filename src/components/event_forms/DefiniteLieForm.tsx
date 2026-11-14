@@ -61,9 +61,11 @@ export function DefiniteLieForm({
     });
   };
 
-  const targetCandidates = settings.players.filter((p) =>
-    p.id !== witnessPlayer
-  );
+  // 生存者を先に、冷凍・消滅済みの人を後ろに並べる (それぞれの中では元の順番を保つ)
+  const isAlive = (id: string) => (playerStatuses[id] || "ALIVE") === "ALIVE";
+  const targetCandidates = settings.players
+    .filter((p) => p.id !== witnessPlayer)
+    .toSorted((a, b) => Number(isAlive(b.id)) - Number(isAlive(a.id)));
 
   return (
     <form onSubmit={handleSubmit}>

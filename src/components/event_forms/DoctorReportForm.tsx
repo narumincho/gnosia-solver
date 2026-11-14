@@ -1,3 +1,4 @@
+import { NoReporterNotice } from "./NoReporterNotice.tsx";
 import { useMemo, useState } from "preact/hooks";
 import {
   DoctorReportEvent,
@@ -71,7 +72,7 @@ export function DoctorReportForm({
   const [selectedDoctor, setSelectedDoctor] = useState<string>(() => {
     if (editingEvent) return editingEvent.reporterId;
     if (initialPlayerId) return initialPlayerId;
-    return doctorCandidates[0]?.id || alivePlayers[0]?.id || "";
+    return doctorCandidates[0]?.id ?? "";
   });
 
   const [targetPlayer, setTargetPlayer] = useState<string>(() => {
@@ -133,6 +134,11 @@ export function DoctorReportForm({
       result: reportResult,
     });
   };
+
+  // 報告できる生存CO者がいない場合は入力させない (CO していない人の報告として登録されるのを防ぐ)
+  if (doctorCandidates.length === 0 && !editingEvent) {
+    return <NoReporterNotice roleName="ドクター" onCancel={onCancel} />;
+  }
 
   return (
     <form onSubmit={handleSubmit}>
@@ -241,16 +247,18 @@ export function DoctorReportForm({
                       <button
                         type="button"
                         className="btn-report-human"
+                        title="人間 (白) と判定"
                         onClick={() => handleReportClick(p.id, "HUMAN")}
                       >
-                        ⚪ 人間 (白)
+                        ⚪ 白
                       </button>
                       <button
                         type="button"
                         className="btn-report-gnosia"
+                        title="グノーシア (黒) と判定"
                         onClick={() => handleReportClick(p.id, "GNOSIA")}
                       >
-                        ⚫ グノーシア (黒)
+                        ⚫ 黒
                       </button>
                     </div>
                   </div>

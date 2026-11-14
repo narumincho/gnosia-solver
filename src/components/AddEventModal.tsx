@@ -203,6 +203,8 @@ export function AddEventModal({
             ? editingEvent
             : undefined}
           settings={settings}
+          events={events}
+          currentDay={currentDay}
           playerStatuses={playerStatuses}
           claimedRoles={claimedRoles}
           myRole={myRole}

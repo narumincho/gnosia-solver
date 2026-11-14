@@ -47,7 +47,6 @@ export function DisappearanceForm({
     onSubmit({
       type: "DISAPPEARANCE",
       disappearedPlayerIds: [],
-      guardedPlayerId: editingEvent?.guardedPlayerId,
     });
   };
 
@@ -67,7 +66,6 @@ export function DisappearanceForm({
     onSubmit({
       type: "DISAPPEARANCE",
       disappearedPlayerIds: [playerId],
-      guardedPlayerId: editingEvent?.guardedPlayerId,
     });
   };
 

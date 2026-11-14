@@ -6,6 +6,8 @@ import {
   ROLE_DEFINITIONS,
   SolverResult,
 } from "../types.ts";
+import { Conclusion, getConclusion } from "../solver/explain.ts";
+import { conclusionLabel } from "./ExplanationModal.tsx";
 
 type PlayerCardProps = {
   readonly player: { readonly id: string; readonly name: string };
@@ -27,6 +29,9 @@ type PlayerCardProps = {
   readonly onQuickGnosiaAttack?: ((playerId: string) => void) | undefined;
   readonly onQuickInvestigate: (playerId: string) => void;
   readonly onQuickDoctorReport?: ((playerId: string) => void) | undefined;
+  readonly onExplain?:
+    | ((playerId: string, conclusion: Conclusion) => void)
+    | undefined;
 };
 
 type DonutSlice = {
@@ -302,9 +307,11 @@ export function PlayerCard({
   isCurrentPerspective,
   solverResult,
   onTogglePerspective,
+  onExplain,
 }: PlayerCardProps) {
   const roleProbs = solverResult.roleProbabilities[player.id] ?? {};
   const definiteRole = solverResult.definiteRoles[player.id];
+  const conclusion = getConclusion(solverResult, player.id);
 
   // ステータスクラス
   const cardClass = [
@@ -341,6 +348,7 @@ export function PlayerCard({
       prob,
       color: ROLE_DEFINITIONS[role].color,
       name: ROLE_DEFINITIONS[role].name,
+      shortName: ROLE_DEFINITIONS[role].shortName,
     }));
 
   const probSummary = sortedRoles.length > 0
@@ -410,6 +418,20 @@ export function PlayerCard({
         definiteRole={definiteRole}
         tooltip={tooltipText}
       />
+
+      {/* 視点人物は役職を前提として固定しているので根拠は出さない */}
+      {conclusion && onExplain && !isCurrentPerspective && (
+        <button
+          type="button"
+          className="explain-btn"
+          onClick={() => onExplain(player.id, conclusion)}
+          title={`${player.name} が${
+            conclusionLabel(conclusion)
+          }になった根拠を表示`}
+        >
+          根拠
+        </button>
+      )}
     </div>
   );
 }

@@ -188,6 +188,30 @@ function getRelatedDisappearanceForInvestigation(
 }
 
 /**
+ * ゲームが継続したことが分かる時点の死亡者集合を返す。
+ * 冷凍 (VOTE) や夜 (DISAPPEARANCE) の後に何らかのイベントが記録されていれば、その時点でゲームは終わっていない
+ */
+function getContinuationCheckpoints(
+  events: ReadonlyArray<GameEvent>,
+  deadBeforeByIndex: ReadonlyArray<ReadonlySet<string>>,
+): ReadonlyArray<ReadonlySet<string>> {
+  const result: Array<ReadonlySet<string>> = [];
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i];
+    if (
+      ev &&
+      (ev.type === "VOTE" || ev.type === "DISAPPEARANCE" ||
+        ev.type === "ATTACK") &&
+      i < events.length - 1
+    ) {
+      const dead = deadBeforeByIndex[i + 1];
+      if (dead) result.push(dead);
+    }
+  }
+  return result;
+}
+
+/**
  * グノーシア人狼ソルバー
  */
 export class GnosiaSolver {
@@ -807,8 +831,10 @@ export class GnosiaSolver {
       options.perspectivePlayerId &&
       options.perspectiveRole === "ENGINEER"
     ) {
-      for (const ev of this.events) {
+      for (let evIdx = 0; evIdx < this.events.length; evIdx++) {
+        const ev = this.events[evIdx];
         if (
+          ev &&
           ev.type === "INVESTIGATION" &&
           ev.investigatorId === options.perspectivePlayerId
         ) {
@@ -822,12 +848,19 @@ export class GnosiaSolver {
 
             // バグ調査消滅の判定:
             // その夜に targetId が消滅していないなら、対象はバグではあり得ない
-            const disappearedThatNight = this.events.some(
-              (other) =>
-                other.type === "ATTACK" &&
-                (other.day === ev.day || other.day === ev.day - 1) &&
-                other.attackedPlayerId === ev.targetId,
+            const relatedDis = getRelatedDisappearanceForInvestigation(
+              this.events,
+              evIdx,
             );
+            const disappearedThatNight =
+              (relatedDis?.disappearedPlayerIds.includes(ev.targetId) ??
+                false) ||
+              this.events.some(
+                (other) =>
+                  other.type === "ATTACK" &&
+                  (other.day === ev.day || other.day === ev.day - 1) &&
+                  other.attackedPlayerId === ev.targetId,
+              );
             if (!disappearedThatNight) {
               targetCandidates.delete("BUG");
             }
@@ -1052,26 +1085,92 @@ export class GnosiaSolver {
         (candidateRoles.get(a)?.size ?? 0) - (candidateRoles.get(b)?.size ?? 0),
     );
 
+    // 各イベントの時点までに死亡（冷凍・消滅）したプレイヤーを事前計算
+    // deadBeforeByIndex[i] は i 番目のイベントより前に死亡した人、
+    // deadBeforeByIndex[events.length] は全イベント後の死亡者
+    const deadBeforeByIndex: Array<ReadonlySet<string>> = [];
+    {
+      const dead = new Set<string>();
+      for (const ev of this.events) {
+        deadBeforeByIndex.push(new Set(dead));
+        if (ev.type === "VOTE") dead.add(ev.frozenPlayerId);
+        else if (ev.type === "DISAPPEARANCE") {
+          for (const pid of ev.disappearedPlayerIds) dead.add(pid);
+        } else if (ev.type === "ATTACK") {
+          dead.add(ev.attackedPlayerId);
+        }
+      }
+      deadBeforeByIndex.push(new Set(dead));
+    }
+
+    // 消滅イベントごとの夜の情報 (襲撃先・護衛先・調査) を事前計算
+    const nightInfoByIndex = this.events.map((ev, i) =>
+      ev.type === "DISAPPEARANCE"
+        ? {
+          gAttack: findCorrespondingGnosiaAttack(this.events, i),
+          guard: findCorrespondingGuardianGuard(this.events, i),
+          nightInvs: getInvestigationsForNight(this.events, i),
+        }
+        : undefined
+    );
+
+    // ゲームが継続したことが分かる時点 (冷凍・夜の後にさらにイベントがある) の死亡者集合
+    const continuationCheckpoints = getContinuationCheckpoints(
+      this.events,
+      deadBeforeByIndex,
+    );
+
+    /**
+     * 指定の役職の人物が、指定時点で生存している可能性があるか。
+     * 無制約プレイヤーは消滅・冷凍イベントに登場しないため常に生存扱いで良い
+     */
+    const canRoleBeAlive = (
+      assignment: RoleAssignment,
+      role: Role,
+      dead: ReadonlySet<string>,
+    ): boolean => {
+      for (const [pid, r] of Object.entries(assignment)) {
+        if (r === role && !dead.has(pid)) return true;
+      }
+      return remainingRoleCounts[role] > 0;
+    };
+
+    /**
+     * ゲーム継続条件: 冷凍・夜の後もゲームが続いているなら、
+     * グノーシアが1人以上生存し、かつ生存グノーシア数 < 生存人数 - 生存グノーシア数
+     */
+    const satisfiesContinuation = (
+      assignment: RoleAssignment,
+      isComplete: boolean,
+    ): boolean => {
+      const gnosiaTotal = targetRoleCounts.GNOSIA;
+      for (const dead of continuationCheckpoints) {
+        let deadGnosia = 0;
+        for (const pid of dead) {
+          if (assignment[pid] === "GNOSIA") deadGnosia++;
+        }
+        // 部分割当でも、グノーシアが全滅していれば破綻
+        if (deadGnosia >= gnosiaTotal) return false;
+        if (isComplete) {
+          const aliveGnosia = gnosiaTotal - deadGnosia;
+          const aliveTotal = playerIds.length - dead.size;
+          if (aliveGnosia >= aliveTotal - aliveGnosia) return false;
+        }
+      }
+      return true;
+    };
+
     const checkEventConsistency = (
       assignment: RoleAssignment,
       isComplete: boolean = false,
     ): boolean => {
+      if (!satisfiesContinuation(assignment, isComplete)) return false;
       for (let evIdx = 0; evIdx < this.events.length; evIdx++) {
         const ev = this.events[evIdx];
         if (!ev) continue;
 
-        // 該当イベントまでに死亡（冷凍・消滅）したプレイヤーを抽出
-        const deadBefore = new Set<string>();
-        for (let j = 0; j < evIdx; j++) {
-          const other = this.events[j];
-          if (!other) continue;
-          if (other.type === "VOTE") deadBefore.add(other.frozenPlayerId);
-          else if (other.type === "DISAPPEARANCE") {
-            for (const pid of other.disappearedPlayerIds) deadBefore.add(pid);
-          } else if (other.type === "ATTACK") {
-            deadBefore.add(other.attackedPlayerId);
-          }
-        }
+        // 該当イベントまでに死亡（冷凍・消滅）したプレイヤー
+        const deadBefore = deadBeforeByIndex[evIdx] ?? new Set<string>();
 
         if (ev.type === "INVESTIGATION") {
           const invRole = assignment[ev.investigatorId];
@@ -1120,29 +1219,20 @@ export class GnosiaSolver {
             }
           }
         } else if (ev.type === "DISAPPEARANCE") {
-          // 同夜のグノーシア襲撃対象を取得
-          const gAttack = findCorrespondingGnosiaAttack(this.events, evIdx);
-          // 同夜の守護天使護衛対象を取得
-          const guard = findCorrespondingGuardianGuard(this.events, evIdx);
-          // その夜に行われた調査を取得
-          const nightInvs = getInvestigationsForNight(this.events, evIdx);
+          // 同夜のグノーシア襲撃対象・守護天使護衛対象・調査 (事前計算済み)
+          const nightInfo = nightInfoByIndex[evIdx];
+          const gAttack = nightInfo?.gAttack;
+          const guard = nightInfo?.guard;
+          const nightInvs = nightInfo?.nightInvs ?? [];
 
           // バグは襲撃では消滅しない。消滅者がバグなら、それは真エンジニアの調査による蒸発であり、
           // その夜の時点で真エンジニアが生存していなければならない
           if (
             ev.disappearedPlayerIds.some((pid) => assignment[pid] === "BUG")
           ) {
-            let canEngineerBeAlive = false;
-            for (const [pid, r] of Object.entries(assignment)) {
-              if (r === "ENGINEER" && !deadBefore.has(pid)) {
-                canEngineerBeAlive = true;
-                break;
-              }
+            if (!canRoleBeAlive(assignment, "ENGINEER", deadBefore)) {
+              return false;
             }
-            if (!canEngineerBeAlive && remainingRoleCounts["ENGINEER"] > 0) {
-              canEngineerBeAlive = true;
-            }
-            if (!canEngineerBeAlive) return false;
           }
 
           if (guard) {
@@ -1151,91 +1241,29 @@ export class GnosiaSolver {
             if (deadBefore.has(guardTarget)) return false;
 
             if (ev.disappearedPlayerIds.length === 0) {
-              if (assignment[guardTarget] === "GNOSIA") {
-                let canHaveBug = false;
-                if (this.settings.roles.hasBug) {
-                  for (const [pid, r] of Object.entries(assignment)) {
-                    if (r === "BUG" && !deadBefore.has(pid)) {
-                      canHaveBug = true;
-                      break;
-                    }
-                  }
-                  if (!canHaveBug && remainingRoleCounts["BUG"] > 0) {
-                    canHaveBug = true;
-                  }
-                }
-                if (!canHaveBug) return false;
+              // 護衛先がグノーシアなら襲撃は別の人物に向かったはずなので、生存中のバグが襲撃された場合のみ平和になり得る
+              if (
+                assignment[guardTarget] === "GNOSIA" &&
+                !canRoleBeAlive(assignment, "BUG", deadBefore)
+              ) {
+                return false;
               }
-            } else if (ev.disappearedPlayerIds.length === 1) {
-              const P = ev.disappearedPlayerIds[0];
-              if (P === guardTarget) {
-                const targetRole = assignment[guardTarget];
-                if (targetRole !== undefined && targetRole !== "BUG") {
-                  return false;
-                }
-                if (isComplete) {
-                  if (assignment[guardTarget] !== "BUG") return false;
-
-                  // その夜、真エンジニアが生存していなければならない
-                  let canEngineerBeAlive = false;
-                  for (const [pid, r] of Object.entries(assignment)) {
-                    if (r === "ENGINEER" && !deadBefore.has(pid)) {
-                      canEngineerBeAlive = true;
-                      break;
-                    }
-                  }
-                  if (
-                    !canEngineerBeAlive &&
-                    remainingRoleCounts["ENGINEER"] > 0
-                  ) {
-                    canEngineerBeAlive = true;
-                  }
-                  if (!canEngineerBeAlive) return false;
-
-                  // もし真エンジニアが guardTarget 以外を調査したイベントが記録されていれば矛盾
-                  for (const invEv of nightInvs) {
-                    if (
-                      assignment[invEv.investigatorId] === "ENGINEER" &&
-                      invEv.targetId !== guardTarget
-                    ) {
-                      return false;
-                    }
-                  }
-                }
+            } else if (ev.disappearedPlayerIds.includes(guardTarget)) {
+              // 護衛対象は襲撃で消滅しないため、消滅したならバグ蒸発
+              // (真エンジニアの生存は上のバグ消滅チェックで検証済み)
+              const targetRole = assignment[guardTarget];
+              if (targetRole !== undefined && targetRole !== "BUG") {
+                return false;
               }
-            } else if (ev.disappearedPlayerIds.length === 2) {
-              if (ev.disappearedPlayerIds.includes(guardTarget)) {
-                const targetRole = assignment[guardTarget];
-                if (targetRole !== undefined && targetRole !== "BUG") {
-                  return false;
-                }
-                if (isComplete) {
-                  if (assignment[guardTarget] !== "BUG") return false;
-
-                  // その夜、真エンジニアが生存していなければならない
-                  let canEngineerBeAlive = false;
-                  for (const [pid, r] of Object.entries(assignment)) {
-                    if (r === "ENGINEER" && !deadBefore.has(pid)) {
-                      canEngineerBeAlive = true;
-                      break;
-                    }
-                  }
+              if (isComplete) {
+                if (assignment[guardTarget] !== "BUG") return false;
+                // もし真エンジニアが guardTarget 以外を調査したイベントが記録されていれば矛盾
+                for (const invEv of nightInvs) {
                   if (
-                    !canEngineerBeAlive &&
-                    remainingRoleCounts["ENGINEER"] > 0
+                    assignment[invEv.investigatorId] === "ENGINEER" &&
+                    invEv.targetId !== guardTarget
                   ) {
-                    canEngineerBeAlive = true;
-                  }
-                  if (!canEngineerBeAlive) return false;
-
-                  // もし真エンジニアが guardTarget 以外を調査したイベントが記録されていれば矛盾
-                  for (const invEv of nightInvs) {
-                    if (
-                      assignment[invEv.investigatorId] === "ENGINEER" &&
-                      invEv.targetId !== guardTarget
-                    ) {
-                      return false;
-                    }
+                    return false;
                   }
                 }
               }
@@ -1272,14 +1300,9 @@ export class GnosiaSolver {
               // 襲撃先が不明な平和な夜:
               // グノーシアは毎晩襲撃するので、生存中の守護天使が護衛したか、生存中のバグを襲撃したかのいずれか。
               // (無制約プレイヤーは消滅・冷凍イベントに登場しないため常に生存扱いで良い)
-              const canBeExplainedBy = (role: Role): boolean => {
-                for (const [pid, r] of Object.entries(assignment)) {
-                  if (r === role && !deadBefore.has(pid)) return true;
-                }
-                return remainingRoleCounts[role] > 0;
-              };
               if (
-                !canBeExplainedBy("GUARDIAN_ANGEL") && !canBeExplainedBy("BUG")
+                !canRoleBeAlive(assignment, "GUARDIAN_ANGEL", deadBefore) &&
+                !canRoleBeAlive(assignment, "BUG", deadBefore)
               ) {
                 return false;
               }

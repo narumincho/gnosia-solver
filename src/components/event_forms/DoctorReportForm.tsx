@@ -1,6 +1,7 @@
 import { useMemo, useState } from "preact/hooks";
 import {
   DoctorReportEvent,
+  GameEvent,
   GameSettings,
   NewGameEvent,
   PlayerStatus,
@@ -11,6 +12,8 @@ import {
 type DoctorReportFormProps = {
   editingEvent?: DoctorReportEvent | undefined;
   settings: GameSettings;
+  events: ReadonlyArray<GameEvent>;
+  currentDay: number;
   playerStatuses: Record<string, PlayerStatus>;
   claimedRoles: Record<string, ReadonlyArray<Role>>;
   myRole?: Role | undefined;
@@ -22,6 +25,8 @@ type DoctorReportFormProps = {
 export function DoctorReportForm({
   editingEvent,
   settings,
+  events,
+  currentDay,
   playerStatuses,
   claimedRoles,
   myRole,
@@ -35,19 +40,33 @@ export function DoctorReportForm({
     );
   }, [settings.players, playerStatuses]);
 
+  // 冷凍された順 (新しい順) に並べる。直近の冷凍者が先頭に来るので、通常はそのままタップできる
   const frozenPlayers = useMemo(() => {
-    return settings.players.filter((p) => playerStatuses[p.id] === "FROZEN");
-  }, [settings.players, playerStatuses]);
+    const voteOrder: Array<string> = [];
+    for (const ev of events) {
+      if (ev.type === "VOTE") voteOrder.push(ev.frozenPlayerId);
+    }
+    const orderOf = (id: string) => voteOrder.lastIndexOf(id);
+    return settings.players
+      .filter((p) => playerStatuses[p.id] === "FROZEN")
+      .toSorted((a, b) => orderOf(b.id) - orderOf(a.id));
+  }, [settings.players, playerStatuses, events]);
 
   // ドクターCOしたプレイヤー（または自分=真ドクターの場合の自分）
+  // 新規入力時は、すでに冷凍・消滅したCO者は診察できないので除外する
   const doctorCandidates = useMemo(() => {
     return settings.players.filter((p) => {
+      if (
+        !editingEvent && (playerStatuses[p.id] || "ALIVE") !== "ALIVE"
+      ) {
+        return false;
+      }
       const cos = claimedRoles[p.id] || [];
       if (cos.includes("DOCTOR")) return true;
       if (p.id === "player" && myRole === "DOCTOR") return true;
       return false;
     });
-  }, [settings.players, claimedRoles, myRole]);
+  }, [settings.players, claimedRoles, myRole, playerStatuses, editingEvent]);
 
   const [selectedDoctor, setSelectedDoctor] = useState<string>(() => {
     if (editingEvent) return editingEvent.reporterId;
@@ -64,6 +83,30 @@ export function DoctorReportForm({
     if (editingEvent) return editingEvent.result;
     return "HUMAN";
   });
+
+  // このドクターがすでに報告済みの対象
+  const alreadyReported: ReadonlySet<string> = useMemo(() => {
+    return new Set(
+      events.flatMap((ev) =>
+        ev.type === "DOCTOR_REPORT" && ev.reporterId === selectedDoctor &&
+          ev.id !== editingEvent?.id
+          ? [ev.targetId]
+          : []
+      ),
+    );
+  }, [events, selectedDoctor, editingEvent]);
+
+  // 同じドクターが同じ日にすでに報告している場合は警告する (1日に診察できるのは1人)
+  const duplicateReport = useMemo(() => {
+    const targetDay = editingEvent?.day ?? currentDay;
+    return events.find(
+      (ev): ev is DoctorReportEvent =>
+        ev.type === "DOCTOR_REPORT" &&
+        ev.reporterId === selectedDoctor &&
+        ev.day === targetDay &&
+        ev.id !== editingEvent?.id,
+    );
+  }, [events, selectedDoctor, currentDay, editingEvent]);
 
   // 1クリックで判定と対象を確定
   const handleReportClick = (targetId: string, result: ReportJudgement) => {
@@ -130,6 +173,16 @@ export function DoctorReportForm({
           )}
       </div>
 
+      {duplicateReport && (
+        <div className="alert-box" role="alert">
+          ⚠️ {settings.players.find((p) => p.id === selectedDoctor)?.name}{" "}
+          は{duplicateReport.day}日目にすでに{" "}
+          {settings.players.find((p) => p.id === duplicateReport.targetId)
+            ?.name}{" "}
+          の診察を報告しています。ドクターが1日に診察できるのは1人だけです。
+        </div>
+      )}
+
       <div className="form-group" style={{ marginBottom: 0 }}>
         <label className="form-label">
           診察した冷凍対象と判定結果をタップしてください
@@ -151,8 +204,13 @@ export function DoctorReportForm({
           )
           : (
             <div className="player-report-list">
-              {frozenPlayers.map((p) => {
+              {frozenPlayers.map((p, index) => {
                 const isSelected = editingEvent && targetPlayer === p.id;
+                const note = alreadyReported.has(p.id)
+                  ? "(報告済み)"
+                  : index === 0
+                  ? "(直近の冷凍)"
+                  : undefined;
                 return (
                   <div
                     key={p.id}
@@ -166,6 +224,18 @@ export function DoctorReportForm({
                   >
                     <span className="player-report-name">
                       ❄️ {p.name}
+                      {note && (
+                        <span
+                          style={{
+                            fontSize: "0.72rem",
+                            color: "var(--text-muted)",
+                            fontWeight: "normal",
+                            marginLeft: "0.3rem",
+                          }}
+                        >
+                          {note}
+                        </span>
+                      )}
                     </span>
                     <div className="player-report-actions">
                       <button

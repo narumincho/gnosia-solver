@@ -8,6 +8,10 @@ import { AddEventModal } from "./components/AddEventModal.tsx";
 import { GameSetupModal } from "./components/GameSetupModal.tsx";
 import { WorldListModal } from "./components/WorldListModal.tsx";
 import { ExportImportModal } from "./components/ExportImportModal.tsx";
+import {
+  ExplanationModal,
+  ExplanationTarget,
+} from "./components/ExplanationModal.tsx";
 import { EventType, GameEvent } from "./types.ts";
 
 export function App() {
@@ -27,6 +31,8 @@ export function App() {
     gnosiaComrades,
     toggleGnosiaComrade,
     solverResult,
+    solverOptions,
+    effectiveEvents,
     claimedRoles,
     definiteLies,
     addEvent,
@@ -43,6 +49,9 @@ export function App() {
   const [isWorldsOpen, setIsWorldsOpen] = useState(false);
   const [isExportImportOpen, setIsExportImportOpen] = useState(false);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const [explanationTarget, setExplanationTarget] = useState<
+    ExplanationTarget | undefined
+  >(undefined);
   const [editingEvent, setEditingEvent] = useState<GameEvent | undefined>(
     undefined,
   );
@@ -155,6 +164,8 @@ export function App() {
                 onQuickInvestigate={handleQuickInvestigate}
                 onQuickDoctorReport={handleQuickDoctorReport}
                 onTogglePerspective={handleTogglePerspective}
+                onExplain={(playerId, conclusion) =>
+                  setExplanationTarget({ playerId, conclusion })}
               />
             ))}
           </div>
@@ -240,6 +251,14 @@ export function App() {
         sampleWorlds={solverResult.sampleWorlds}
         totalWorlds={solverResult.totalPossibleWorlds}
         settings={settings}
+      />
+
+      <ExplanationModal
+        target={explanationTarget}
+        onClose={() => setExplanationTarget(undefined)}
+        settings={settings}
+        events={effectiveEvents}
+        solverOptions={solverOptions}
       />
 
       <ExportImportModal

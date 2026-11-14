@@ -5,7 +5,8 @@
     "jsxImportSource": "preact",
     "lib": ["deno.ns", "dom", "dom.iterable", "dom.asynciterable"],
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
+    "exactOptionalPropertyTypes": true,
+    "types": ["./src/vite-env.d.ts"]
   },
   "tasks": {
     "dev": "deno run -A vite",

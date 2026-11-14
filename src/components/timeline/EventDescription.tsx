@@ -1,8 +1,10 @@
-import { GameEvent, Player, ROLE_DEFINITIONS } from "../../types.ts";
+import { GameEvent, ROLE_DEFINITIONS } from "../../types.ts";
 
 type EventDescriptionProps = {
   readonly event: GameEvent;
-  readonly players: ReadonlyArray<Player>;
+  readonly players: ReadonlyArray<
+    { readonly id: string; readonly name: string }
+  >;
 };
 
 export function EventDescription({ event, players }: EventDescriptionProps) {

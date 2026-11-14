@@ -1127,6 +1127,24 @@ export class GnosiaSolver {
           // その夜に行われた調査を取得
           const nightInvs = getInvestigationsForNight(this.events, evIdx);
 
+          // バグは襲撃では消滅しない。消滅者がバグなら、それは真エンジニアの調査による蒸発であり、
+          // その夜の時点で真エンジニアが生存していなければならない
+          if (
+            ev.disappearedPlayerIds.some((pid) => assignment[pid] === "BUG")
+          ) {
+            let canEngineerBeAlive = false;
+            for (const [pid, r] of Object.entries(assignment)) {
+              if (r === "ENGINEER" && !deadBefore.has(pid)) {
+                canEngineerBeAlive = true;
+                break;
+              }
+            }
+            if (!canEngineerBeAlive && remainingRoleCounts["ENGINEER"] > 0) {
+              canEngineerBeAlive = true;
+            }
+            if (!canEngineerBeAlive) return false;
+          }
+
           if (guard) {
             const guardTarget = guard.targetId;
             if (guardTarget === "player") return false;
@@ -1249,6 +1267,21 @@ export class GnosiaSolver {
                   }
                 }
                 if (!isTargetBug && !canBeGuardedByGA) return false;
+              }
+            } else {
+              // 襲撃先が不明な平和な夜:
+              // グノーシアは毎晩襲撃するので、生存中の守護天使が護衛したか、生存中のバグを襲撃したかのいずれか。
+              // (無制約プレイヤーは消滅・冷凍イベントに登場しないため常に生存扱いで良い)
+              const canBeExplainedBy = (role: Role): boolean => {
+                for (const [pid, r] of Object.entries(assignment)) {
+                  if (r === role && !deadBefore.has(pid)) return true;
+                }
+                return remainingRoleCounts[role] > 0;
+              };
+              if (
+                !canBeExplainedBy("GUARDIAN_ANGEL") && !canBeExplainedBy("BUG")
+              ) {
+                return false;
               }
             }
 

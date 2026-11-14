@@ -860,19 +860,19 @@ body {
 }
 
 .timeline-checkpoint:hover .checkpoint-line {
-  background: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 0 6px rgba(56, 189, 248, 0.3);
+  background: rgb(56 189 248 / 40%);
+  box-shadow: 0 0 6px rgb(56 189 248 / 30%);
 }
 
 .timeline-checkpoint:hover .checkpoint-badge {
   opacity: 1;
   transform: scale(1);
-  background: rgba(15, 23, 42, 0.95);
-  border: 1px solid rgba(56, 189, 248, 0.5);
+  background: rgb(15 23 42 / 95%);
+  border: 1px solid rgb(56 189 248 / 50%);
   border-radius: 9999px;
   padding: 2px 10px;
   color: #38bdf8;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 50%);
 }
 
 .timeline-checkpoint.active {
@@ -881,7 +881,7 @@ body {
 
 .timeline-checkpoint.active .checkpoint-line {
   background: #38bdf8;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 8px rgb(56 189 248 / 60%);
 }
 
 .timeline-checkpoint.active .checkpoint-badge {
@@ -892,13 +892,13 @@ body {
   border: 1px solid #7dd3fc;
   border-radius: 9999px;
   padding: 3px 12px;
-  color: #ffffff;
+  color: #fff;
   font-weight: bold;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 12px rgb(56 189 248 / 40%);
 }
 
 .checkpoint-reset-btn {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgb(255 255 255 / 25%);
   border: none;
   border-radius: 50%;
   color: #fff;
@@ -914,13 +914,16 @@ body {
 }
 
 .checkpoint-reset-btn:hover {
-  background: rgba(239, 68, 68, 0.8);
+  background: rgb(239 68 68 / 80%);
 }
 
 .inspecting-past-banner {
-  background: linear-gradient(90deg, rgba(14, 116, 144, 0.25), rgba(56, 189,
-    248, 0.15));
-  border: 1px solid rgba(56, 189, 248, 0.4);
+  background: linear-gradient(
+    90deg,
+    rgb(14 116 144 / 25%),
+    rgb(56 189 248 / 15%)
+  );
+  border: 1px solid rgb(56 189 248 / 40%);
   border-radius: 8px;
   padding: 0.6rem 1rem;
   margin-bottom: 1rem;

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import {
   DEFAULT_CHARACTERS,
   GameEvent,
@@ -57,22 +57,65 @@ export function recalculateDays(
   });
 }
 
+/** 入力状態を自動保存する localStorage のキー */
+export const STORAGE_KEY = "gnosia-solver:session";
+
+/** セッションデータとして最低限の形を満たしているか */
+function isValidSession(data: unknown): data is SessionData {
+  if (!data || typeof data !== "object") return false;
+  const session = data as Partial<SessionData>;
+  return !!session.settings && Array.isArray(session.settings.players) &&
+    !!session.settings.roles && Array.isArray(session.events);
+}
+
+/** 自動保存されたセッションを読み込む。無い・壊れている・保存領域が使えない場合は undefined */
+export function loadStoredSession(): SessionData | undefined {
+  try {
+    const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
+    if (!raw) return undefined;
+    const data: unknown = JSON.parse(raw);
+    return isValidSession(data) ? data : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function saveStoredSession(session: SessionData): void {
+  try {
+    globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(session));
+  } catch {
+    // 保存領域が使えない (プライベートモード・容量超過など) 場合は保存しない
+  }
+}
+
 export function useGameStore() {
-  const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
-  const [events, setEvents] = useState<ReadonlyArray<GameEvent>>([]);
+  // 前回の入力状態を同期的に復元して初期値にする
+  // (マウント後に非同期で復元すると、空の初期状態で先に上書き保存されてしまうため)
+  const [stored] = useState(loadStoredSession);
+
+  const [settings, setSettings] = useState<GameSettings>(
+    stored?.settings ?? DEFAULT_SETTINGS,
+  );
+  const [events, setEvents] = useState<ReadonlyArray<GameEvent>>(
+    stored ? recalculateDays(stored.events) : [],
+  );
   const [perspectiveRoles, setPerspectiveRoles] = useState<
     Record<string, Role>
-  >({});
-  const [myRole, setMyRoleState] = useState<Role | undefined>(undefined);
-  const [perspective, setPerspective] = useState<PerspectiveOption>({
-    id: "objective",
-    name: "全体 (客観神視点)",
-  });
+  >(stored?.perspectiveRoles ?? {});
+  const [myRole, setMyRoleState] = useState<Role | undefined>(stored?.myRole);
+  const [perspective, setPerspective] = useState<PerspectiveOption>(
+    stored?.perspective && typeof stored.perspective.id === "string"
+      ? stored.perspective
+      : {
+        id: "objective",
+        name: "全体 (客観神視点)",
+      },
+  );
   const [playerStatuses, setPlayerStatuses] = useState<
     Record<string, PlayerStatus>
-  >({});
+  >(stored?.playerStatuses ?? {});
   const [gnosiaComrades, setGnosiaComrades] = useState<ReadonlyArray<string>>(
-    [],
+    stored?.gnosiaComrades ?? [],
   );
 
   const toggleGnosiaComrade = (playerId: string) => {
@@ -439,6 +482,19 @@ export function useGameStore() {
       };
     }
   };
+
+  // 入力状態が変わるたびに自動保存する
+  useEffect(() => {
+    saveStoredSession(exportSession());
+  }, [
+    settings,
+    events,
+    perspective,
+    myRole,
+    perspectiveRoles,
+    playerStatuses,
+    gnosiaComrades,
+  ]);
 
   return {
     settings,

@@ -1,5 +1,6 @@
 import { ArrowUpDown, Globe, RefreshCw, Settings } from "lucide-preact";
 import { GitHubIcon } from "./icons/GitHubIcon.tsx";
+import { formatWithSpaces } from "../utils/format.ts";
 
 type HeaderProps = {
   readonly onOpenSettings: () => void;
@@ -37,7 +38,7 @@ export function Header({
       <div className="header-actions">
         <button
           type="button"
-          className="btn"
+          className="btn btn-worlds"
           command="show-modal"
           commandfor="world-list-dialog"
           onClick={onOpenWorlds}
@@ -45,7 +46,8 @@ export function Header({
         >
           <Globe size={16} />
           <span>
-            可能世界: <strong>{possibleWorldsCount}</strong> 通り
+            <span className="btn-label">可能世界:</span>{" "}
+            <strong>{formatWithSpaces(possibleWorldsCount)}</strong> 通り
           </span>
         </button>
 
@@ -56,9 +58,10 @@ export function Header({
           commandfor="export-import-dialog"
           onClick={onOpenExportImport}
           title="現在の入力状況をファイルやテキストで保存・復元"
+          aria-label="保存 / 読込"
         >
           <ArrowUpDown size={16} />
-          <span>保存 / 読込</span>
+          <span className="btn-label">保存 / 読込</span>
         </button>
 
         <button
@@ -68,9 +71,10 @@ export function Header({
           commandfor="game-setup-dialog"
           onClick={onOpenSettings}
           title="参加者や役職設定を変更"
+          aria-label="ゲーム設定"
         >
           <Settings size={16} />
-          <span>ゲーム設定</span>
+          <span className="btn-label">ゲーム設定</span>
         </button>
 
         <button
@@ -78,9 +82,10 @@ export function Header({
           className="btn btn-danger btn-sm"
           onClick={onReset}
           title="現在のゲーム履歴をリセット"
+          aria-label="リセット"
         >
           <RefreshCw size={14} />
-          <span>リセット</span>
+          <span className="btn-label">リセット</span>
         </button>
 
         <a

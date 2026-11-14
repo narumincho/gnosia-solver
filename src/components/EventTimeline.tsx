@@ -1,5 +1,5 @@
 import { Fragment } from "preact";
-import { useMemo } from "preact/hooks";
+import { useEffect, useMemo, useRef } from "preact/hooks";
 import {
   AlertOctagon,
   ArrowDown,
@@ -159,6 +159,15 @@ export function EventTimeline({
     }
     return undefined;
   }, [events, settings.players]);
+  // イベントが追加されたら最新のイベントが見えるようにリスト内を一番下までスクロールする
+  // (リスト自体がスクロール領域のときだけ動き、ページ全体はスクロールしない)
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (inspectedEventIndex !== null) return;
+    const list = listRef.current;
+    if (list) list.scrollTop = list.scrollHeight;
+  }, [events.length, inspectedEventIndex]);
+
   // タイムラインに存在する日の一覧
   const recordedDays = useMemo(() => {
     return Array.from(
@@ -205,15 +214,7 @@ export function EventTimeline({
       )}
 
       {recordedDays.length > 1 && (
-        <div
-          style={{
-            display: "flex",
-            gap: "0.4rem",
-            marginBottom: "0.8rem",
-            overflowX: "auto",
-            paddingBottom: "0.2rem",
-          }}
-        >
+        <div className="timeline-day-nav">
           {recordedDays.map((d) => (
             <button
               key={d}
@@ -225,7 +226,6 @@ export function EventTimeline({
                   el.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
               }}
-              style={{ padding: "0.2rem 0.55rem", fontSize: "0.75rem" }}
             >
               Day {d}
             </button>
@@ -233,7 +233,7 @@ export function EventTimeline({
         </div>
       )}
 
-      <div className="timeline-list">
+      <div className="timeline-list" ref={listRef}>
         {events.length === 0
           ? (
             <div

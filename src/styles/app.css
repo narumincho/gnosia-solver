@@ -52,8 +52,10 @@ body {
 /* Header */
 .header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .logo-container {
@@ -81,6 +83,7 @@ body {
 
 .header-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
 }
@@ -172,7 +175,8 @@ body {
 /* Status summary */
 .status-summary {
   display: flex;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
   font-size: 0.85rem;
   color: var(--text-muted);
   margin-top: 0.75rem;
@@ -230,6 +234,11 @@ body {
   box-shadow: 0 0 8px rgb(244 63 94 / 40%);
 }
 
+/* 「参加人数: 14人」のような短い項目は途中で折り返さない */
+.summary-item:not(:last-child) {
+  white-space: nowrap;
+}
+
 .summary-item strong {
   color: var(--text-main);
   font-family: var(--font-display);
@@ -268,13 +277,14 @@ body {
 
 @media (width <= 680px) {
   .player-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
   }
 }
 
-@media (width <= 440px) {
+@media (width <= 340px) {
   .player-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -300,15 +310,19 @@ body {
 }
 
 .player-card.frozen {
-  opacity: 0.65;
+  opacity: 0.5;
   border-color: #3b82f6;
   background: rgb(30 58 138 / 15%);
 }
 
 .player-card.attacked {
-  opacity: 0.6;
+  opacity: 0.5;
   border-color: #f43f5e;
   background: rgb(136 19 55 / 15%);
+}
+
+.player-card.is-dead:hover {
+  opacity: 0.85;
 }
 
 .player-card.is-perspective {
@@ -447,10 +461,13 @@ body {
 }
 
 .player-header-badges {
+  width: 100%;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0.25rem;
-  flex-shrink: 0;
+  min-height: 1rem;
 }
 
 .badge-co {
@@ -685,7 +702,7 @@ body {
 .timeline-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.3rem;
   max-height: 650px;
   overflow-y: auto;
   padding-right: 0.25rem;
@@ -785,7 +802,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  margin: 1.25rem 0 0.5rem;
+  margin: 0.6rem 0 0.2rem;
 }
 
 .timeline-day-badge {
@@ -1614,4 +1631,181 @@ dialog.modal-dialog[open] {
   color: var(--text-muted);
   font-size: 0.75rem;
   margin-right: 0.5rem;
+}
+
+/* ドーナツグラフ中央のテキスト */
+.role-pie-center-main {
+  fill: var(--text-main);
+  font-family: var(--font-display);
+  font-weight: 800;
+  pointer-events: none;
+  user-select: none;
+}
+
+.role-pie-center-sub {
+  fill: var(--text-muted);
+  font-size: 7.5px;
+  font-weight: 700;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 役職確率の上位をテキストで表示 */
+.role-prob-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.role-prob-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.role-prob-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.role-prob-name {
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.role-prob-pct {
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.role-prob-list .role-prob-rest {
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  justify-content: flex-end;
+}
+
+/* Day ジャンプボタン: 折り返して全て見えるようにする */
+.timeline-day-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.8rem;
+}
+
+.timeline-day-nav .btn {
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+}
+
+/* スマホ・タブレット用: プレイヤー / タイムライン切り替えタブ */
+.view-tabs {
+  display: none;
+}
+
+@media (width <= 1100px) {
+  .view-tabs {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    gap: 0.4rem;
+    padding: 0.4rem;
+    background: rgb(15 23 42 / 92%);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    backdrop-filter: blur(8px);
+  }
+
+  .view-tab {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  .view-tab[aria-selected="true"] {
+    background: rgb(56 189 248 / 15%);
+    border-color: rgb(56 189 248 / 50%);
+    color: var(--text-main);
+  }
+
+  .view-tab-count {
+    font-size: 0.7rem;
+    color: var(--text-accent);
+    white-space: nowrap;
+  }
+
+  .main-grid[data-view="players"] .sidebar,
+  .main-grid[data-view="timeline"] .main-content {
+    display: none;
+  }
+
+  /* タブ表示中はタイムライン自体を内側でスクロールさせずページでスクロールする */
+  .timeline-list {
+    max-height: none;
+  }
+}
+
+/* ヘッダー: 狭い画面での折り返し */
+.header-actions .btn {
+  white-space: nowrap;
+}
+
+@media (width <= 680px) {
+  .app-container {
+    padding: 0.75rem 0.6rem 3rem;
+    gap: 0.75rem;
+  }
+
+  .logo-title {
+    font-size: 1.3rem;
+  }
+
+  .header-actions {
+    width: 100%;
+    gap: 0.4rem;
+  }
+
+  .header-actions .btn {
+    padding: 0.45rem 0.6rem;
+  }
+
+  /* 狭い画面ではアイコンのみ (title / aria-label で意味は伝わる) */
+  .header-actions .btn-label {
+    display: none;
+  }
+
+  /* 可能世界数は情報なので残し、余った幅を使う */
+  .header-actions .btn-worlds {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* 死亡者はグラフも彩度を落として、生存者が目立つようにする */
+.player-card.is-dead .role-pie-svg {
+  filter: saturate(0.35) drop-shadow(0 2px 8px rgb(0 0 0 / 50%));
 }

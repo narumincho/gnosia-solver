@@ -1,3 +1,4 @@
+import { ListOrdered, Users } from "lucide-preact";
 import { useState } from "preact/hooks";
 import { useGameStore } from "./state/store.ts";
 import { Header } from "./components/Header.tsx";
@@ -49,6 +50,8 @@ export function App() {
   const [isWorldsOpen, setIsWorldsOpen] = useState(false);
   const [isExportImportOpen, setIsExportImportOpen] = useState(false);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  // スマホ・タブレットで表示する画面 (広い画面では両方表示)
+  const [view, setView] = useState<"players" | "timeline">("players");
   const [explanationTarget, setExplanationTarget] = useState<
     ExplanationTarget | undefined
   >(undefined);
@@ -142,7 +145,31 @@ export function App() {
         onToggleGnosiaComrade={toggleGnosiaComrade}
       />
 
-      <div className="main-grid">
+      <div className="view-tabs" role="tablist" aria-label="表示切り替え">
+        <button
+          type="button"
+          role="tab"
+          className="view-tab"
+          aria-selected={view === "players"}
+          onClick={() => setView("players")}
+        >
+          <Users size={16} />
+          プレイヤー
+        </button>
+        <button
+          type="button"
+          role="tab"
+          className="view-tab"
+          aria-selected={view === "timeline"}
+          onClick={() => setView("timeline")}
+        >
+          <ListOrdered size={16} />
+          タイムライン
+          <span className="view-tab-count">{events.length}件</span>
+        </button>
+      </div>
+
+      <div className="main-grid" data-view={view}>
         <main className="main-content">
           <div className="player-grid">
             {settings.players.map((p) => (

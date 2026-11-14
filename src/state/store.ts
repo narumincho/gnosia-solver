@@ -10,7 +10,7 @@ import {
   SessionData,
 } from "../types.ts";
 
-import { GnosiaSolver } from "../solver/solver.ts";
+import { GnosiaSolver, SolverOptions } from "../solver/solver.ts";
 
 export const DEFAULT_SETTINGS: GameSettings = {
   players: DEFAULT_CHARACTERS.map((c) => ({ id: c.id, name: c.name })),
@@ -198,9 +198,8 @@ export function useGameStore() {
     return statuses;
   }, [settings.players, effectiveEvents, playerStatuses]);
 
-  // ソルバー実行結果のメモ化
-  const solverResult = useMemo(() => {
-    const solver = new GnosiaSolver(settings, effectiveEvents);
+  // ソルバーに渡す視点オプションのメモ化
+  const solverOptions: SolverOptions = useMemo(() => {
     const isPlayerGnosia = myRole === "GNOSIA" ||
       perspectiveRoles["player"] === "GNOSIA";
     const gnosiaTeam: ReadonlyArray<string> = isPlayerGnosia
@@ -219,20 +218,27 @@ export function useGameStore() {
       ? gnosiaTeam.filter((id) => id !== perspective.id)
       : undefined;
 
-    return solver.solve({
+    return {
       perspectivePlayerId: perspective.id === "objective"
         ? undefined
         : perspective.id,
       perspectiveRole: effectivePerspectiveRole,
       gnosiaComrades: effectiveComrades,
-    });
+    };
   }, [
-    settings,
-    effectiveEvents,
     perspective,
     myRole,
     perspectiveRoles,
     gnosiaComrades,
+  ]);
+
+  // ソルバー実行結果のメモ化
+  const solverResult = useMemo(() => {
+    return new GnosiaSolver(settings, effectiveEvents).solve(solverOptions);
+  }, [
+    settings,
+    effectiveEvents,
+    solverOptions,
   ]);
 
   // COしている役職のマップ (playerId -> Role[])
@@ -456,6 +462,8 @@ export function useGameStore() {
     toggleGnosiaComrade,
     setGnosiaComrades,
     solverResult,
+    solverOptions,
+    effectiveEvents,
     claimedRoles,
     definiteLies,
     addEvent,

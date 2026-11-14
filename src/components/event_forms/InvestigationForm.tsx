@@ -41,14 +41,20 @@ export function InvestigationForm({
   }, [settings.players, playerStatuses]);
 
   // エンジニアCOしたプレイヤー（または自分=真エンジニアの場合の自分）
+  // 新規入力時は、すでに冷凍・消滅したCO者は調査できないので除外する
   const engineerCandidates = useMemo(() => {
     return settings.players.filter((p) => {
+      if (
+        !editingEvent && (playerStatuses[p.id] || "ALIVE") !== "ALIVE"
+      ) {
+        return false;
+      }
       const cos = claimedRoles[p.id] || [];
       if (cos.includes("ENGINEER")) return true;
       if (p.id === "player" && myRole === "ENGINEER") return true;
       return false;
     });
-  }, [settings.players, claimedRoles, myRole]);
+  }, [settings.players, claimedRoles, myRole, playerStatuses, editingEvent]);
 
   const [selectedInvestigator, setSelectedInvestigator] = useState<string>(
     () => {
@@ -127,6 +133,18 @@ export function InvestigationForm({
     editingEvent,
   ]);
 
+  // 同じエンジニアが同じ日にすでに調査報告している場合は警告する (1晩に調査できるのは1人)
+  const duplicateReport = useMemo(() => {
+    const targetDay = editingEvent?.day ?? currentDay;
+    return events.find(
+      (ev): ev is InvestigationEvent =>
+        ev.type === "INVESTIGATION" &&
+        ev.investigatorId === selectedInvestigator &&
+        ev.day === targetDay &&
+        ev.id !== editingEvent?.id,
+    );
+  }, [events, selectedInvestigator, currentDay, editingEvent]);
+
   // 調査者が切り替わった場合などに無効になった targetPlayer をリセット
   useEffect(() => {
     if (targetPlayer && !targetCandidates.some((p) => p.id === targetPlayer)) {
@@ -204,6 +222,17 @@ export function InvestigationForm({
             </select>
           )}
       </div>
+
+      {duplicateReport && (
+        <div className="alert-box" role="alert">
+          ⚠️ {settings.players.find((p) => p.id === selectedInvestigator)?.name}
+          {" "}
+          は{duplicateReport.day}日目にすでに{" "}
+          {settings.players.find((p) => p.id === duplicateReport.targetId)
+            ?.name}{" "}
+          の調査を報告しています。エンジニアが1晩に調査できるのは1人だけです。
+        </div>
+      )}
 
       <div className="form-group" style={{ marginBottom: 0 }}>
         <label className="form-label">

@@ -989,6 +989,19 @@ body {
   gap: 0.4rem;
   font-size: 0.8rem;
   color: var(--text-main);
+  min-width: 0;
+}
+
+/* 名前が「ラキ/オ」のように途中で折り返さないよう1行に収める */
+.pending-report-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.pending-report-row > :last-child {
+  flex-shrink: 0;
 }
 
 .pending-report-name {
@@ -1045,6 +1058,7 @@ body {
 
 .btn-add-event {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
@@ -1264,6 +1278,12 @@ body {
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.player-report-actions > button {
+  min-width: 3.4rem;
 }
 
 .player-report-actions {
@@ -1808,4 +1828,92 @@ dialog.modal-dialog[open] {
 /* 死亡者はグラフも彩度を落として、生存者が目立つようにする */
 .player-card.is-dead .role-pie-svg {
   filter: saturate(0.35) drop-shadow(0 2px 8px rgb(0 0 0 / 50%));
+}
+
+/* イベント追加ボタン: 次の入力のおすすめと入力できないもの */
+.add-event-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.add-event-recommended .btn-add-event {
+  padding: 0.6rem 0.4rem;
+  font-size: 0.82rem;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 18%);
+}
+
+.btn-add-event-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  max-width: 100%;
+}
+
+.btn-add-event-reason {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.btn-add-event:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 報告者がいないときの案内 */
+.no-reporter-notice {
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px dashed var(--border-color);
+  background: rgb(255 255 255 / 3%);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.no-reporter-notice-hint {
+  margin-top: 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* スマホ・タブレット用の固定追加バー (広い画面では出さない) */
+.mobile-add-bar {
+  display: none;
+}
+
+@media (width <= 1100px) {
+  .mobile-add-bar {
+    display: flex;
+    position: fixed;
+    left: 0.6rem;
+    right: 0.6rem;
+    bottom: calc(0.6rem + env(safe-area-inset-bottom));
+    z-index: 30;
+    gap: 0.4rem;
+    padding: 0.4rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: rgb(15 23 42 / 94%);
+    box-shadow: 0 6px 24px rgb(0 0 0 / 55%);
+    backdrop-filter: blur(8px);
+  }
+
+  .mobile-add-bar .btn-add-event {
+    flex: 1;
+    padding: 0.6rem 0.4rem;
+    font-size: 0.85rem;
+  }
+
+  .mobile-add-bar .mobile-add-more {
+    flex: 0 0 auto;
+    font-size: 0.8rem;
+  }
+
+  /* 固定バーで最後のボタンが隠れないよう余白を空ける */
+  .sidebar-panel {
+    padding-bottom: 5rem;
+  }
 }

@@ -1,3 +1,4 @@
+import { NoReporterNotice } from "./NoReporterNotice.tsx";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import {
   GameEvent,
@@ -60,7 +61,7 @@ export function InvestigationForm({
     () => {
       if (editingEvent) return editingEvent.investigatorId;
       if (initialPlayerId) return initialPlayerId;
-      return engineerCandidates[0]?.id || alivePlayers[0]?.id || "";
+      return engineerCandidates[0]?.id ?? "";
     },
   );
 
@@ -183,6 +184,11 @@ export function InvestigationForm({
     });
   };
 
+  // 報告できる生存CO者がいない場合は入力させない (CO していない人の報告として登録されるのを防ぐ)
+  if (engineerCandidates.length === 0 && !editingEvent) {
+    return <NoReporterNotice roleName="エンジニア" onCancel={onCancel} />;
+  }
+
   return (
     <form onSubmit={handleSubmit}>
       <div className="form-group" style={{ marginBottom: "1rem" }}>
@@ -289,16 +295,18 @@ export function InvestigationForm({
                       <button
                         type="button"
                         className="btn-report-human"
+                        title="人間 (白) と判定"
                         onClick={() => handleReportClick(p.id, "HUMAN")}
                       >
-                        ⚪ 人間 (白)
+                        ⚪ 白
                       </button>
                       <button
                         type="button"
                         className="btn-report-gnosia"
+                        title="グノーシア (黒) と判定"
                         onClick={() => handleReportClick(p.id, "GNOSIA")}
                       >
-                        ⚫ グノーシア (黒)
+                        ⚫ 黒
                       </button>
                     </div>
                   </div>

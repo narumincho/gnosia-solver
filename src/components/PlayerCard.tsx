@@ -43,12 +43,14 @@ type DonutSlice = {
 };
 
 function RolePieChart({
-  roleProbs,
+  slices,
   definiteRole,
+  enemyProb,
   tooltip,
 }: {
-  readonly roleProbs: Partial<Record<Role, number>>;
+  readonly slices: ReadonlyArray<DonutSlice>;
   readonly definiteRole?: Role | undefined;
+  readonly enemyProb: number | undefined;
   readonly tooltip: string;
 }) {
   const [hovered, setHovered] = useState<DonutSlice | undefined>(undefined);
@@ -61,64 +63,28 @@ function RolePieChart({
   });
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const activeSlices: ReadonlyArray<DonutSlice> = (
-    Object.entries(roleProbs) as ReadonlyArray<[Role, number]>
-  )
-    .filter(([_, prob]) => prob > 0.005)
-    .sort((a, b) => b[1] - a[1])
-    .map(([role, prob]) => ({
-      role,
-      prob,
-      color: ROLE_DEFINITIONS[role].color,
-      name: ROLE_DEFINITIONS[role].name,
-      shortName: ROLE_DEFINITIONS[role].shortName,
-    }));
-
   const size = 70;
   const cx = size / 2;
   const cy = size / 2;
   const r = 35;
+  const innerR = 22;
 
-  const getCenterLabel = () => {
-    switch (definiteRole) {
-      case "ENGINEER":
-        return "真工";
-      case "DOCTOR":
-        return "真医";
-      case "GUARD_DUTY":
-        return "留";
-      case "GUARDIAN_ANGEL":
-        return "守";
-      case "CREW":
-        return "乗";
-      case "GNOSIA":
-        return "グ";
-      case "AC_FOLLOWER":
-        return "AC";
-      case "BUG":
-        return "バグ";
-      default:
-        return "";
-    }
-  };
+  // 中央表示: 役職確定ならその役職、未確定なら敵陣営確率
+  const centerMain = definiteRole
+    ? CENTER_LABELS[definiteRole]
+    : enemyProb === undefined
+    ? "-"
+    : `${Math.round(enemyProb * 100)}%`;
+  const centerSub = definiteRole ? "確定" : "敵";
 
-  const centerLabel = getCenterLabel();
-
-  // 扇形スライスの計算
+  // ドーナツのスライス計算
   let currentAngle = -Math.PI / 2; // 12 o'clock
-  const computedSlices = activeSlices.map((slice) => {
+  const computedSlices = slices.map((slice) => {
     const angle = slice.prob * 2 * Math.PI;
     const startAngle = currentAngle;
     const endAngle = currentAngle + angle;
     currentAngle = endAngle;
-    const midAngle = startAngle + angle / 2;
-    return {
-      ...slice,
-      startAngle,
-      endAngle,
-      midAngle,
-      angle,
-    };
+    return { ...slice, startAngle, endAngle, angle };
   });
 
   const updateMousePos = (e: MouseEvent) => {
@@ -129,6 +95,20 @@ function RolePieChart({
       y: e.clientY - rect.top,
     });
   };
+
+  // 円環全体 (外周の円から内周の円をくり抜く)
+  const ringPath = `M ${cx - r} ${cy} a ${r} ${r} 0 1 0 ${
+    2 * r
+  } 0 a ${r} ${r} 0 1 0 ${-2 * r} 0 Z M ${
+    cx - innerR
+  } ${cy} a ${innerR} ${innerR} 0 1 0 ${
+    2 * innerR
+  } 0 a ${innerR} ${innerR} 0 1 0 ${-2 * innerR} 0 Z`;
+
+  const point = (radius: number, angle: number) =>
+    `${(cx + radius * Math.cos(angle)).toFixed(2)} ${
+      (cy + radius * Math.sin(angle)).toFixed(2)
+    }`;
 
   return (
     <div
@@ -143,136 +123,78 @@ function RolePieChart({
         height={size}
         viewBox={`0 0 ${size} ${size}`}
         className="role-pie-svg"
+        role="img"
+        aria-label={tooltip}
       >
         {/* 背景ベース */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={r}
+        <path
+          d={ringPath}
           fill="rgba(255, 255, 255, 0.08)"
+          fill-rule="evenodd"
         />
 
-        {/* 単一ロール (100%) の場合 */}
-        {computedSlices.length === 1 && (
-          <g>
-            <circle
-              cx={cx}
-              cy={cy}
-              r={r}
-              fill={computedSlices[0]?.color}
-              className={`role-pie-slice ${
-                hovered?.role === computedSlices[0]?.role ? "is-hovered" : ""
-              }`}
-              onMouseEnter={(e: MouseEvent) => {
-                setHovered(computedSlices[0]);
-                updateMousePos(e);
-              }}
-            />
-            <text
-              x={cx}
-              y={cy}
-              textAnchor="middle"
-              dominantBaseline="central"
-              fill="#ffffff"
-              stroke="rgba(0, 0, 0, 0.85)"
-              strokeWidth="1.3"
-              paintOrder="stroke fill"
-              fontSize={centerLabel
-                ? (centerLabel.length >= 3 ? "10" : "11")
-                : "11"}
-              fontWeight="800"
-              fontFamily="var(--font-display)"
-              style={{
-                pointerEvents: "none",
-                userSelect: "none",
-                filter: "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8))",
-              }}
-            >
-              {centerLabel || computedSlices[0]?.shortName}
-            </text>
-          </g>
-        )}
-
-        {/* 複数ロールの場合: SVG扇形パス + 確率大の頭文字表示 */}
-        {computedSlices.length > 1 &&
-          computedSlices.map((slice) => {
-            const x1 = cx + r * Math.cos(slice.startAngle);
-            const y1 = cy + r * Math.sin(slice.startAngle);
-            const x2 = cx + r * Math.cos(slice.endAngle);
-            const y2 = cy + r * Math.sin(slice.endAngle);
-            const largeArc = slice.angle > Math.PI ? 1 : 0;
-
-            const d = `M ${cx} ${cy} L ${x1.toFixed(2)} ${
-              y1.toFixed(2)
-            } A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
-
-            // 扇形内に文字が絶対に収まる条件：
-            // 2文字（AC, バグ）は20%以上、1文字（乗, グ等）は14%以上
-            const isMultiChar = slice.shortName.length >= 2;
-            const showInitial = isMultiChar
-              ? slice.prob >= 0.20
-              : slice.prob >= 0.14;
-
-            // スライス内での文字配置半径（外周にも中心にも飛び出さない位置）
-            const labelR = 21;
-            const lx = cx + labelR * Math.cos(slice.midAngle);
-            const ly = cy + labelR * Math.sin(slice.midAngle);
-
-            const fontSize = isMultiChar
-              ? "7.5"
-              : slice.prob >= 0.25
-              ? "9"
-              : "8";
-
+        {computedSlices.map((slice) => {
+          const isHovered = hovered?.role === slice.role;
+          const onEnter = (e: MouseEvent) => {
+            setHovered(slice);
+            updateMousePos(e);
+          };
+          // 100% のときは円弧で描けないので円で描く
+          if (slice.angle >= 2 * Math.PI - 1e-6) {
             return (
-              <g key={slice.role}>
-                <path
-                  d={d}
-                  fill={slice.color}
-                  className={`role-pie-slice ${
-                    hovered?.role === slice.role ? "is-hovered" : ""
-                  }`}
-                  onMouseEnter={(e: MouseEvent) => {
-                    setHovered(slice);
-                    updateMousePos(e);
-                  }}
-                />
-                {showInitial && (
-                  <text
-                    x={lx.toFixed(2)}
-                    y={ly.toFixed(2)}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fill="#ffffff"
-                    stroke="rgba(0, 0, 0, 0.9)"
-                    strokeWidth="1.2"
-                    paintOrder="stroke fill"
-                    fontSize={fontSize}
-                    fontWeight="800"
-                    fontFamily="var(--font-display)"
-                    style={{
-                      pointerEvents: "none",
-                      userSelect: "none",
-                      filter: "drop-shadow(0 1px 1px rgba(0, 0, 0, 0.8))",
-                    }}
-                  >
-                    {slice.shortName}
-                  </text>
-                )}
-              </g>
+              <path
+                key={slice.role}
+                d={ringPath}
+                fill={slice.color}
+                fill-rule="evenodd"
+                className={`role-pie-slice ${isHovered ? "is-hovered" : ""}`}
+                onMouseEnter={onEnter}
+              />
             );
-          })}
+          }
+          const largeArc = slice.angle > Math.PI ? 1 : 0;
+          const d = `M ${
+            point(r, slice.startAngle)
+          } A ${r} ${r} 0 ${largeArc} 1 ${point(r, slice.endAngle)} L ${
+            point(innerR, slice.endAngle)
+          } A ${innerR} ${innerR} 0 ${largeArc} 0 ${
+            point(innerR, slice.startAngle)
+          } Z`;
+          return (
+            <path
+              key={slice.role}
+              d={d}
+              fill={slice.color}
+              className={`role-pie-slice ${isHovered ? "is-hovered" : ""}`}
+              onMouseEnter={onEnter}
+            />
+          );
+        })}
 
-        {/* 外枠境界線 (クリーンな円周) */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={r}
-          fill="none"
-          stroke="rgba(255, 255, 255, 0.2)"
-          strokeWidth="1"
-          style={{ pointerEvents: "none" }}
-        />
+        {/* 中央テキスト */}
+        <text
+          x={cx}
+          y={cy - 1}
+          text-anchor="middle"
+          dominant-baseline="central"
+          className="role-pie-center-main"
+          fontSize={centerMain.length >= 4
+            ? "9"
+            : centerMain.length === 3
+            ? "10.5"
+            : "12"}
+        >
+          {centerMain}
+        </text>
+        <text
+          x={cx}
+          y={cy + 11}
+          text-anchor="middle"
+          dominant-baseline="central"
+          className="role-pie-center-sub"
+        >
+          {centerSub}
+        </text>
       </svg>
 
       {/* ホバー時: マウスカーソル右下に表示してグラフと被らないツールチップ */}
@@ -299,6 +221,39 @@ function RolePieChart({
   );
 }
 
+/** 確定役職のときにドーナツ中央に出す短い表記 */
+const CENTER_LABELS: Record<Role, string> = {
+  ENGINEER: "真エ",
+  DOCTOR: "真ド",
+  GUARD_DUTY: "留守",
+  GUARDIAN_ANGEL: "守護",
+  CREW: "乗員",
+  GNOSIA: "グノ",
+  AC_FOLLOWER: "AC",
+  BUG: "バグ",
+};
+
+/** 確率の高い役職を上位から最大 3 件、テキストで表示する */
+function RoleProbList(
+  { slices }: { readonly slices: ReadonlyArray<DonutSlice> },
+) {
+  if (slices.length <= 1) return null;
+  const top = slices.slice(0, 3);
+  const rest = slices.length - top.length;
+  return (
+    <ul className="role-prob-list">
+      {top.map((s) => (
+        <li key={s.role}>
+          <span className="role-prob-dot" style={{ background: s.color }} />
+          <span className="role-prob-name">{s.name}</span>
+          <span className="role-prob-pct">{Math.round(s.prob * 100)}%</span>
+        </li>
+      ))}
+      {rest > 0 && <li className="role-prob-rest">ほか{rest}役職</li>}
+    </ul>
+  );
+}
+
 export function PlayerCard({
   player,
   status,
@@ -318,6 +273,7 @@ export function PlayerCard({
     "player-card",
     status === "FROZEN" ? "frozen" : "",
     status === "ATTACKED" ? "attacked" : "",
+    status !== "ALIVE" ? "is-dead" : "",
     isCurrentPerspective ? "is-perspective" : "",
   ]
     .filter(Boolean)
@@ -365,7 +321,7 @@ export function PlayerCard({
 
   return (
     <div className={cardClass}>
-      {/* 上部: 名前 + 視点切り替え目のアイコン + 右上: COバッジ・ステータス */}
+      {/* 上段: 視点切り替え目のアイコン + 名前 */}
       <div className="player-card-header">
         <div className="player-name-row">
           <button
@@ -391,33 +347,40 @@ export function PlayerCard({
                 : "var(--text-muted)"}
             />
           </button>
-          <span className="player-name">{player.name}</span>
+          <span className="player-name" title={player.name}>
+            {player.name}
+          </span>
           {isCurrentPerspective && (
             <span className="perspective-badge">(視点)</span>
           )}
         </div>
-        <div className="player-header-badges">
-          {claimedRoles.map((role) => (
-            <span
-              key={role}
-              className={`badge badge-co ${ROLE_DEFINITIONS[role].badgeClass}`}
-              title={`${ROLE_DEFINITIONS[role].name}名乗り (CO)`}
-            >
-              {role === "GUARD_DUTY"
-                ? "留守番CO"
-                : `${ROLE_DEFINITIONS[role].name}CO`}
-            </span>
-          ))}
-          {getStatusBadge()}
-        </div>
+      </div>
+
+      {/* 下段: COバッジ・ステータス (名前が省略されないよう別の行に置く) */}
+      <div className="player-header-badges">
+        {claimedRoles.map((role) => (
+          <span
+            key={role}
+            className={`badge badge-co ${ROLE_DEFINITIONS[role].badgeClass}`}
+            title={`${ROLE_DEFINITIONS[role].name}名乗り (CO)`}
+          >
+            {role === "GUARD_DUTY"
+              ? "留守番CO"
+              : `${ROLE_DEFINITIONS[role].name}CO`}
+          </span>
+        ))}
+        {getStatusBadge()}
       </div>
 
       {/* 中央: 拡大円グラフ (各スライスホバーで役職名と%を表示) */}
       <RolePieChart
-        roleProbs={roleProbs}
+        slices={sortedRoles}
         definiteRole={definiteRole}
+        enemyProb={solverResult.enemyProbabilities[player.id]}
         tooltip={tooltipText}
       />
+
+      <RoleProbList slices={sortedRoles} />
 
       {/* 視点人物は役職を前提として固定しているので根拠は出さない */}
       {conclusion && onExplain && !isCurrentPerspective && (

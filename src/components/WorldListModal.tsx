@@ -1,3 +1,4 @@
+import { formatWithSpaces } from "../utils/format.ts";
 import { useEffect, useRef } from "preact/hooks";
 import { Globe, X } from "lucide-preact";
 import { GameSettings, ROLE_DEFINITIONS, RoleAssignment } from "../types.ts";
@@ -49,7 +50,7 @@ export function WorldListModal({
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <Globe size={20} color="var(--text-accent)" />
           <h3 className="modal-title">
-            可能世界 ({totalWorlds} 通り)
+            可能世界 ({formatWithSpaces(totalWorlds)} 通り)
           </h3>
         </div>
         <button
@@ -159,7 +160,7 @@ export function WorldListModal({
                 }}
               >
                 ※ 上位 {sampleWorlds.length} パターンを表示しています（全{" "}
-                {totalWorlds} 通り）
+                {formatWithSpaces(totalWorlds)} 通り）
               </p>
             )}
           </div>

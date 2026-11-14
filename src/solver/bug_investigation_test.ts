@@ -75,3 +75,60 @@ Deno.test("再現テスト - エンジニアが調査して生存している対
   // 自分視点で、調査して消滅していない夕里子はバグ確率 0% でなければならない！
   assertEquals(result.roleProbabilities["yuriko"]?.BUG, 0);
 });
+
+Deno.test("エンジニア視点 - 調査対象が2人消滅の夜に消えた場合はバグ確定 (破綻しない)", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "自分" },
+      { id: "setsu", name: "セツ" },
+      { id: "gina", name: "ジナ" },
+      { id: "sq", name: "SQ" },
+      { id: "raqio", name: "ラキオ" },
+      { id: "stella", name: "ステラ" },
+      { id: "shigemichi", name: "しげみち" },
+      { id: "chipie", name: "シピ" },
+      { id: "comet", name: "コメット" },
+    ],
+    roles: {
+      gnosiaCount: 2,
+      hasEngineer: true,
+      hasDoctor: false,
+      hasGuardianAngel: false,
+      hasGuardDuty: false,
+      hasACFollower: false,
+      hasBug: true,
+    },
+    allowHiddenRoles: false,
+  };
+  const events: ReadonlyArray<GameEvent> = [
+    {
+      id: "1",
+      day: 1,
+      type: "CO",
+      playerId: "player",
+      claimedRole: "ENGINEER",
+    },
+    { id: "2", day: 1, type: "VOTE", frozenPlayerId: "gina" },
+    {
+      id: "3",
+      day: 1,
+      type: "DISAPPEARANCE",
+      disappearedPlayerIds: ["setsu", "sq"],
+    },
+    {
+      id: "4",
+      day: 2,
+      type: "INVESTIGATION",
+      investigatorId: "player",
+      targetId: "setsu",
+      result: "HUMAN",
+    },
+  ];
+  const result = new GnosiaSolver(settings, events).solve({
+    perspectivePlayerId: "player",
+    perspectiveRole: "ENGINEER",
+  });
+  assertEquals(result.hasContradiction, false);
+  assertEquals(result.roleProbabilities["setsu"]?.BUG, 1);
+  assertEquals(result.roleProbabilities["sq"]?.BUG, 0);
+});

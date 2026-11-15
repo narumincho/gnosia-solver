@@ -1,4 +1,9 @@
-import { GameEvent, getGuarderId, ROLE_DEFINITIONS } from "../../types.ts";
+import {
+  GameEvent,
+  getAttackerId,
+  getGuarderId,
+  ROLE_DEFINITIONS,
+} from "../../types.ts";
 
 type EventDescriptionProps = {
   readonly event: GameEvent;
@@ -192,16 +197,17 @@ export function EventDescription({ event, players }: EventDescriptionProps) {
     case "GNOSIA_ATTACK": {
       return (
         <span>
-          夜間に{" "}
+          夜間に <strong>{getPlayerName(getAttackerId(event))}</strong> が{" "}
           <strong style={{ color: "var(--color-gnosia)" }}>
             {getPlayerName(event.targetId)}
           </strong>{" "}
-          を <strong>【襲撃対象に指定】</strong>{" "}
+          を <strong>【襲撃】</strong>{" "}
           <span
             className="badge badge-enemy"
             style={{ fontSize: "0.7rem", padding: "1px 6px" }}
+            title="襲撃先はグノーシア陣営しか知らないため、襲撃者本人と仲間のグノーシアの視点でのみ推論に使います"
           >
-            G視点
+            {getPlayerName(getAttackerId(event))}と仲間G視点のみ
           </span>
         </span>
       );

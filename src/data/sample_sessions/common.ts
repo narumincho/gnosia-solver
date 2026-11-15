@@ -5,6 +5,11 @@ export type SampleSession = {
   readonly title: string;
   readonly badge: string;
   readonly description: string;
+  /** 元になった動画などの出典 (インポート画面にリンクとして表示する) */
+  readonly source?: {
+    readonly title: string;
+    readonly url: string;
+  };
   readonly data: SessionData;
 };
 

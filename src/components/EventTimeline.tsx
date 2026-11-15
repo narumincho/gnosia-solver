@@ -8,6 +8,7 @@ import {
   GripVertical,
   Pencil,
   Plus,
+  RefreshCw,
   Trash2,
 } from "lucide-preact";
 import {
@@ -40,6 +41,7 @@ type AddAction = {
 };
 
 type EventTimelineProps = {
+  readonly onReset: () => void;
   events: ReadonlyArray<GameEvent>;
   settings: GameSettings;
   currentDay: number;
@@ -68,6 +70,7 @@ type EventTimelineProps = {
 };
 
 export function EventTimeline({
+  onReset,
   events,
   settings,
   currentDay,
@@ -381,6 +384,17 @@ export function EventTimeline({
             >
               {events.length} イベント
             </span>
+            <button
+              type="button"
+              className="btn btn-danger btn-sm"
+              onClick={onReset}
+              disabled={events.length === 0}
+              title="イベント・視点・自分の役職をリセット (ゲーム設定は残ります)"
+              aria-label="リセット"
+            >
+              <RefreshCw size={13} />
+              <span className="timeline-reset-label">リセット</span>
+            </button>
           </div>
         </div>
 

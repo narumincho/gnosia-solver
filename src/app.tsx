@@ -27,7 +27,6 @@ export function App() {
     selectPerspective,
     updatePerspectiveRole,
     myRole,
-    setMyRole,
     playerStatuses,
     gnosiaComrades,
     toggleGnosiaComrade,
@@ -128,7 +127,6 @@ export function App() {
     <div className="app-container">
       <Header
         onOpenSettings={() => setIsSetupOpen(true)}
-        onReset={resetGame}
         onOpenWorlds={() => setIsWorldsOpen(true)}
         onOpenExportImport={() => setIsExportImportOpen(true)}
         possibleWorldsCount={solverResult.totalPossibleWorlds}
@@ -141,7 +139,6 @@ export function App() {
         gnosiaComrades={gnosiaComrades}
         onSelectPerspective={selectPerspective}
         onSelectRole={updatePerspectiveRole}
-        onSetMyRole={setMyRole}
         onToggleGnosiaComrade={toggleGnosiaComrade}
       />
 
@@ -200,6 +197,7 @@ export function App() {
 
         <aside className="sidebar">
           <EventTimeline
+            onReset={resetGame}
             events={events}
             settings={settings}
             currentDay={currentDay}

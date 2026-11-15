@@ -13,7 +13,6 @@ type PerspectiveBarProps = {
   gnosiaComrades?: ReadonlyArray<string> | undefined;
   onSelectPerspective: (id: string, name: string) => void;
   onSelectRole: (role?: Role | undefined) => void;
-  onSetMyRole: (role?: Role | undefined) => void;
   onToggleGnosiaComrade?: ((playerId: string) => void) | undefined;
 };
 
@@ -24,7 +23,6 @@ export function PerspectiveBar({
   gnosiaComrades = [],
   onSelectPerspective,
   onSelectRole,
-  onSetMyRole,
   onToggleGnosiaComrade,
 }: PerspectiveBarProps) {
   const isObjective = perspective.id === "objective";
@@ -47,83 +45,69 @@ export function PerspectiveBar({
 
   return (
     <div className="perspective-panel">
-      <div className="perspective-header">
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "1.2rem",
-            flexWrap: "wrap",
-          }}
-        >
-          {/* 自分の役職（常設設定） */}
+      {!isObjective && (
+        <div className="perspective-header">
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "0.4rem",
-              background: "rgba(56, 189, 248, 0.1)",
-              padding: "0.25rem 0.6rem",
-              borderRadius: "6px",
-              border: "1px solid rgba(56, 189, 248, 0.25)",
+              gap: "1.2rem",
+              flexWrap: "wrap",
             }}
           >
-            <Shield size={14} color="var(--text-accent)" />
-            <span
-              style={{
-                fontSize: "0.8rem",
-                color: "var(--text-accent)",
-                fontWeight: "bold",
-              }}
-            >
-              自分の本当の役職:
-            </span>
-            <select
-              className="role-lock-select"
-              style={{ padding: "0.25rem 0.5rem" }}
-              value={myRole || ""}
-              onChange={(e) => {
-                const val = (e.target as HTMLSelectElement).value;
-                onSetMyRole(val ? (val as Role) : undefined);
-              }}
-            >
-              <option value="">(未定・指定なし)</option>
-              {availableRoles.map((r) => (
-                <option key={r} value={r}>
-                  {ROLE_DEFINITIONS[r].name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* 選択中キャラの仮定役職 */}
-          {!isObjective && (
-            <div
-              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
-            >
-              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                {perspective.name} の仮定役職:
-              </span>
-              <select
-                className="role-lock-select"
-                value={effectivePerspectiveRole || ""}
-                onChange={(e) => {
-                  const val = (e.target as HTMLSelectElement).value;
-                  onSelectRole(val ? (val as Role) : undefined);
-                }}
+            {/* 選択中キャラの仮定役職 */}
+            {!isObjective && (
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
               >
-                <option value="">(指定なし・候補すべて)</option>
-                {availableRoles.map((r) => (
-                  <option key={r} value={r}>
-                    {ROLE_DEFINITIONS[r].name}{" "}
-                    ({ROLE_DEFINITIONS[r].side === "HUMAN" ? "人間" : "敵対"})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+                {
+                  /* 主人公視点のときは「自分の本当の役職」を兼ねる
+                (store 側で主人公の仮定役職と myRole を同期している) */
+                }
+                {perspective.id === "player"
+                  ? (
+                    <span
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "var(--text-accent)",
+                        fontWeight: "bold",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.3rem",
+                      }}
+                    >
+                      <Shield size={14} />
+                      自分 ({perspective.name}) の役職:
+                    </span>
+                  )
+                  : (
+                    <span
+                      style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}
+                    >
+                      {perspective.name} の仮定役職:
+                    </span>
+                  )}
+                <select
+                  className="role-lock-select"
+                  value={effectivePerspectiveRole || ""}
+                  onChange={(e) => {
+                    const val = (e.target as HTMLSelectElement).value;
+                    onSelectRole(val ? (val as Role) : undefined);
+                  }}
+                >
+                  <option value="">(指定なし・候補すべて)</option>
+                  {availableRoles.map((r) => (
+                    <option key={r} value={r}>
+                      {ROLE_DEFINITIONS[r].name}{" "}
+                      ({ROLE_DEFINITIONS[r].side === "HUMAN" ? "人間" : "敵対"})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {myRole === "GNOSIA" && settings.roles.gnosiaCount > 1 && (
         <div className="gnosia-comrades-panel">

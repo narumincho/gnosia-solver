@@ -34,6 +34,7 @@ Deno.test("GUARDIAN_GUARD - 自分が守護天使で護衛成功（犠牲者ゼ�
       id: "2",
       day: 1,
       type: "GUARDIAN_GUARD",
+      guarderId: "player",
       targetId: "gina",
     },
     {
@@ -89,6 +90,7 @@ Deno.test("GUARDIAN_GUARD - 護衛対象がその夜に消滅（バグ蒸発で�
       id: "2",
       day: 1,
       type: "GUARDIAN_GUARD",
+      guarderId: "player",
       targetId: "gina",
     },
     {
@@ -133,6 +135,7 @@ Deno.test("GUARDIAN_GUARD - 自分自身を守ろうとした場合は破綻を�
       id: "1",
       day: 1,
       type: "GUARDIAN_GUARD",
+      guarderId: "player",
       targetId: "player", // 自分自身を護衛
     },
   ];
@@ -167,6 +170,7 @@ Deno.test("GUARDIAN_GUARD - 守護天使が存在しない設定で護衛イベ�
       id: "1",
       day: 1,
       type: "GUARDIAN_GUARD",
+      guarderId: "player",
       targetId: "gina",
     },
   ];
@@ -205,7 +209,13 @@ Deno.test("GUARDIAN_GUARD - 複数夜にわたる護衛（プレイヤーズ）�
   const events: ReadonlyArray<GameEvent> = [
     { id: "1", day: 1, type: "CO", playerId: "gina", claimedRole: "DOCTOR" },
     { id: "2", day: 1, type: "VOTE", frozenPlayerId: "setsu" },
-    { id: "3", day: 1, type: "GUARDIAN_GUARD", targetId: "gina" },
+    {
+      id: "3",
+      day: 1,
+      type: "GUARDIAN_GUARD",
+      guarderId: "player",
+      targetId: "gina",
+    },
     { id: "4", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: [] },
     {
       id: "5",
@@ -216,7 +226,13 @@ Deno.test("GUARDIAN_GUARD - 複数夜にわたる護衛（プレイヤーズ）�
       result: "HUMAN",
     },
     { id: "6", day: 2, type: "VOTE", frozenPlayerId: "raqio" },
-    { id: "7", day: 2, type: "GUARDIAN_GUARD", targetId: "sq" },
+    {
+      id: "7",
+      day: 2,
+      type: "GUARDIAN_GUARD",
+      guarderId: "player",
+      targetId: "sq",
+    },
     {
       id: "8",
       day: 2,
@@ -274,7 +290,13 @@ Deno.test("GUARDIAN_GUARD - 護衛対象が消滅した場合はバグ100%確定
   // Day 1: ジナを守ったが、翌朝ジナが消滅
   // 護衛により襲撃死はあり得ないため、ジナは真エンジニアによる調査蒸発＝バグ確定！
   const events: ReadonlyArray<GameEvent> = [
-    { id: "1", day: 1, type: "GUARDIAN_GUARD", targetId: "gina" },
+    {
+      id: "1",
+      day: 1,
+      type: "GUARDIAN_GUARD",
+      guarderId: "player",
+      targetId: "gina",
+    },
     { id: "2", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: ["gina"] },
   ];
 
@@ -314,7 +336,13 @@ Deno.test("GUARDIAN_GUARD - 2人消滅時に護衛対象が含まれる場合、
   // ジナを守ったが、夜が明けてジナとセツの2人が消滅
   // ジナは護衛されていたため襲撃死は不可 -> ジナがバグ確定、セツが襲撃死確定！
   const events: ReadonlyArray<GameEvent> = [
-    { id: "1", day: 1, type: "GUARDIAN_GUARD", targetId: "gina" },
+    {
+      id: "1",
+      day: 1,
+      type: "GUARDIAN_GUARD",
+      guarderId: "player",
+      targetId: "gina",
+    },
     {
       id: "2",
       day: 1,
@@ -361,7 +389,13 @@ Deno.test("GUARDIAN_GUARD - 護衛対象が消滅したが真エンジニアが�
   // 真エンジニアがジナを調査していないためジナが蒸発することはあり得ず破綻
   const events: ReadonlyArray<GameEvent> = [
     { id: "1", day: 1, type: "CO", playerId: "setsu", claimedRole: "ENGINEER" },
-    { id: "2", day: 1, type: "GUARDIAN_GUARD", targetId: "gina" },
+    {
+      id: "2",
+      day: 1,
+      type: "GUARDIAN_GUARD",
+      guarderId: "player",
+      targetId: "gina",
+    },
     { id: "3", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: ["gina"] },
     {
       id: "4",
@@ -380,4 +414,100 @@ Deno.test("GUARDIAN_GUARD - 護衛対象が消滅したが真エンジニアが�
   });
 
   assertEquals(result.hasContradiction, true);
+});
+
+Deno.test("GUARDIAN_GUARD - 護衛は守った人の視点でのみ使い、客観視点では使わない", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "player", name: "主人公" },
+      { id: "setsu", name: "セツ" },
+      { id: "gina", name: "ジナ" },
+      { id: "stella", name: "ステラ" },
+      { id: "kukrushka", name: "ククルシカ" },
+    ],
+    roles: {
+      gnosiaCount: 1,
+      hasEngineer: true,
+      hasDoctor: false,
+      hasGuardianAngel: true,
+      hasGuardDuty: false,
+      hasACFollower: false,
+      hasBug: true,
+    },
+    allowHiddenRoles: false,
+  };
+  const events: ReadonlyArray<GameEvent> = [
+    { id: "1", day: 1, type: "VOTE", frozenPlayerId: "stella" },
+    {
+      id: "2",
+      day: 1,
+      type: "GUARDIAN_GUARD",
+      guarderId: "player",
+      targetId: "setsu",
+    },
+    { id: "3", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: ["setsu"] },
+  ];
+  const solver = new GnosiaSolver(settings, events);
+
+  // 客観視点: 主人公の護衛は分からないので、セツは襲撃死の可能性もありバグ確定にはならない
+  const objective = solver.solve();
+  assertEquals(objective.hasContradiction, false);
+  assertEquals((objective.roleProbabilities["setsu"]?.BUG ?? 0) < 1, true);
+
+  // 主人公視点: 守護天使が護衛したセツが消えたのでバグ確定
+  const asGuarder = solver.solve({ perspectivePlayerId: "player" });
+  assertEquals(asGuarder.hasContradiction, false);
+  assertEquals(asGuarder.roleProbabilities["player"]?.GUARDIAN_ANGEL, 1);
+  assertEquals(asGuarder.roleProbabilities["setsu"]?.BUG, 1);
+
+  // 別の人物の視点でも護衛は使わない
+  const asGina = solver.solve({ perspectivePlayerId: "gina" });
+  assertEquals((asGina.roleProbabilities["setsu"]?.BUG ?? 0) < 1, true);
+});
+
+Deno.test("GUARDIAN_GUARD - 主人公以外が守った護衛も、その人の視点でのみ使う", () => {
+  const settings: GameSettings = {
+    players: [
+      { id: "setsu", name: "セツ" },
+      { id: "gina", name: "ジナ" },
+      { id: "sq", name: "SQ" },
+      { id: "raqio", name: "ラキオ" },
+      { id: "stella", name: "ステラ" },
+    ],
+    roles: {
+      gnosiaCount: 1,
+      hasEngineer: false,
+      hasDoctor: false,
+      hasGuardianAngel: true,
+      hasGuardDuty: false,
+      hasACFollower: false,
+      hasBug: false,
+    },
+    allowHiddenRoles: false,
+  };
+  const events: ReadonlyArray<GameEvent> = [
+    { id: "1", day: 1, type: "VOTE", frozenPlayerId: "stella" },
+    {
+      id: "2",
+      day: 1,
+      type: "GUARDIAN_GUARD",
+      guarderId: "gina",
+      targetId: "sq",
+    },
+    { id: "3", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: [] },
+  ];
+  const solver = new GnosiaSolver(settings, events);
+
+  // ジナ視点: ジナは守護天使、SQ を護衛して平和 → SQ は非グノーシア
+  const asGina = solver.solve({ perspectivePlayerId: "gina" });
+  assertEquals(asGina.hasContradiction, false);
+  assertEquals(asGina.roleProbabilities["gina"]?.GUARDIAN_ANGEL, 1);
+  assertEquals(asGina.gnosiaProbabilities["sq"], 0);
+
+  // 客観視点ではジナが守護天使とは決まらない
+  const objective = solver.solve();
+  assertEquals(
+    (objective.roleProbabilities["gina"]?.GUARDIAN_ANGEL ?? 0) < 1,
+    true,
+  );
 });

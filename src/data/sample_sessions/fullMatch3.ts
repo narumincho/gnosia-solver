@@ -47,6 +47,7 @@ export const FULL_MATCH_3_SESSION: SampleSession = {
       },
       {
         type: "GUARDIAN_GUARD",
+        guarderId: "player",
         targetId: "comet",
         id: "69243aba-2528-4593-8a43-0aed016fb4cb",
         day: 1,
@@ -141,6 +142,7 @@ export const FULL_MATCH_3_SESSION: SampleSession = {
       },
       {
         type: "GUARDIAN_GUARD",
+        guarderId: "player",
         targetId: "gina",
         id: "0c48bec4-65e5-40ef-844d-7ba9f6d03c80",
         day: 2,

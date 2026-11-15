@@ -2,6 +2,7 @@ import { useMemo, useState } from "preact/hooks";
 import { Shield } from "lucide-preact";
 import {
   GameSettings,
+  getGuarderId,
   GuardianGuardEvent,
   NewGameEvent,
   PlayerStatus,
@@ -30,10 +31,20 @@ export function GuardianGuardForm({
     );
   }, [settings.players, playerStatuses]);
 
-  // 守護天使の護衛対象候補（自分 "player" 以外の生存プレイヤー）
+  // 守った人 (守護天使)。既定は主人公、主人公がいない・死亡しているときは生存者の先頭
+  const [guarderId, setGuarderId] = useState<string>(() => {
+    if (editingEvent) return getGuarderId(editingEvent);
+    if (alivePlayers.some((p) => p.id === "player")) return "player";
+    return alivePlayers[0]?.id ?? "";
+  });
+
+  // 守る人の候補 (編集時は死亡者も含めて元の値を選べるようにする)
+  const guarderCandidates = editingEvent ? settings.players : alivePlayers;
+
+  // 護衛対象の候補 (守った人以外の生存プレイヤー。守護天使は自分を護衛できない)
   const guardianGuardCandidates = useMemo(() => {
-    return alivePlayers.filter((p) => p.id !== "player");
-  }, [alivePlayers]);
+    return alivePlayers.filter((p) => p.id !== guarderId);
+  }, [alivePlayers, guarderId]);
 
   const [selectedPlayer, setSelectedPlayer] = useState<string>(() => {
     if (editingEvent) return editingEvent.targetId;
@@ -49,15 +60,17 @@ export function GuardianGuardForm({
     // 1クリックで即登録！
     onSubmit({
       type: "GUARDIAN_GUARD",
+      guarderId,
       targetId: playerId,
     });
   };
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
-    if (!selectedPlayer) return;
+    if (!selectedPlayer || selectedPlayer === guarderId) return;
     onSubmit({
       type: "GUARDIAN_GUARD",
+      guarderId,
       targetId: selectedPlayer,
     });
   };
@@ -85,7 +98,7 @@ export function GuardianGuardForm({
           }}
         >
           <Shield size={16} />
-          <span>【守護天使視点】夜に護衛する乗員を指定</span>
+          <span>守護天使の護衛 (誰が誰を守ったか)</span>
         </div>
         <p
           style={{
@@ -95,15 +108,37 @@ export function GuardianGuardForm({
             lineHeight: "1.4",
           }}
         >
-          守護天使は毎晩1人をグノーシアの襲撃から護衛します。<br />
-          護衛した夜に犠牲者ゼロ（平和）となった場合、護衛対象の<strong>
-            【非グノーシア】
-          </strong>が確定します（自分は護衛できません）。
+          守護天使は毎晩1人をグノーシアの襲撃から護衛します（自分は護衛できません）。<br />
+          護衛は守った本人しか知らない情報なので、推論には<strong>
+            守った人の視点
+          </strong>で見ているときだけ使います（客観視点では使いません）。
         </p>
+
+        <div className="form-group">
+          <label className="form-label" htmlFor="guarder-select">
+            守った人 (守護天使)
+          </label>
+          <select
+            id="guarder-select"
+            className="form-select"
+            value={guarderId}
+            onChange={(e) => {
+              const next = (e.target as HTMLSelectElement).value;
+              setGuarderId(next);
+              if (selectedPlayer === next) setSelectedPlayer("");
+            }}
+          >
+            {guarderCandidates.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="form-group" style={{ marginBottom: 0 }}>
           <label className="form-label">
-            護衛する乗員をタップしてください
+            守られた人をタップしてください
           </label>
           <div className="player-tile-grid">
             {guardianGuardCandidates.map((p) => {
@@ -144,7 +179,7 @@ export function GuardianGuardForm({
           <button
             type="submit"
             className="btn btn-primary"
-            disabled={!selectedPlayer}
+            disabled={!selectedPlayer || selectedPlayer === guarderId}
           >
             変更を保存する
           </button>

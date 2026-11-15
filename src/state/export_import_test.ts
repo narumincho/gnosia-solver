@@ -292,7 +292,13 @@ Deno.test("SessionData - 仲間グノーシア視点でインポートされた�
 Deno.test("SessionData - 守護天使視点でのセッション保持と護衛イベントの整合性", () => {
   const events: ReadonlyArray<GameEvent> = [
     { id: "1", day: 1, type: "VOTE", frozenPlayerId: "setsu" },
-    { id: "2", day: 1, type: "GUARDIAN_GUARD", targetId: "gina" },
+    {
+      id: "2",
+      day: 1,
+      type: "GUARDIAN_GUARD",
+      guarderId: "player",
+      targetId: "gina",
+    },
     {
       id: "3",
       day: 1,

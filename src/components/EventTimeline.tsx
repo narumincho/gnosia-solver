@@ -268,11 +268,9 @@ export function EventTimeline({
         className: "btn-add-guard",
         title: "守護天使の護衛先を記録",
         options: { type: "GUARDIAN_GUARD" },
-        // 護衛先が分かるのは自分が守護天使のときだけ (役職未設定なら入力は許す)
+        // 誰が守ったかを入力するので、主人公以外の守護天使の護衛も記録できる
         disabledReason: !roles.hasGuardianAngel
           ? notInSettings("守護天使")
-          : myRole !== undefined && myRole !== "GUARDIAN_ANGEL"
-          ? "自分が守護天使のときのみ"
           : undefined,
       },
       {

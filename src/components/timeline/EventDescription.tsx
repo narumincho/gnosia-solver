@@ -1,4 +1,4 @@
-import { GameEvent, ROLE_DEFINITIONS } from "../../types.ts";
+import { GameEvent, getGuarderId, ROLE_DEFINITIONS } from "../../types.ts";
 
 type EventDescriptionProps = {
   readonly event: GameEvent;
@@ -209,16 +209,17 @@ export function EventDescription({ event, players }: EventDescriptionProps) {
     case "GUARDIAN_GUARD": {
       return (
         <span>
-          夜間に{" "}
+          夜間に <strong>{getPlayerName(getGuarderId(event))}</strong> が{" "}
           <strong style={{ color: "var(--color-angel, #eab308)" }}>
             {getPlayerName(event.targetId)}
           </strong>{" "}
-          を <strong>【護衛対象に指定】</strong>{" "}
+          を <strong>【護衛】</strong>{" "}
           <span
             className="badge badge-angel"
             style={{ fontSize: "0.7rem", padding: "1px 6px" }}
+            title="護衛は守った本人しか知らないため、この人物の視点でのみ推論に使います"
           >
-            守護天使視点
+            {getPlayerName(getGuarderId(event))}視点のみ
           </span>
         </span>
       );

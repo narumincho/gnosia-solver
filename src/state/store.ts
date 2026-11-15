@@ -4,6 +4,7 @@ import {
   GameEvent,
   GameSettings,
   NewGameEvent,
+  normalizeEvents,
   PerspectiveOption,
   PlayerStatus,
   Role,
@@ -97,7 +98,7 @@ export function useGameStore() {
     stored?.settings ?? DEFAULT_SETTINGS,
   );
   const [events, setEvents] = useState<ReadonlyArray<GameEvent>>(
-    stored ? recalculateDays(stored.events) : [],
+    stored ? recalculateDays(normalizeEvents(stored.events)) : [],
   );
   const [perspectiveRoles, setPerspectiveRoles] = useState<
     Record<string, Role>
@@ -449,7 +450,7 @@ export function useGameStore() {
       }
 
       setSettings(session.settings);
-      setEvents(recalculateDays(session.events));
+      setEvents(recalculateDays(normalizeEvents(session.events)));
       setInspectedEventIndex(null);
       if (session.perspective && typeof session.perspective.id === "string") {
         setPerspective(session.perspective);

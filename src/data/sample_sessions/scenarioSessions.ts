@@ -125,7 +125,13 @@ export const SCENARIO_SESSIONS: ReadonlyArray<SampleSession> = [
           claimedRole: "DOCTOR",
         },
         { id: "2", day: 1, type: "VOTE", frozenPlayerId: "setsu" },
-        { id: "3", day: 1, type: "GUARDIAN_GUARD", targetId: "gina" },
+        {
+          id: "3",
+          day: 1,
+          type: "GUARDIAN_GUARD",
+          guarderId: "player",
+          targetId: "gina",
+        },
         { id: "4", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: [] },
         {
           id: "5",
@@ -136,7 +142,13 @@ export const SCENARIO_SESSIONS: ReadonlyArray<SampleSession> = [
           result: "HUMAN",
         },
         { id: "6", day: 2, type: "VOTE", frozenPlayerId: "raqio" },
-        { id: "7", day: 2, type: "GUARDIAN_GUARD", targetId: "sq" },
+        {
+          id: "7",
+          day: 2,
+          type: "GUARDIAN_GUARD",
+          guarderId: "player",
+          targetId: "sq",
+        },
         {
           id: "8",
           day: 2,
@@ -198,7 +210,13 @@ export const SCENARIO_SESSIONS: ReadonlyArray<SampleSession> = [
           claimedRole: "ENGINEER",
         },
         { id: "2", day: 1, type: "VOTE", frozenPlayerId: "sq" },
-        { id: "3", day: 1, type: "GUARDIAN_GUARD", targetId: "gina" },
+        {
+          id: "3",
+          day: 1,
+          type: "GUARDIAN_GUARD",
+          guarderId: "player",
+          targetId: "gina",
+        },
         {
           id: "4",
           day: 1,

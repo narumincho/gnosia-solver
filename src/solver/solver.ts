@@ -2,6 +2,7 @@ import {
   DisappearanceEvent,
   GameEvent,
   GameSettings,
+  getGuarderId,
   GnosiaAttackEvent,
   GuardianGuardEvent,
   InvestigationEvent,
@@ -211,6 +212,20 @@ function getContinuationCheckpoints(
   return result;
 }
 
+/** 破綻 (矛盾) を表す結果 */
+function contradiction(reason: string): SolverResult {
+  return {
+    totalPossibleWorlds: 0,
+    roleProbabilities: {},
+    gnosiaProbabilities: {},
+    enemyProbabilities: {},
+    definiteRoles: {},
+    hasContradiction: true,
+    contradictionReason: reason,
+    sampleWorlds: [],
+  };
+}
+
 /**
  * グノーシア人狼ソルバー
  */
@@ -227,6 +242,52 @@ export class GnosiaSolver {
    * 制約を解いて確率と成立する世界（配役パターン）を計算する
    */
   public solve(options: SolverOptions = {}): SolverResult {
+    // 守護天使の護衛は守った本人しか知らない情報なので、守った人の視点でのみ推論に使う。
+    // それ以外の視点 (客観視点を含む) では護衛イベントを除いて解く
+    const guardEvents = this.events.filter(
+      (ev): ev is GuardianGuardEvent => ev.type === "GUARDIAN_GUARD",
+    );
+    if (guardEvents.length > 0) {
+      // 入力自体の矛盾は視点に関係なく破綻とする
+      if (!this.settings.roles.hasGuardianAngel) {
+        return contradiction(
+          "守護天使が存在しない設定ですが、守護天使の行動が記録されています。",
+        );
+      }
+      if (guardEvents.some((ev) => getGuarderId(ev) === ev.targetId)) {
+        return contradiction("守護天使は自分自身を護衛できません。");
+      }
+      const guarders = new Set(guardEvents.map(getGuarderId));
+      if (guarders.size > 1) {
+        return contradiction(
+          "守護天使は1人だけですが、複数の人物の護衛が記録されています。",
+        );
+      }
+    }
+    const isGuarderPerspective = (guarderId: string) =>
+      options.perspectivePlayerId === guarderId;
+    const hasHiddenGuardInfo =
+      guardEvents.some((ev) => !isGuarderPerspective(getGuarderId(ev))) ||
+      (options.perspectivePlayerId !== "player" &&
+        this.events.some((ev) =>
+          ev.type === "DISAPPEARANCE" && ev.guardedPlayerId !== undefined
+        ));
+    if (hasHiddenGuardInfo) {
+      const visibleEvents = this.events
+        .filter((ev) =>
+          ev.type !== "GUARDIAN_GUARD" || isGuarderPerspective(getGuarderId(ev))
+        )
+        .map((ev) =>
+          // 消滅イベントに付いている旧形式の護衛先は主人公の護衛として扱う
+          ev.type === "DISAPPEARANCE" && ev.guardedPlayerId !== undefined &&
+            options.perspectivePlayerId !== "player"
+            ? { ...ev, guardedPlayerId: undefined }
+            : ev
+        );
+      return new GnosiaSolver(this.settings, visibleEvents).solve(options);
+    }
+    const guarderId = guardEvents[0] ? getGuarderId(guardEvents[0]) : "player";
+
     const players = this.settings.players;
     const playerIds = players.map((p) => p.id);
     const totalCount = playerIds.length;
@@ -548,14 +609,18 @@ export class GnosiaSolver {
           sampleWorlds: [],
         };
       }
-      const playerCandidates = candidateRoles.get("player");
-      if (playerCandidates) {
+      // 護衛を記録した視点の人物 (視点が守護天使ならその人物) が守護天使で確定
+      const angelId = hasGuardianGuardEvent
+        ? guarderId
+        : options.perspectivePlayerId ?? "player";
+      const angelCandidates = candidateRoles.get(angelId);
+      if (angelCandidates) {
         for (const r of ALL_ROLES) {
-          if (r !== "GUARDIAN_ANGEL") playerCandidates.delete(r);
+          if (r !== "GUARDIAN_ANGEL") angelCandidates.delete(r);
         }
       }
       for (const pid of playerIds) {
-        if (pid !== "player") {
+        if (pid !== angelId) {
           candidateRoles.get(pid)?.delete("GUARDIAN_ANGEL");
         }
       }
@@ -589,7 +654,7 @@ export class GnosiaSolver {
         // グノーシアは仲間を襲撃しないため非グノーシア
         candidateRoles.get(ev.targetId)?.delete("GNOSIA");
       } else if (ev.type === "GUARDIAN_GUARD") {
-        if (ev.targetId === "player") {
+        if (ev.targetId === getGuarderId(ev)) {
           return {
             totalPossibleWorlds: 0,
             roleProbabilities: {},
@@ -739,7 +804,7 @@ export class GnosiaSolver {
         const guard = findCorrespondingGuardianGuard(this.events, i);
         if (guard && isSelfGuardianAngel) {
           const guardTarget = guard.targetId;
-          if (guardTarget === "player") {
+          if (guardTarget === guarderId) {
             return {
               totalPossibleWorlds: 0,
               roleProbabilities: {},
@@ -1004,6 +1069,7 @@ export class GnosiaSolver {
       } else if (ev.type === "GNOSIA_ATTACK") {
         involvedPlayerIds.add(ev.targetId);
       } else if (ev.type === "GUARDIAN_GUARD") {
+        involvedPlayerIds.add(getGuarderId(ev));
         involvedPlayerIds.add(ev.targetId);
       } else if (ev.type === "ATTACK") {
         involvedPlayerIds.add(ev.attackedPlayerId);
@@ -1237,7 +1303,7 @@ export class GnosiaSolver {
 
           if (guard) {
             const guardTarget = guard.targetId;
-            if (guardTarget === "player") return false;
+            if (guardTarget === guarderId) return false;
             if (deadBefore.has(guardTarget)) return false;
 
             if (ev.disappearedPlayerIds.length === 0) {
@@ -1429,14 +1495,17 @@ export class GnosiaSolver {
             }
           }
         } else if (ev.type === "GUARDIAN_GUARD") {
-          // 自分が守護天使でない世界は矛盾
+          // 守った人が守護天使でない世界は矛盾 (守った人の視点でのみここに来る)
+          const evGuarder = getGuarderId(ev);
           if (
-            assignment["player"] !== undefined &&
-            assignment["player"] !== "GUARDIAN_ANGEL"
+            assignment[evGuarder] !== undefined &&
+            assignment[evGuarder] !== "GUARDIAN_ANGEL"
           ) {
             return false;
           }
-          if (ev.targetId === "player") return false;
+          if (ev.targetId === evGuarder) return false;
+          // 死亡した人は護衛できない・護衛されない
+          if (deadBefore.has(evGuarder)) return false;
           if (deadBefore.has(ev.targetId)) return false;
         } else if (ev.type === "NO_ATTACK") {
           if (ev.guardedPlayerId) {

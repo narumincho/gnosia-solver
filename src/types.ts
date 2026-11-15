@@ -208,11 +208,29 @@ export type GnosiaAttackEvent = BaseGameEvent & {
   targetId: string; // 襲撃対象
 };
 
-// 守護天使夜間護衛対象指定 (自分が守護天使の場合の視点入力)
+// 守護天使の夜間護衛 (守った本人だけが知る情報。推論には守った人の視点でのみ使う)
 export type GuardianGuardEvent = BaseGameEvent & {
   type: "GUARDIAN_GUARD";
+  guarderId: string; // 守った人 (守護天使)。古いデータで未設定の場合は主人公 ("player")
   targetId: string; // 護衛対象
 };
+
+/** 護衛イベントの守った人 (古いデータで未設定なら主人公) */
+export function getGuarderId(event: GuardianGuardEvent): string {
+  return (event as Partial<GuardianGuardEvent>).guarderId ?? "player";
+}
+
+/**
+ * 読み込んだイベントを現在の形式にそろえる。
+ * (古いデータの護衛イベントには guarderId が無いので主人公を補う)
+ */
+export function normalizeEvents(
+  events: ReadonlyArray<GameEvent>,
+): ReadonlyArray<GameEvent> {
+  return events.map((ev) =>
+    ev.type === "GUARDIAN_GUARD" ? { ...ev, guarderId: getGuarderId(ev) } : ev
+  );
+}
 
 export type AttackEvent = BaseGameEvent & {
   type: "ATTACK";

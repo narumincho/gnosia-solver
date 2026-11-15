@@ -119,6 +119,7 @@ export function App() {
   const handleQuickGnosiaAttack = (playerId: string) => {
     addEvent({
       type: "GNOSIA_ATTACK",
+      attackerId: "player",
       targetId: playerId,
     });
   };

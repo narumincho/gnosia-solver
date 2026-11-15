@@ -335,7 +335,13 @@ Deno.test("GnosiaSolver - グノーシア視点で襲撃対象と違う人物が
       targetId: "sq",
       result: "HUMAN",
     },
-    { id: "3", day: 1, type: "GNOSIA_ATTACK", targetId: "setsu" },
+    {
+      id: "3",
+      day: 1,
+      type: "GNOSIA_ATTACK",
+      attackerId: "player",
+      targetId: "setsu",
+    },
     { id: "4", day: 1, type: "DISAPPEARANCE", disappearedPlayerIds: ["sq"] },
   ];
 
@@ -363,8 +369,12 @@ Deno.test("GnosiaSolver - グノーシア視点で襲撃対象と違う人物が
     ...settings,
     roles: { ...settings.roles, hasGuardianAngel: false },
   };
+  // (襲撃先を知っているのはグノーシアなので、グノーシアである主人公の視点で確認する)
   const solverContradiction = new GnosiaSolver(noAngelSettings, events);
-  const resultContradiction = solverContradiction.solve();
+  const resultContradiction = solverContradiction.solve({
+    perspectivePlayerId: "player",
+    perspectiveRole: "GNOSIA",
+  });
   assertEquals(resultContradiction.hasContradiction, true);
 });
 
@@ -1201,7 +1211,13 @@ Deno.test("GnosiaSolver - 複数日にわたる襲撃と2人消滅（バグ蒸�
       day: 1,
     },
     { type: "VOTE", frozenPlayerId: "raqio", id: "6", day: 1 },
-    { type: "GNOSIA_ATTACK", targetId: "chipie", id: "7", day: 1 },
+    {
+      type: "GNOSIA_ATTACK",
+      attackerId: "player",
+      targetId: "chipie",
+      id: "7",
+      day: 1,
+    },
     {
       type: "DISAPPEARANCE",
       disappearedPlayerIds: ["chipie"],
@@ -1241,7 +1257,13 @@ Deno.test("GnosiaSolver - 複数日にわたる襲撃と2人消滅（バグ蒸�
       day: 2,
     },
     { type: "VOTE", frozenPlayerId: "comet", id: "13", day: 2 },
-    { type: "GNOSIA_ATTACK", targetId: "gina", id: "14", day: 2 },
+    {
+      type: "GNOSIA_ATTACK",
+      attackerId: "player",
+      targetId: "gina",
+      id: "14",
+      day: 2,
+    },
     { type: "DISAPPEARANCE", disappearedPlayerIds: [], id: "15", day: 2 },
     {
       type: "DOCTOR_REPORT",
@@ -1276,7 +1298,13 @@ Deno.test("GnosiaSolver - 複数日にわたる襲撃と2人消滅（バグ蒸�
       day: 3,
     },
     { type: "VOTE", frozenPlayerId: "gina", id: "20", day: 3 },
-    { type: "GNOSIA_ATTACK", targetId: "sha_ming", id: "21", day: 3 },
+    {
+      type: "GNOSIA_ATTACK",
+      attackerId: "player",
+      targetId: "sha_ming",
+      id: "21",
+      day: 3,
+    },
     {
       type: "DISAPPEARANCE",
       disappearedPlayerIds: ["setsu", "sha_ming"],
@@ -1365,7 +1393,13 @@ Deno.test("GnosiaSolver - 翌朝にバグ消滅者（セツ）への調査報告
       day: 1,
     },
     { type: "VOTE", frozenPlayerId: "raqio", id: "6", day: 1 },
-    { type: "GNOSIA_ATTACK", targetId: "chipie", id: "7", day: 1 },
+    {
+      type: "GNOSIA_ATTACK",
+      attackerId: "player",
+      targetId: "chipie",
+      id: "7",
+      day: 1,
+    },
     {
       type: "DISAPPEARANCE",
       disappearedPlayerIds: ["chipie"],
@@ -1405,7 +1439,13 @@ Deno.test("GnosiaSolver - 翌朝にバグ消滅者（セツ）への調査報告
       day: 2,
     },
     { type: "VOTE", frozenPlayerId: "comet", id: "13", day: 2 },
-    { type: "GNOSIA_ATTACK", targetId: "gina", id: "14", day: 2 },
+    {
+      type: "GNOSIA_ATTACK",
+      attackerId: "player",
+      targetId: "gina",
+      id: "14",
+      day: 2,
+    },
     { type: "DISAPPEARANCE", disappearedPlayerIds: [], id: "15", day: 2 },
     {
       type: "DOCTOR_REPORT",
@@ -1440,7 +1480,13 @@ Deno.test("GnosiaSolver - 翌朝にバグ消滅者（セツ）への調査報告
       day: 3,
     },
     { type: "VOTE", frozenPlayerId: "gina", id: "20", day: 3 },
-    { type: "GNOSIA_ATTACK", targetId: "sha_ming", id: "21", day: 3 },
+    {
+      type: "GNOSIA_ATTACK",
+      attackerId: "player",
+      targetId: "sha_ming",
+      id: "21",
+      day: 3,
+    },
     {
       type: "DISAPPEARANCE",
       disappearedPlayerIds: ["setsu", "sha_ming"],
@@ -1562,6 +1608,7 @@ Deno.test("GnosiaSolver - 実戦完走検証2（15人・3グノーシア・Day 1
     },
     {
       type: "GNOSIA_ATTACK",
+      attackerId: "player",
       targetId: "chipie",
       id: "7e280747-deb3-4a3f-b937-6fc00d2a0c15",
       day: 1,
@@ -1613,6 +1660,7 @@ Deno.test("GnosiaSolver - 実戦完走検証2（15人・3グノーシア・Day 1
     },
     {
       type: "GNOSIA_ATTACK",
+      attackerId: "player",
       targetId: "gina",
       id: "f884adb1-9a90-40a5-8ce5-44ca9349cd79",
       day: 2,
@@ -1664,6 +1712,7 @@ Deno.test("GnosiaSolver - 実戦完走検証2（15人・3グノーシア・Day 1
     },
     {
       type: "GNOSIA_ATTACK",
+      attackerId: "player",
       targetId: "sha_ming",
       id: "057aaf04-24c4-4ccf-b3f3-7ad90651a7c7",
       day: 3,
@@ -1801,14 +1850,16 @@ Deno.test("GnosiaSolver - 実戦完走検証2（15人・3グノーシア・Day 1
   assertEquals(remnanResult.definiteRoles["jonas"], "GNOSIA");
 
   // 3. 客観全体視点
+  // グノーシアの襲撃先はグノーシア陣営しか知らないので使わない。
+  // そのため「襲撃された = 非グノーシア」による ラキオ・コメット の乗員確定は出ない
   const objResult = solver.solve();
   assertEquals(objResult.hasContradiction, false);
-  assertEquals(objResult.totalPossibleWorlds, 24);
+  assertEquals(objResult.totalPossibleWorlds, 36);
   assertEquals(objResult.definiteRoles["setsu"], "BUG");
   assertEquals(objResult.definiteRoles["gina"], "AC_FOLLOWER");
   assertEquals(objResult.definiteRoles["stella"], "ENGINEER");
   assertEquals(objResult.definiteRoles["shigemichi"], "GUARD_DUTY");
   assertEquals(objResult.definiteRoles["chipie"], "GUARD_DUTY");
-  assertEquals(objResult.definiteRoles["raqio"], "CREW");
-  assertEquals(objResult.definiteRoles["comet"], "CREW");
+  assertEquals(objResult.definiteRoles["raqio"], undefined);
+  assertEquals(objResult.definiteRoles["comet"], undefined);
 });

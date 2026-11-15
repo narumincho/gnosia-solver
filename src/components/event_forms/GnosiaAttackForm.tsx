@@ -2,6 +2,7 @@ import { useMemo, useState } from "preact/hooks";
 import { Target } from "lucide-preact";
 import {
   GameSettings,
+  getAttackerId,
   GnosiaAttackEvent,
   NewGameEvent,
   PlayerStatus,
@@ -30,9 +31,20 @@ export function GnosiaAttackForm({
     );
   }, [settings.players, playerStatuses]);
 
+  // 襲撃したグノーシア。既定は主人公、主人公がいない・死亡しているときは生存者の先頭
+  const [attackerId, setAttackerId] = useState<string>(() => {
+    if (editingEvent) return getAttackerId(editingEvent);
+    if (alivePlayers.some((p) => p.id === "player")) return "player";
+    return alivePlayers[0]?.id ?? "";
+  });
+
+  // 襲撃者の候補 (編集時は死亡者も含めて元の値を選べるようにする)
+  const attackerCandidates = editingEvent ? settings.players : alivePlayers;
+
+  // 襲撃対象の候補 (襲撃者以外の生存プレイヤー)
   const attackCandidates = useMemo(() => {
-    return alivePlayers.filter((p) => p.id !== "player");
-  }, [alivePlayers]);
+    return alivePlayers.filter((p) => p.id !== attackerId);
+  }, [alivePlayers, attackerId]);
 
   const [selectedPlayer, setSelectedPlayer] = useState<string>(() => {
     if (editingEvent) return editingEvent.targetId;
@@ -48,15 +60,17 @@ export function GnosiaAttackForm({
     // 1クリックで即登録！
     onSubmit({
       type: "GNOSIA_ATTACK",
+      attackerId,
       targetId: playerId,
     });
   };
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
-    if (!selectedPlayer) return;
+    if (!selectedPlayer || selectedPlayer === attackerId) return;
     onSubmit({
       type: "GNOSIA_ATTACK",
+      attackerId,
       targetId: selectedPlayer,
     });
   };
@@ -84,7 +98,7 @@ export function GnosiaAttackForm({
           }}
         >
           <Target size={16} />
-          <span>自分がグノーシア陣営の場合の襲撃先指定</span>
+          <span>グノーシアの襲撃 (誰が誰を襲撃したか)</span>
         </div>
         <p
           style={{
@@ -94,14 +108,39 @@ export function GnosiaAttackForm({
             lineHeight: "1.4",
           }}
         >
+          襲撃先はグノーシア陣営しか知らない情報なので、推論には<strong>
+            襲撃したグノーシア本人と仲間のグノーシアの視点
+          </strong>で見ているときだけ使います（客観視点では使いません）。<br />
           襲撃対象と異なる人物が朝に消滅した場合、その消滅者は<strong>
             【バグ確定】
           </strong>となり、守護天使が生存して襲撃対象を守った世界のみが導出されます。
         </p>
 
+        <div className="form-group">
+          <label className="form-label" htmlFor="attacker-select">
+            襲撃したグノーシア
+          </label>
+          <select
+            id="attacker-select"
+            className="form-select"
+            value={attackerId}
+            onChange={(e) => {
+              const next = (e.target as HTMLSelectElement).value;
+              setAttackerId(next);
+              if (selectedPlayer === next) setSelectedPlayer("");
+            }}
+          >
+            {attackerCandidates.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="form-group" style={{ marginBottom: 0 }}>
           <label className="form-label">
-            襲撃する乗員をタップしてください
+            襲撃された人をタップしてください
           </label>
           <div className="player-tile-grid">
             {attackCandidates.map((p) => {
@@ -142,7 +181,7 @@ export function GnosiaAttackForm({
           <button
             type="submit"
             className="btn btn-primary"
-            disabled={!selectedPlayer}
+            disabled={!selectedPlayer || selectedPlayer === attackerId}
           >
             変更を保存する
           </button>

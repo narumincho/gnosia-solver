@@ -203,10 +203,17 @@ export type DisappearanceEvent = BaseGameEvent & {
 };
 
 // グノーシア夜間襲撃対象指定 (自分がグノーシアの場合の視点入力)
+// グノーシアの襲撃 (グノーシア陣営しか知らない情報。推論には襲撃者と仲間の視点でのみ使う)
 export type GnosiaAttackEvent = BaseGameEvent & {
   type: "GNOSIA_ATTACK";
+  attackerId: string; // 襲撃したグノーシア。古いデータで未設定の場合は主人公 ("player")
   targetId: string; // 襲撃対象
 };
+
+/** 襲撃イベントの襲撃者 (古いデータで未設定なら主人公) */
+export function getAttackerId(event: GnosiaAttackEvent): string {
+  return (event as Partial<GnosiaAttackEvent>).attackerId ?? "player";
+}
 
 // 守護天使の夜間護衛 (守った本人だけが知る情報。推論には守った人の視点でのみ使う)
 export type GuardianGuardEvent = BaseGameEvent & {
@@ -222,13 +229,17 @@ export function getGuarderId(event: GuardianGuardEvent): string {
 
 /**
  * 読み込んだイベントを現在の形式にそろえる。
- * (古いデータの護衛イベントには guarderId が無いので主人公を補う)
+ * (古いデータの護衛・襲撃イベントには guarderId / attackerId が無いので主人公を補う)
  */
 export function normalizeEvents(
   events: ReadonlyArray<GameEvent>,
 ): ReadonlyArray<GameEvent> {
   return events.map((ev) =>
-    ev.type === "GUARDIAN_GUARD" ? { ...ev, guarderId: getGuarderId(ev) } : ev
+    ev.type === "GUARDIAN_GUARD"
+      ? { ...ev, guarderId: getGuarderId(ev) }
+      : ev.type === "GNOSIA_ATTACK"
+      ? { ...ev, attackerId: getAttackerId(ev) }
+      : ev
   );
 }
 

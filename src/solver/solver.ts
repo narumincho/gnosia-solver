@@ -2,6 +2,7 @@ import {
   DisappearanceEvent,
   GameEvent,
   GameSettings,
+  getAttackerId,
   getGuarderId,
   GnosiaAttackEvent,
   GuardianGuardEvent,
@@ -264,18 +265,33 @@ export class GnosiaSolver {
         );
       }
     }
+    // グノーシアの襲撃先はグノーシア陣営しか知らないので、襲撃者本人か仲間のグノーシアの視点でのみ使う
+    const attackEvents = this.events.filter(
+      (ev): ev is GnosiaAttackEvent => ev.type === "GNOSIA_ATTACK",
+    );
+    if (attackEvents.some((ev) => getAttackerId(ev) === ev.targetId)) {
+      return contradiction("グノーシアは自分自身を襲撃できません。");
+    }
+    const isAttackerSide = (attackerId: string) =>
+      options.perspectivePlayerId === attackerId ||
+      (options.perspectivePlayerId !== undefined &&
+        (options.gnosiaComrades ?? []).includes(attackerId));
+
     const isGuarderPerspective = (guarderId: string) =>
       options.perspectivePlayerId === guarderId;
-    const hasHiddenGuardInfo =
+    const hasHiddenPrivateInfo =
       guardEvents.some((ev) => !isGuarderPerspective(getGuarderId(ev))) ||
+      attackEvents.some((ev) => !isAttackerSide(getAttackerId(ev))) ||
       (options.perspectivePlayerId !== "player" &&
         this.events.some((ev) =>
           ev.type === "DISAPPEARANCE" && ev.guardedPlayerId !== undefined
         ));
-    if (hasHiddenGuardInfo) {
+    if (hasHiddenPrivateInfo) {
       const visibleEvents = this.events
         .filter((ev) =>
-          ev.type !== "GUARDIAN_GUARD" || isGuarderPerspective(getGuarderId(ev))
+          (ev.type !== "GUARDIAN_GUARD" ||
+            isGuarderPerspective(getGuarderId(ev))) &&
+          (ev.type !== "GNOSIA_ATTACK" || isAttackerSide(getAttackerId(ev)))
         )
         .map((ev) =>
           // 消滅イベントに付いている旧形式の護衛先は主人公の護衛として扱う
@@ -653,6 +669,13 @@ export class GnosiaSolver {
       } else if (ev.type === "GNOSIA_ATTACK") {
         // グノーシアは仲間を襲撃しないため非グノーシア
         candidateRoles.get(ev.targetId)?.delete("GNOSIA");
+        // 襲撃したのはグノーシア (ここに来るのは襲撃者本人か仲間の視点のときだけ)
+        const attackerCandidates = candidateRoles.get(getAttackerId(ev));
+        if (attackerCandidates) {
+          for (const r of ALL_ROLES) {
+            if (r !== "GNOSIA") attackerCandidates.delete(r);
+          }
+        }
       } else if (ev.type === "GUARDIAN_GUARD") {
         if (ev.targetId === getGuarderId(ev)) {
           return {
@@ -1067,6 +1090,7 @@ export class GnosiaSolver {
         }
         if (ev.guardedPlayerId) involvedPlayerIds.add(ev.guardedPlayerId);
       } else if (ev.type === "GNOSIA_ATTACK") {
+        involvedPlayerIds.add(getAttackerId(ev));
         involvedPlayerIds.add(ev.targetId);
       } else if (ev.type === "GUARDIAN_GUARD") {
         involvedPlayerIds.add(getGuarderId(ev));

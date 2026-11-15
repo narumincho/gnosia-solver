@@ -279,10 +279,8 @@ export function EventTimeline({
         className: "btn-add-attack",
         title: "グノーシアの襲撃先を記録",
         options: { type: "GNOSIA_ATTACK" },
-        // 襲撃先が分かるのは自分がグノーシアのときだけ (役職未設定なら入力は許す)
-        disabledReason: myRole !== undefined && myRole !== "GNOSIA"
-          ? "自分がグノーシアのときのみ"
-          : undefined,
+        // 誰が襲撃したかを入力するので、主人公以外のグノーシアの襲撃も記録できる
+        disabledReason: undefined,
       },
       {
         key: "disappearance",

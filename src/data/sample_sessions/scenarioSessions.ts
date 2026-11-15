@@ -317,7 +317,13 @@ export const SCENARIO_SESSIONS: ReadonlyArray<SampleSession> = [
           day: 1,
         },
         { type: "VOTE", frozenPlayerId: "raqio", id: "6", day: 1 },
-        { type: "GNOSIA_ATTACK", targetId: "chipie", id: "7", day: 1 },
+        {
+          type: "GNOSIA_ATTACK",
+          attackerId: "player",
+          targetId: "chipie",
+          id: "7",
+          day: 1,
+        },
         {
           type: "DISAPPEARANCE",
           disappearedPlayerIds: ["chipie"],
@@ -357,7 +363,13 @@ export const SCENARIO_SESSIONS: ReadonlyArray<SampleSession> = [
           day: 2,
         },
         { type: "VOTE", frozenPlayerId: "comet", id: "13", day: 2 },
-        { type: "GNOSIA_ATTACK", targetId: "gina", id: "14", day: 2 },
+        {
+          type: "GNOSIA_ATTACK",
+          attackerId: "player",
+          targetId: "gina",
+          id: "14",
+          day: 2,
+        },
         { type: "DISAPPEARANCE", disappearedPlayerIds: [], id: "15", day: 2 },
         {
           type: "DOCTOR_REPORT",
@@ -392,7 +404,13 @@ export const SCENARIO_SESSIONS: ReadonlyArray<SampleSession> = [
           day: 3,
         },
         { type: "VOTE", frozenPlayerId: "gina", id: "20", day: 3 },
-        { type: "GNOSIA_ATTACK", targetId: "sha_ming", id: "21", day: 3 },
+        {
+          type: "GNOSIA_ATTACK",
+          attackerId: "player",
+          targetId: "sha_ming",
+          id: "21",
+          day: 3,
+        },
         {
           type: "DISAPPEARANCE",
           disappearedPlayerIds: ["setsu", "sha_ming"],

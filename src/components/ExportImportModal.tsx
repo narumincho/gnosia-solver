@@ -454,6 +454,19 @@ export function ExportImportModal({
                     {currentSelectedSample.data.currentDay}時点）
                   </div>
                   <div>{currentSelectedSample.description}</div>
+                  {currentSelectedSample.source && (
+                    <div style={{ marginTop: "0.4rem" }}>
+                      出典:{" "}
+                      <a
+                        href={currentSelectedSample.source.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "var(--text-accent)" }}
+                      >
+                        {currentSelectedSample.source.title}
+                      </a>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

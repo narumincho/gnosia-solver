@@ -2,7 +2,8 @@ import { assertEquals } from "@std/assert";
 import { GnosiaSolver } from "./solver.ts";
 import { GameEvent, GameSettings } from "../types.ts";
 
-// https://www.youtube.com/watch?v=wdzOgyXSLSY の状況をもとに、守護天使ありに変えた仮想の状況
+// 動画「ラキオ先生の補習授業～絶対に敵だ講座～」(https://www.youtube.com/watch?v=wdzOgyXSLSY)
+// の状況をもとに、守護天使ありに変えた仮想の状況
 // (実際の動画は守護天使なし: src/data/sample_sessions/videoMatch1.ts)
 const settings: GameSettings = {
   "players": [

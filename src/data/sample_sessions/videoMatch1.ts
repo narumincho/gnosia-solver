@@ -1,15 +1,21 @@
 import { SampleSession } from "./common.ts";
 
 /**
- * https://www.youtube.com/watch?v=wdzOgyXSLSY の状況を再現した観戦データ。
+ * 動画「ラキオ先生の補習授業～絶対に敵だ講座～」
+ * (https://www.youtube.com/watch?v=wdzOgyXSLSY) の状況を再現した観戦データ。
  * 主人公はおらず、14人・3G・守護天使なし。
  */
 export const VIDEO_MATCH_1_SESSION: SampleSession = {
   id: "video-match-1",
-  title: "動画観戦 1 (客観視点・14人・3G・守護天使なし・Day 1〜7)",
+  title:
+    "ラキオ先生の補習授業～絶対に敵だ講座～ (客観視点・14人・3G・守護天使なし・Day 1〜7)",
   badge: "動画観戦",
   description:
-    "YouTube 動画 (https://www.youtube.com/watch?v=wdzOgyXSLSY) の状況を再現した観戦データです。エンジニア2CO・ドクター2COで、守護天使がいないのに6日目の夜が平和だったことから、生存中のバグが襲撃されたと分かり、ジョナスが真ドクター・ラキオが偽ドクターと確定します。",
+    "動画の状況を再現した観戦データです。エンジニア2CO・ドクター2COで、守護天使がいないのに6日目の夜が平和だったことから、生存中のバグが襲撃されたと分かり、ジョナスが真ドクター・ラキオが偽ドクターと確定します。",
+  source: {
+    title: "ラキオ先生の補習授業～絶対に敵だ講座～",
+    url: "https://www.youtube.com/watch?v=wdzOgyXSLSY",
+  },
   data: {
     "version": 1,
     "exportedAt": "2026-11-14T00:54:12.697Z",

@@ -25,7 +25,7 @@ Deno.test("SAMPLE_SESSIONS - 全てのサンプルセッションが矛盾なく
   }
 });
 
-Deno.test("SAMPLE_SESSIONS - 動画観戦 1 (守護天使なし): 平和な夜からジョナスが真ドクター・ラキオが偽ドクターと確定する", () => {
+Deno.test("SAMPLE_SESSIONS - ラキオ先生の補習授業～絶対に敵だ講座～ (守護天使なし): 平和な夜からジョナスが真ドクター・ラキオが偽ドクターと確定する", () => {
   const sample = SAMPLE_SESSIONS.find((s) => s.id === "video-match-1");
   if (!sample) throw new Error("video-match-1 が見つかりません");
   const { settings, events } = sample.data;

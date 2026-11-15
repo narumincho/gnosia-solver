@@ -1,10 +1,9 @@
-import { ArrowUpDown, Globe, RefreshCw, Settings } from "lucide-preact";
+import { ArrowUpDown, Globe, Settings } from "lucide-preact";
 import { GitHubIcon } from "./icons/GitHubIcon.tsx";
 import { formatWithSpaces } from "../utils/format.ts";
 
 type HeaderProps = {
   readonly onOpenSettings: () => void;
-  readonly onReset: () => void;
   readonly onOpenWorlds: () => void;
   readonly onOpenExportImport: () => void;
   readonly possibleWorldsCount: number;
@@ -12,7 +11,6 @@ type HeaderProps = {
 
 export function Header({
   onOpenSettings,
-  onReset,
   onOpenWorlds,
   onOpenExportImport,
   possibleWorldsCount,
@@ -75,17 +73,6 @@ export function Header({
         >
           <Settings size={16} />
           <span className="btn-label">ゲーム設定</span>
-        </button>
-
-        <button
-          type="button"
-          className="btn btn-danger btn-sm"
-          onClick={onReset}
-          title="現在のゲーム履歴をリセット"
-          aria-label="リセット"
-        >
-          <RefreshCw size={14} />
-          <span className="btn-label">リセット</span>
         </button>
 
         <a

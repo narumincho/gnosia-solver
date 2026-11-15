@@ -1,5 +1,5 @@
 import { useRef, useState } from "preact/hooks";
-import { Eye } from "lucide-preact";
+import { Eye, Ghost, Snowflake } from "lucide-preact";
 import {
   PlayerStatus,
   Role,
@@ -63,11 +63,11 @@ function RolePieChart({
   });
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const size = 70;
+  const size = 60;
   const cx = size / 2;
   const cy = size / 2;
-  const r = 35;
-  const innerR = 22;
+  const r = 30;
+  const innerR = 19;
 
   // 中央表示: 役職確定ならその役職、未確定なら敵陣営確率
   const centerMain = definiteRole
@@ -179,16 +179,16 @@ function RolePieChart({
           dominant-baseline="central"
           className="role-pie-center-main"
           fontSize={centerMain.length >= 4
-            ? "9"
+            ? "8"
             : centerMain.length === 3
-            ? "10.5"
-            : "12"}
+            ? "9.5"
+            : "11"}
         >
           {centerMain}
         </text>
         <text
           x={cx}
-          y={cy + 11}
+          y={cy + 10}
           text-anchor="middle"
           dominant-baseline="central"
           className="role-pie-center-sub"
@@ -279,20 +279,28 @@ export function PlayerCard({
     .filter(Boolean)
     .join(" ");
 
-  const getStatusBadge = () => {
-    switch (status) {
-      case "FROZEN":
-        return <span className="player-status-badge status-frozen">冷凍</span>;
-      case "ATTACKED":
-        return (
-          <span className="player-status-badge status-attacked">
-            消滅
-          </span>
-        );
-      default:
-        return <span className="player-status-badge status-alive">生存</span>;
-    }
-  };
+  // 生存は既定の状態なので表示しない。冷凍・消滅のときだけ小さなアイコンを出す
+  const statusIcon = status === "FROZEN"
+    ? (
+      <span
+        className="player-status-icon status-frozen"
+        title="冷凍"
+        aria-label="冷凍"
+      >
+        <Snowflake size={12} />
+      </span>
+    )
+    : status === "ATTACKED"
+    ? (
+      <span
+        className="player-status-icon status-attacked"
+        title="消滅"
+        aria-label="消滅"
+      >
+        <Ghost size={12} />
+      </span>
+    )
+    : null;
 
   const sortedRoles: ReadonlyArray<DonutSlice> = (
     Object.entries(roleProbs) as ReadonlyArray<[Role, number]>
@@ -350,51 +358,46 @@ export function PlayerCard({
           <span className="player-name" title={player.name}>
             {player.name}
           </span>
-          {isCurrentPerspective && (
-            <span className="perspective-badge">(視点)</span>
-          )}
+          {claimedRoles.map((role) => (
+            <span
+              key={role}
+              className={`badge badge-co ${ROLE_DEFINITIONS[role].badgeClass}`}
+              title={`${ROLE_DEFINITIONS[role].name}名乗り (CO)`}
+            >
+              {ROLE_DEFINITIONS[role].shortName}CO
+            </span>
+          ))}
+          {statusIcon}
         </div>
       </div>
 
-      {/* 下段: COバッジ・ステータス (名前が省略されないよう別の行に置く) */}
-      <div className="player-header-badges">
-        {claimedRoles.map((role) => (
-          <span
-            key={role}
-            className={`badge badge-co ${ROLE_DEFINITIONS[role].badgeClass}`}
-            title={`${ROLE_DEFINITIONS[role].name}名乗り (CO)`}
-          >
-            {role === "GUARD_DUTY"
-              ? "留守番CO"
-              : `${ROLE_DEFINITIONS[role].name}CO`}
-          </span>
-        ))}
-        {getStatusBadge()}
+      {/* グラフと役職確率を横に並べて高さを抑える (狭いカードでは折り返す) */}
+      <div className="player-card-body">
+        <RolePieChart
+          slices={sortedRoles}
+          definiteRole={definiteRole}
+          enemyProb={solverResult.enemyProbabilities[player.id]}
+          tooltip={tooltipText}
+        />
+
+        <div className="player-card-side">
+          <RoleProbList slices={sortedRoles} />
+
+          {/* 視点人物は役職を前提として固定しているので根拠は出さない */}
+          {conclusion && onExplain && !isCurrentPerspective && (
+            <button
+              type="button"
+              className="explain-btn"
+              onClick={() => onExplain(player.id, conclusion)}
+              title={`${player.name} が${
+                conclusionLabel(conclusion)
+              }になった根拠を表示`}
+            >
+              根拠
+            </button>
+          )}
+        </div>
       </div>
-
-      {/* 中央: 拡大円グラフ (各スライスホバーで役職名と%を表示) */}
-      <RolePieChart
-        slices={sortedRoles}
-        definiteRole={definiteRole}
-        enemyProb={solverResult.enemyProbabilities[player.id]}
-        tooltip={tooltipText}
-      />
-
-      <RoleProbList slices={sortedRoles} />
-
-      {/* 視点人物は役職を前提として固定しているので根拠は出さない */}
-      {conclusion && onExplain && !isCurrentPerspective && (
-        <button
-          type="button"
-          className="explain-btn"
-          onClick={() => onExplain(player.id, conclusion)}
-          title={`${player.name} が${
-            conclusionLabel(conclusion)
-          }になった根拠を表示`}
-        >
-          根拠
-        </button>
-      )}
     </div>
   );
 }
